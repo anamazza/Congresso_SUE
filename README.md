@@ -93,9 +93,10 @@ Gera `dist/index.html` com CSS, JavaScript, logos e edital embutidos.
 O projeto está no repositório <https://github.com/anamazza/Congresso_SUE> e o site é publicado
 em **<https://anamazza.github.io/Congresso_SUE/>**.
 
-O arquivo `.github/workflows/pages.yml` publica a pasta `site/` a cada envio para a branch
-`main`. Se a publicação não acontecer, confira no repositório **Settings > Pages > Build and
-deployment > Source**: precisa estar em **GitHub Actions**.
+O arquivo `.github/workflows/pages.yml` copia a pasta `site/` para a branch `gh-pages` a cada
+envio para a branch `main`, e o GitHub Pages publica essa branch. Se a publicação não
+acontecer, confira no repositório **Settings > Pages > Build and deployment**: Source em
+**Deploy from a branch**, branch **gh-pages**, pasta **/ (root)**.
 
 Para atualizar o site: edite os arquivos em `site/`, faça o commit e envie (`git push`).
 Em um ou dois minutos a versão nova está no ar.

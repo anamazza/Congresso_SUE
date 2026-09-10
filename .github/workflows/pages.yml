@@ -1,5 +1,6 @@
 # Publica a pasta site/ no GitHub Pages a cada envio para a branch principal.
-# No repositório: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+# Como funciona: copia o conteúdo de site/ para a branch gh-pages, que o
+# GitHub Pages usa como fonte (Settings > Pages > Branch: gh-pages, pasta /).
 name: Publicar site
 
 on:
@@ -8,9 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -19,20 +18,14 @@ concurrency:
 jobs:
   publicar:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Baixar o repositório
         uses: actions/checkout@v4
-      - name: Configurar o Pages
-        uses: actions/configure-pages@v5
+      - name: Enviar a pasta site/ para a branch gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-      - name: Empacotar a pasta site/
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - name: Publicar
-        id: deploy
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "Publicar site"
