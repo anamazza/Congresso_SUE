@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1º Simpósio de Urgência e Emergência</title>
+<meta name="description" content="1º Simpósio de Urgência e Emergência da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE). 27 e 28 de novembro de 2026, UNIGRANRIO Barra da Tijuca. Atendimento ao paciente grave na urgência, inscrições e submissão de trabalhos.">
+<meta property="og:title" content="1º Simpósio de Urgência e Emergência">
+<meta property="og:description" content="27 e 28 de novembro de 2026 · UNIGRANRIO, Barra da Tijuca · 250 vagas. Secretaria Municipal de Saúde do Rio de Janeiro / SUBHUE.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://anamazza.github.io/Congresso_SUE/assets/capa.jpg">
+<meta property="og:url" content="https://anamazza.github.io/Congresso_SUE/">
+<link rel="canonical" href="https://anamazza.github.io/Congresso_SUE/">
+<!-- Se o site ganhar um domínio próprio, troque o endereço nas três linhas acima. -->
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<noscript><style>.pagina[hidden] { display: block !important; }</style></noscript>
+
+<!-- Foto do Rio como fundo de todas as páginas (intensidade: --fundo-forca no CSS) -->
+<div class="fundo" aria-hidden="true"></div>
+
+<!-- =====================================================================
+     MENU (definido uma única vez; cada link "#/..." abre uma página abaixo)
+     ===================================================================== -->
+<header class="topo">
+  <div class="container topo__inner">
+    <a class="topo__marca" href="#/inicio" aria-label="Início: 1º Simpósio de Urgência e Emergência">
+      <img src="assets/logo-branco.png" alt="" width="1039" height="570">
+    </a>
+    <button class="topo__menu" type="button" aria-expanded="false" aria-controls="menu-principal">
+      <span class="topo__menu-icone" aria-hidden="true"></span>
+      <span>Menu</span>
+    </button>
+    <nav id="menu-principal" class="topo__nav" aria-label="Menu principal">
+      <ul class="menu">
+        <li><a href="#/inicio">Home</a></li>
+        <li class="menu__grupo">
+          <details>
+            <summary>Informações</summary>
+            <ul class="submenu">
+              <li><a href="#/evento">O evento</a></li>
+              <li><a href="#/evento/publico">Público-alvo</a></li>
+              <li><a href="#/local">Local do evento</a></li>
+              <li><a href="#/cronograma/certificacao">Certificação</a></li>
+              <li><a href="#/faq">Perguntas frequentes</a></li>
+              <li><a href="#/apoio">Realização e apoio</a></li>
+              <li data-vinculo="avisos"><a href="#/avisos">Avisos</a></li>
+              <li data-vinculo="comissoes"><a href="#/comissoes">Comissões</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="menu__grupo">
+          <details>
+            <summary>Programação</summary>
+            <ul class="submenu">
+              <li><a href="#/programacao">Programação dos dois dias</a></li>
+              <li data-vinculo="palestrantes"><a href="#/palestrantes">Palestrantes</a></li>
+              <li><a href="#/cronograma">Datas importantes</a></li>
+            </ul>
+          </details>
+        </li>
+        <li><a href="#/inscricoes">Inscrições</a></li>
+        <li class="menu__grupo">
+          <details>
+            <summary>Trabalhos</summary>
+            <ul class="submenu">
+              <li><a href="#/trabalhos">Submissão de trabalhos</a></li>
+              <li><a href="#/trabalhos/eixos">Eixos temáticos</a></li>
+              <li><a href="#/trabalhos/avaliacao">Avaliação e apresentação</a></li>
+              <li><a href="#/normas">Normas de submissão</a></li>
+              <li><a data-config-href="submissao.modeloPoster" data-pendente="ocultar" href="#">Modelo de pôster</a></li>
+            </ul>
+          </details>
+        </li>
+        <li><a href="#/contato">Contato</a></li>
+      </ul>
+      <ul class="menu menu--acoes">
+        <li><a class="topo__social" data-config-href="contato.instagram" data-pendente="ocultar" href="#" aria-label="Instagram do evento">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </a></li>
+        <li><a class="btn btn--primario btn--pequeno" data-config-href="inscricoes.url" data-pendente="ocultar" href="#/inscricoes">Inscreva-se</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="conteudo">
+
+  <!-- ===================== HOME ===================== -->
+  <section class="pagina pagina--inicio" data-pagina="inicio">
+    <div class="hero">
+      <h1 class="hero__capa">
+        <img src="assets/capa.jpg" alt="1º Simpósio de Urgência e Emergência" width="1920" height="1080" fetchpriority="high">
+      </h1>
+      <div class="container hero__inner">
+        <p class="eyebrow">Secretaria Municipal de Saúde do Rio de Janeiro · SUBHUE</p>
+        <p class="hero__lead">Um encontro da Rede de Urgência e Emergência do Rio de Janeiro dedicado ao atendimento do paciente grave nas unidades de urgência e emergência: reconhecimento precoce, estabilização e qualificação da assistência.</p>
+
+        <ul class="fatos" aria-label="Informações principais do evento">
+          <li>
+            <span class="fato__rotulo">Quando</span>
+            <strong>27 e 28 de novembro de 2026</strong>
+            <span>sexta-feira e sábado</span>
+          </li>
+          <li>
+            <span class="fato__rotulo">Onde</span>
+            <strong>UNIGRANRIO · Campus Barra da Tijuca</strong>
+            <span>Rio de Janeiro, RJ · presencial</span>
+          </li>
+          <li>
+            <span class="fato__rotulo">Vagas</span>
+            <strong>250 participantes</strong>
+            <span>por ordem de inscrição</span>
+          </li>
+          <li>
+            <span class="fato__rotulo">Contagem</span>
+            <strong id="contagem">Novembro de 2026</strong>
+            <span id="contagem-sub">em breve</span>
+          </li>
+        </ul>
+
+        <div class="hero__acoes">
+          <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Inscreva-se" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
+          <a class="btn btn--secundario btn--pendente" data-config-href="submissao.url" data-texto-ativo="Submeta seu trabalho" data-texto-pendente="Submissão de trabalhos em breve" href="#/trabalhos">Submissão de trabalhos em breve</a>
+        </div>
+      </div>
+
+      <img class="hero__ecg" src="assets/linha-batimentos.png" alt="" width="2400" height="307" aria-hidden="true">
+    </div>
+
+    <!-- Último aviso publicado (preenchido a partir de CONFIG.avisos; some quando não há avisos) -->
+    <div class="container" id="aviso-destaque" hidden>
+      <a class="aviso-destaque" href="#/avisos">
+        <span class="aviso-destaque__rotulo">Aviso</span>
+        <span class="aviso-destaque__texto"></span>
+        <span class="aviso-destaque__mais">Ver todos os avisos</span>
+      </a>
+    </div>
+
+    <div class="container atalhos-wrap">
+      <ul class="atalhos" aria-label="Páginas do site">
+        <li><a class="atalho" href="#/evento"><strong>O evento</strong><span>Objetivos, público-alvo e o foco no paciente grave.</span><em>Saiba mais</em></a></li>
+        <li><a class="atalho" href="#/programacao"><strong>Programação</strong><span>Palestras, mesas-redondas e pôsteres nos dias 27 e 28.</span><em>Ver programação</em></a></li>
+        <li><a class="atalho" href="#/trabalhos"><strong>Trabalhos científicos</strong><span>Eixos temáticos, prazos e regras de submissão.</span><em>Como participar</em></a></li>
+        <li><a class="atalho" href="#/local"><strong>Local</strong><span>UNIGRANRIO, Campus Barra da Tijuca. Endereço e mapa.</span><em>Ver local</em></a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== O EVENTO ===================== -->
+  <section class="pagina" data-pagina="evento" data-titulo="O evento" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">O evento</p>
+        <h1>Atendimento ao paciente grave na urgência e emergência</h1>
+        <p class="lead">A Secretaria Municipal de Saúde do Rio de Janeiro, por meio da Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE), realiza o 1º Simpósio de Urgência e Emergência, com foco no cuidado ao paciente grave nas unidades de urgência e emergência da rede municipal.</p>
+        <p>Em dois dias de palestras, mesas-redondas, debates e apresentação de trabalhos, o simpósio promove a atualização técnico-científica, a integração entre os profissionais da Rede de Urgência e Emergência e o compartilhamento de experiências e práticas voltadas à qualificação da assistência.</p>
+      </header>
+
+      <div class="bloco">
+        <h2 class="subtitulo subtitulo--centro">Objetivos</h2>
+        <ul class="objetivos">
+          <li>Promover a atualização dos profissionais que atuam em urgência e emergência.</li>
+          <li>Estimular estratégias para qualificar a assistência ao paciente em situação de urgência e emergência.</li>
+          <li>Favorecer a integração entre os profissionais e serviços que compõem a Rede de Urgência e Emergência.</li>
+          <li>Compartilhar experiências exitosas, projetos e boas práticas desenvolvidas nos serviços de saúde.</li>
+          <li>Incentivar a produção técnico-científica relacionada à urgência e emergência.</li>
+          <li>Possibilitar a apresentação e a divulgação de trabalhos científicos desenvolvidos na área.</li>
+          <li>Fortalecer a educação permanente e a qualificação dos profissionais da Rede de Atenção à Saúde.</li>
+        </ul>
+      </div>
+
+      <div class="bloco" id="publico">
+        <h2 class="subtitulo subtitulo--centro">Para quem</h2>
+        <p class="centro">O simpósio é aberto a profissionais e estudantes das áreas da saúde e de outras áreas relacionadas à atenção às urgências e emergências.</p>
+        <ul class="chips">
+          <li>Médicos</li>
+          <li>Enfermeiros</li>
+          <li>Técnicos e auxiliares de enfermagem</li>
+          <li>Fisioterapeutas</li>
+          <li>Farmacêuticos</li>
+          <li>Psicólogos</li>
+          <li>Assistentes sociais</li>
+          <li>Outras categorias da saúde</li>
+          <li>Gestores de serviços de saúde</li>
+          <li>Residentes</li>
+          <li>Acadêmicos e estudantes</li>
+          <li>Demais interessados na temática</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROGRAMAÇÃO ===================== -->
+  <section class="pagina" data-pagina="programacao" data-titulo="Programação" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Programação preliminar</p>
+        <h1>Dois dias de palestras, mesas-redondas e pôsteres</h1>
+        <p class="lead">Os horários, os temas das mesas e os palestrantes serão divulgados pela organização. A programação pode sofrer ajustes, sempre comunicados previamente aos participantes.</p>
+      </header>
+
+      <div class="dias">
+        <article class="dia">
+          <header class="dia__cabecalho">
+            <span class="dia__numero">27</span>
+            <div>
+              <strong>Sexta-feira</strong><br>
+              <span>27 de novembro de 2026</span>
+            </div>
+          </header>
+          <ol class="agenda">
+            <li><span class="hora"></span><span>Credenciamento e acolhimento dos participantes</span></li>
+            <li><span class="hora"></span><span>Abertura oficial</span></li>
+            <li><span class="hora"></span><span class="agenda__destaque">Palestra magna</span></li>
+            <li><span class="hora"></span><span>Mesa-redonda: urgência e emergência</span></li>
+            <li class="agenda__intervalo"><span class="hora"></span><span>Intervalo</span></li>
+            <li><span class="hora"></span><span>Palestra técnica</span></li>
+            <li><span class="hora"></span><span>Mesa de discussão</span></li>
+            <li><span class="hora"></span><span>Apresentação de trabalhos: pôsteres e painéis</span></li>
+            <li class="agenda__intervalo"><span class="hora"></span><span>Intervalo para almoço</span></li>
+            <li><span class="hora"></span><span>Palestra técnica</span></li>
+            <li><span class="hora"></span><span>Mesa-redonda</span></li>
+            <li><span class="hora"></span><span>Discussão de experiências e boas práticas</span></li>
+            <li><span class="hora"></span><span>Encerramento do 1º dia</span></li>
+          </ol>
+        </article>
+
+        <article class="dia">
+          <header class="dia__cabecalho">
+            <span class="dia__numero">28</span>
+            <div>
+              <strong>Sábado</strong><br>
+              <span>28 de novembro de 2026</span>
+            </div>
+          </header>
+          <ol class="agenda">
+            <li><span class="hora"></span><span>Abertura do 2º dia</span></li>
+            <li><span class="hora"></span><span class="agenda__destaque">Palestra magna</span></li>
+            <li><span class="hora"></span><span>Mesa-redonda</span></li>
+            <li><span class="hora"></span><span>Apresentação dos trabalhos</span></li>
+            <li><span class="hora"></span><span>Palestra técnica</span></li>
+            <li><span class="hora"></span><span>Debate final</span></li>
+            <li><span class="hora"></span><span>Encerramento do simpósio</span></li>
+          </ol>
+        </article>
+      </div>
+
+      <p class="centro nota bloco-rodape">Datas de inscrição, submissão e certificação: <a href="#/cronograma">veja o cronograma completo</a>.</p>
+    </div>
+  </section>
+
+  <!-- ===================== PALESTRANTES (aparece quando preenchido em js/main.js) ===================== -->
+  <section class="pagina" data-pagina="palestrantes" data-titulo="Palestrantes" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Palestrantes</p>
+        <h1>Quem vai conduzir as discussões</h1>
+      </header>
+      <div id="palestrantes-lista">
+        <ul class="pessoas"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== INSCRIÇÕES ===================== -->
+  <section class="pagina" data-pagina="inscricoes" data-titulo="Inscrições" hidden>
+    <div class="container grid-2">
+      <div>
+        <p class="eyebrow">Inscrições</p>
+        <h1>Garanta uma das 250 vagas</h1>
+        <p class="lead">As inscrições serão feitas exclusivamente pela plataforma oficial do evento. As vagas são limitadas à capacidade do auditório e preenchidas por ordem de inscrição.</p>
+        <ul class="regras">
+          <li>A inscrição é pessoal e intransferível.</li>
+          <li>Após se inscrever, acompanhe as orientações da organização sobre a confirmação da participação.</li>
+          <li>O credenciamento acontece no local, nos dias do evento.</li>
+          <li>Participantes que cumprirem os critérios de frequência recebem certificado. <a href="#/cronograma/certificacao">Saiba mais sobre a certificação</a>.</li>
+        </ul>
+      </div>
+      <div class="painel">
+        <dl class="painel__lista">
+          <div><dt>Abertura</dt><dd data-config="inscricoes.inicio">a divulgar</dd></div>
+          <div><dt>Encerramento</dt><dd data-config="inscricoes.fim">a divulgar</dd></div>
+          <div><dt>Plataforma</dt><dd data-config="inscricoes.plataforma">a divulgar</dd></div>
+          <div><dt>Vagas</dt><dd><span data-config="inscricoes.vagas">250</span> participantes</dd></div>
+        </dl>
+        <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Inscreva-se" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TRABALHOS ===================== -->
+  <section class="pagina" data-pagina="trabalhos" data-titulo="Trabalhos científicos" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Trabalhos científicos</p>
+        <h1>Apresente a experiência do seu serviço</h1>
+        <p class="lead">Serão aceitos trabalhos científicos e relatos de experiência relacionados à urgência e emergência. Os trabalhos aprovados são apresentados na modalidade pôster ou painel, durante o simpósio.</p>
+      </header>
+
+      <div class="grid-2">
+        <div>
+          <h2 class="subtitulo">Como enviar</h2>
+          <ul class="regras">
+            <li>O envio é feito exclusivamente pela plataforma de submissão, dentro do prazo do cronograma.</li>
+            <li>Trabalhos enviados após o prazo não serão considerados.</li>
+            <li>Siga as normas de formatação e identificação definidas pela Comissão Organizadora, que serão publicadas neste site.</li>
+            <li>O resultado da avaliação é comunicado aos autores pelo canal informado pela organização.</li>
+          </ul>
+        </div>
+        <div class="painel">
+          <h2 class="subtitulo">Envio</h2>
+          <dl class="painel__lista">
+            <div><dt>Abertura</dt><dd data-config="submissao.inicio">a divulgar</dd></div>
+            <div><dt>Prazo final</dt><dd data-config="submissao.prazo">a divulgar</dd></div>
+            <div><dt>Plataforma</dt><dd data-config="submissao.plataforma">a divulgar</dd></div>
+            <div><dt>Modalidade</dt><dd>Pôster ou painel</dd></div>
+          </dl>
+          <a class="btn btn--secundario btn--pendente" data-config-href="submissao.url" data-texto-ativo="Submeter trabalho" data-texto-pendente="Submissão em breve" href="#/trabalhos">Submissão em breve</a>
+        </div>
+      </div>
+
+      <div class="bloco" id="eixos">
+        <h2 class="subtitulo subtitulo--centro">Eixos temáticos</h2>
+        <p class="centro">Os trabalhos podem contemplar, entre outros, os seguintes temas:</p>
+        <ul class="chips">
+          <li>Atendimento às urgências e emergências</li>
+          <li>Trauma</li>
+          <li>Acidente Vascular Cerebral (AVC)</li>
+          <li>Infarto Agudo do Miocárdio (IAM)</li>
+          <li>Sepse</li>
+          <li>Parada cardiorrespiratória e reanimação cardiopulmonar</li>
+          <li>Classificação de risco</li>
+          <li>Segurança do paciente</li>
+          <li>Enfermagem em urgência e emergência</li>
+          <li>Práticas multiprofissionais</li>
+          <li>Humanização da assistência</li>
+          <li>Gestão dos serviços de urgência e emergência</li>
+          <li>Gestão de leitos</li>
+          <li>Regulação e acesso aos serviços de saúde</li>
+          <li>Organização da Rede de Urgência e Emergência</li>
+          <li>Atendimento pré-hospitalar</li>
+          <li>Educação permanente em saúde</li>
+          <li>Tecnologia e inovação em saúde</li>
+          <li>Experiências exitosas e boas práticas</li>
+          <li>Outros temas de assistência, gestão, ensino e pesquisa</li>
+        </ul>
+      </div>
+
+      <div class="bloco grid-2 grid-2--igual" id="avaliacao">
+        <div>
+          <h2 class="subtitulo">Como os trabalhos são avaliados</h2>
+          <p>A Comissão Científica avalia cada trabalho considerando, entre outros critérios:</p>
+          <ul class="regras">
+            <li>Adequação do tema à proposta do evento</li>
+            <li>Relevância científica, técnica ou assistencial</li>
+            <li>Clareza dos objetivos</li>
+            <li>Metodologia utilizada</li>
+            <li>Organização e qualidade da apresentação</li>
+            <li>Contribuição para a área de urgência e emergência</li>
+            <li>Aplicabilidade dos resultados ou da experiência apresentada</li>
+          </ul>
+          <p class="nota">A Comissão Científica pode solicitar ajustes ou adequações nos trabalhos submetidos.</p>
+        </div>
+        <div>
+          <h2 class="subtitulo">Apresentação dos aprovados</h2>
+          <ul class="regras">
+            <li>O autor responsável imprime o pôster ou painel nas dimensões que serão divulgadas pela organização.</li>
+            <li>O material é levado pelo autor e apresentado no local, no dia e horário definidos pela Comissão Organizadora.</li>
+            <li>A ausência do autor responsável no período de apresentação pode implicar a não certificação do trabalho.</li>
+            <li>Autores de trabalhos aprovados e apresentados recebem certificação específica.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== COMISSÕES (aparece quando preenchido em js/main.js) ===================== -->
+  <section class="pagina" data-pagina="comissoes" data-titulo="Comissões" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Comissões</p>
+        <h1>Quem organiza o simpósio</h1>
+      </header>
+      <div class="grid-2 grid-2--igual">
+        <div id="comissao-organizadora" hidden>
+          <h2 class="subtitulo">Comissão Organizadora</h2>
+          <ul class="pessoas"></ul>
+        </div>
+        <div id="comissao-cientifica" hidden>
+          <h2 class="subtitulo">Comissão Científica</h2>
+          <ul class="pessoas"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOCAL ===================== -->
+  <section class="pagina" data-pagina="local" data-titulo="Local" hidden>
+    <div class="container grid-2">
+      <div>
+        <p class="eyebrow">Local</p>
+        <h1>UNIGRANRIO, Campus Barra da Tijuca</h1>
+        <p class="lead">O simpósio acontece presencialmente nas dependências da UNIGRANRIO, na Barra da Tijuca, zona oeste do Rio de Janeiro.</p>
+        <address class="endereco">
+          <strong>Av. Ayrton Senna, 2.200</strong><br>
+          Barra da Tijuca, Rio de Janeiro, RJ
+        </address>
+        <a class="btn btn--secundario" href="https://www.google.com/maps/search/?api=1&amp;query=UNIGRANRIO+Campus+Barra+da+Tijuca+Av.+Ayrton+Senna+2200+Rio+de+Janeiro" target="_blank" rel="noopener">Ver no mapa</a>
+      </div>
+      <div class="painel">
+        <h2 class="subtitulo">Orientações aos participantes</h2>
+        <ul class="regras">
+          <li>Credenciamento no local, nos dias do evento, mediante inscrição prévia.</li>
+          <li>Os autores de trabalhos aprovados recebem, com antecedência, o local e o horário de exposição dos pôsteres.</li>
+          <li>Demais orientações sobre acesso, estacionamento e transporte serão enviadas aos inscritos.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DATAS E CERTIFICAÇÃO ===================== -->
+  <section class="pagina" data-pagina="cronograma" data-titulo="Datas importantes" hidden>
+    <div class="container grid-2">
+      <div>
+        <p class="eyebrow">Cronograma</p>
+        <h1>Datas importantes</h1>
+        <p>As datas ainda não definidas serão publicadas nos canais oficiais do evento.</p>
+        <div class="tabela-wrap">
+          <table class="cronograma">
+            <thead>
+              <tr><th scope="col">Atividade</th><th scope="col">Data</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Divulgação do edital</td><td data-config="datas.edital">a divulgar</td></tr>
+              <tr><td>Início das inscrições</td><td data-config="inscricoes.inicio">a divulgar</td></tr>
+              <tr><td>Início da submissão de trabalhos</td><td data-config="submissao.inicio">a divulgar</td></tr>
+              <tr><td>Encerramento das inscrições</td><td data-config="inscricoes.fim">a divulgar</td></tr>
+              <tr><td>Encerramento da submissão de trabalhos</td><td data-config="submissao.prazo">a divulgar</td></tr>
+              <tr><td>Período de avaliação dos trabalhos</td><td data-config="datas.avaliacao">a divulgar</td></tr>
+              <tr><td>Divulgação dos trabalhos aprovados</td><td data-config="datas.aprovados">a divulgar</td></tr>
+              <tr><td>Divulgação da programação final</td><td data-config="datas.programacao">a divulgar</td></tr>
+              <tr class="destaque"><td>Simpósio · 1º dia</td><td>27/11/2026</td></tr>
+              <tr class="destaque"><td>Simpósio · 2º dia</td><td>28/11/2026</td></tr>
+              <tr><td>Apresentação dos trabalhos aprovados</td><td data-config="datas.apresentacao">a divulgar</td></tr>
+              <tr><td>Disponibilização dos certificados</td><td data-config="datas.certificados">a divulgar</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="painel" id="certificacao">
+        <p class="eyebrow">Certificação</p>
+        <h2 class="subtitulo">Certificados para participantes e autores</h2>
+        <p>Recebem certificado os participantes que cumprirem os critérios de participação definidos pela Comissão Organizadora. Autores de trabalhos aprovados e apresentados recebem certificação específica.</p>
+        <dl class="painel__lista">
+          <div><dt>Carga horária</dt><dd data-config="certificacao.cargaHoraria">a divulgar</dd></div>
+          <div><dt>Frequência</dt><dd data-config="certificacao.frequencia">a divulgar</dd></div>
+          <div><dt>Emissão</dt><dd data-config="datas.certificados">a divulgar</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONTATO ===================== -->
+  <section class="pagina" data-pagina="contato" data-titulo="Contato" hidden>
+    <div class="container grid-2">
+      <div>
+        <p class="eyebrow">Contato</p>
+        <h1>Fale com a organização</h1>
+        <p class="lead">Dúvidas sobre inscrições, submissão de trabalhos ou programação: fale com a Comissão Organizadora pelos canais abaixo.</p>
+        <dl class="painel__lista">
+          <div><dt>E-mail</dt><dd><a data-config-mailto="contato.email" href="#">a divulgar</a></dd></div>
+          <div><dt>Telefone</dt><dd data-config="contato.telefone">a divulgar</dd></div>
+          <div><dt>Instagram</dt><dd><a data-config-href="contato.instagram" data-texto-ativo="Perfil do evento" data-texto-pendente="a divulgar" href="#">a divulgar</a></dd></div>
+        </dl>
+        <a class="btn btn--secundario" data-config-href="edital.url" data-pendente="ocultar" href="assets/Edital.docx" download>Baixar o edital</a>
+      </div>
+      <div class="painel">
+        <p class="eyebrow">Realização</p>
+        <p><strong>Secretaria Municipal de Saúde do Rio de Janeiro</strong><br>Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE)</p>
+        <p class="eyebrow">Local</p>
+        <p>UNIGRANRIO · Campus Barra da Tijuca<br>Av. Ayrton Senna, 2.200 · Rio de Janeiro, RJ</p>
+        <p class="nota">A participação no simpósio implica ciência e concordância com as normas do edital. Os casos omissos são deliberados pela Comissão Organizadora.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PERGUNTAS FREQUENTES ===================== -->
+  <section class="pagina" data-pagina="faq" data-titulo="Perguntas frequentes" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Perguntas frequentes</p>
+        <h1>Dúvidas comuns sobre o simpósio</h1>
+        <p class="lead">As respostas seguem o edital do evento. O que ainda não foi definido pela Comissão Organizadora aparece como "a divulgar" e será atualizado nesta página.</p>
+      </header>
+      <div class="faq">
+        <details class="faq__item">
+          <summary>Quem pode participar?</summary>
+          <div>
+            <p>Profissionais e estudantes das áreas da saúde e de outras áreas relacionadas à atenção às urgências e emergências: médicos, enfermeiros, técnicos e auxiliares de enfermagem, fisioterapeutas, farmacêuticos, psicólogos, assistentes sociais, gestores de serviços de saúde, residentes, acadêmicos e demais interessados na temática.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Como faço a inscrição?</summary>
+          <div>
+            <p>Exclusivamente pela plataforma oficial do evento, cujo link será publicado na página <a href="#/inscricoes">Inscrições</a>. São 250 vagas, preenchidas por ordem de inscrição. A inscrição é pessoal e intransferível.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>A inscrição tem custo?</summary>
+          <div>
+            <p>As condições de inscrição, incluindo eventual taxa, serão divulgadas junto com a abertura das inscrições, nesta página e na página <a href="#/inscricoes">Inscrições</a>.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Quando e onde acontece?</summary>
+          <div>
+            <p>Nos dias 27 e 28 de novembro de 2026, sexta-feira e sábado, na UNIGRANRIO, Campus Barra da Tijuca, Av. Ayrton Senna, 2.200, Rio de Janeiro. O simpósio é presencial. Veja a página <a href="#/local">Local</a>.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Que tipos de trabalho posso enviar?</summary>
+          <div>
+            <p>Trabalhos científicos e relatos de experiência relacionados à urgência e emergência, dentro dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio. O envio é feito pela plataforma de submissão, dentro do prazo do cronograma. Veja as <a href="#/normas">normas de submissão</a>.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Como os trabalhos são avaliados?</summary>
+          <div>
+            <p>Pela Comissão Científica, considerando a adequação do tema, a relevância, a clareza dos objetivos, a metodologia, a organização, a contribuição para a área e a aplicabilidade dos resultados. A comissão pode pedir ajustes. O resultado é comunicado aos autores pelo canal informado pela organização.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Como é a apresentação dos trabalhos aprovados?</summary>
+          <div>
+            <p>Em pôster ou painel, impresso pelo autor responsável nas dimensões que serão divulgadas, e apresentado no dia e horário definidos pela Comissão Organizadora. A ausência do autor responsável no período de apresentação pode implicar a não certificação do trabalho.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Vou receber certificado?</summary>
+          <div>
+            <p>Sim, se cumprir os critérios de participação definidos pela Comissão Organizadora. Autores de trabalhos aprovados e apresentados recebem certificação específica. Carga horária: <span data-config="certificacao.cargaHoraria">a divulgar</span>. Emissão dos certificados: <span data-config="datas.certificados">a divulgar</span>.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>A programação pode mudar?</summary>
+          <div>
+            <p>Pode. A Comissão Organizadora pode ajustar a programação, os horários e as atividades, sempre com comunicação prévia aos participantes. A versão atual está na página <a href="#/programacao">Programação</a>.</p>
+          </div>
+        </details>
+        <details class="faq__item">
+          <summary>Onde tiro outras dúvidas?</summary>
+          <div>
+            <p>Pelos canais da página <a href="#/contato">Contato</a>. Novidades sobre inscrições, trabalhos e programação também são publicadas na página de avisos, quando houver.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NORMAS DE SUBMISSÃO ===================== -->
+  <section class="pagina" data-pagina="normas" data-titulo="Normas de submissão" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Normas de submissão</p>
+        <h1>Como preparar e enviar o seu trabalho</h1>
+        <p class="lead">Regras para o envio de trabalhos científicos e relatos de experiência. Os itens marcados como "a divulgar" serão definidos pela Comissão Científica e atualizados nesta página.</p>
+      </header>
+
+      <div class="grid-2">
+        <div>
+          <h2 class="subtitulo">Modalidades</h2>
+          <ul class="regras">
+            <li><strong>Trabalho científico:</strong> pesquisa concluída ou em andamento, com método definido e resultados, ainda que parciais.</li>
+            <li><strong>Relato de experiência:</strong> descrição de uma prática, projeto ou intervenção desenvolvida em serviço de saúde, com os resultados observados e as lições aprendidas.</li>
+          </ul>
+          <h2 class="subtitulo">Estrutura do resumo</h2>
+          <ol class="regras regras--numeradas">
+            <li>Título</li>
+            <li>Autores e instituição de cada um, com indicação do autor responsável pela apresentação</li>
+            <li>Eixo temático, conforme a <a href="#/trabalhos/eixos">lista de eixos</a></li>
+            <li>Introdução</li>
+            <li>Objetivo</li>
+            <li>Método, ou descrição da experiência no caso do relato</li>
+            <li>Resultados</li>
+            <li>Conclusão ou considerações finais</li>
+            <li>Palavras-chave</li>
+          </ol>
+        </div>
+        <div class="painel">
+          <h2 class="subtitulo">Limites e formato</h2>
+          <dl class="painel__lista">
+            <div><dt>Palavras</dt><dd data-config="normas.maxPalavras">a divulgar</dd></div>
+            <div><dt>Autores</dt><dd data-config="normas.maxAutores">a divulgar</dd></div>
+            <div><dt>Por autor</dt><dd data-config="normas.maxTrabalhosPorAutor">a divulgar</dd></div>
+            <div><dt>Pôster</dt><dd data-config="normas.poster">a divulgar</dd></div>
+            <div><dt>Idioma</dt><dd data-config="normas.idioma">a divulgar</dd></div>
+          </dl>
+          <p class="nota">Os arquivos oficiais aparecem abaixo assim que forem publicados.</p>
+          <p><a class="btn btn--secundario" data-config-href="submissao.normas" data-pendente="ocultar" href="#">Baixar as normas em PDF</a></p>
+          <p><a class="btn btn--secundario" data-config-href="submissao.modeloPoster" data-pendente="ocultar" href="#">Baixar o modelo de pôster</a></p>
+          <a class="btn btn--primario btn--pendente" data-config-href="submissao.url" data-texto-ativo="Submeter trabalho" data-texto-pendente="Submissão em breve" href="#/trabalhos">Submissão em breve</a>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <h2 class="subtitulo">Regras gerais</h2>
+        <ul class="regras">
+          <li>O envio é feito exclusivamente pela plataforma de submissão, dentro do prazo do <a href="#/cronograma">cronograma</a>. Trabalhos enviados após o prazo não serão considerados.</li>
+          <li>O trabalho deve se relacionar à urgência e emergência e a um dos eixos temáticos do simpósio.</li>
+          <li>A Comissão Científica avalia os trabalhos pelos <a href="#/trabalhos/avaliacao">critérios publicados</a> e pode solicitar ajustes ou adequações.</li>
+          <li>O resultado da avaliação é comunicado aos autores pelo canal informado pela organização.</li>
+          <li>Os trabalhos aprovados são apresentados em pôster ou painel, no dia e horário definidos pela Comissão Organizadora. A ausência do autor responsável pode implicar a não certificação do trabalho.</li>
+          <li>Ao submeter, os autores declaram que o conteúdo é de sua autoria e que respeita as normas éticas aplicáveis à pesquisa e ao relato de experiências em saúde.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REALIZAÇÃO E APOIO ===================== -->
+  <section class="pagina" data-pagina="apoio" data-titulo="Realização e apoio" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Realização e apoio</p>
+        <h1>Quem faz o simpósio acontecer</h1>
+      </header>
+      <div class="grid-2 grid-2--igual">
+        <div class="painel">
+          <p class="eyebrow">Realização</p>
+          <h2 class="subtitulo">Secretaria Municipal de Saúde do Rio de Janeiro</h2>
+          <p>Por meio da Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE), responsável pela organização do simpósio, pela Comissão Organizadora e pela Comissão Científica.</p>
+        </div>
+        <div class="painel">
+          <p class="eyebrow">Sede do evento</p>
+          <h2 class="subtitulo">UNIGRANRIO · Campus Barra da Tijuca</h2>
+          <p>Instituição que recebe o simpósio nos dias 27 e 28 de novembro de 2026, na Av. Ayrton Senna, 2.200, Barra da Tijuca. Veja como chegar na página <a href="#/local">Local</a>.</p>
+        </div>
+      </div>
+      <div class="bloco" id="apoio-lista" hidden>
+        <h2 class="subtitulo subtitulo--centro">Apoio e parcerias</h2>
+        <ul class="apoiadores"></ul>
+      </div>
+      <p class="centro nota bloco-rodape">Instituições interessadas em apoiar o simpósio podem falar com a Comissão Organizadora pela <a href="#/contato">página de contato</a>.</p>
+    </div>
+  </section>
+
+  <!-- ===================== AVISOS (aparece quando há avisos em js/main.js) ===================== -->
+  <section class="pagina" data-pagina="avisos" data-titulo="Avisos" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Avisos</p>
+        <h1>Comunicados da organização</h1>
+        <p class="lead">Novidades oficiais sobre inscrições, submissão de trabalhos, programação e certificados, do mais recente para o mais antigo.</p>
+      </header>
+      <ol class="avisos" id="avisos-lista"></ol>
+    </div>
+  </section>
+
+  <!-- ===================== PRIVACIDADE ===================== -->
+  <section class="pagina" data-pagina="privacidade" data-titulo="Privacidade" hidden>
+    <div class="container conteudo-estreito">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Privacidade</p>
+        <h1>Aviso de privacidade</h1>
+        <p class="lead">Como os dados pessoais dos participantes são usados no 1º Simpósio de Urgência e Emergência, conforme a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018).</p>
+      </header>
+      <h2 class="subtitulo">Quem é responsável pelos dados</h2>
+      <p>A Secretaria Municipal de Saúde do Rio de Janeiro, por meio da Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE), organizadora do simpósio.</p>
+      <h2 class="subtitulo">Quais dados são coletados</h2>
+      <p>Os dados informados no formulário de inscrição e na submissão de trabalhos, como nome, e-mail, telefone, categoria profissional, instituição e, quando necessário para o certificado, documento de identificação. A plataforma de inscrição pode registrar também dados de acesso, como data e hora.</p>
+      <h2 class="subtitulo">Para que os dados são usados</h2>
+      <ul class="regras">
+        <li>Organizar as inscrições, controlar as vagas e fazer o credenciamento no evento.</li>
+        <li>Receber, avaliar e comunicar o resultado dos trabalhos submetidos.</li>
+        <li>Emitir os certificados de participação e de apresentação de trabalhos.</li>
+        <li>Enviar comunicados sobre o simpósio, como confirmação de inscrição, programação e orientações.</li>
+      </ul>
+      <h2 class="subtitulo">Com quem os dados são compartilhados</h2>
+      <p>Com a plataforma contratada para inscrições e submissão de trabalhos e com os parceiros estritamente necessários à realização do evento, como a instituição que sedia o simpósio, para controle de acesso. Os dados não são vendidos nem usados para outras finalidades.</p>
+      <h2 class="subtitulo">Por quanto tempo os dados ficam guardados</h2>
+      <p>Pelo período necessário à realização do simpósio e à emissão e comprovação dos certificados, observados os prazos legais de guarda de documentos da administração pública.</p>
+      <h2 class="subtitulo">Registros de imagem</h2>
+      <p>Durante o simpósio podem ser feitos registros fotográficos e audiovisuais das atividades, para divulgação institucional do evento. Quem não quiser ser registrado deve informar a organização no credenciamento.</p>
+      <h2 class="subtitulo">Seus direitos</h2>
+      <p>Você pode pedir acesso, correção ou exclusão dos seus dados, além de informações sobre o uso deles, pelos canais da <a href="#/contato">página de contato</a>. Os pedidos são respondidos conforme a LGPD.</p>
+      <p class="nota">Este aviso pode ser atualizado. A versão vigente é sempre a publicada nesta página.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== RODAPÉ ===================== -->
+<footer class="rodape">
+  <div class="container rodape__inner">
+    <div>
+      <img class="rodape__logo" src="assets/logo-branco.png" alt="1º Simpósio de Urgência e Emergência" width="1039" height="570" loading="lazy">
+      <p>27 e 28 de novembro de 2026<br>UNIGRANRIO · Campus Barra da Tijuca · Rio de Janeiro</p>
+    </div>
+    <div>
+      <p class="eyebrow">Realização</p>
+      <p><strong>Secretaria Municipal de Saúde do Rio de Janeiro</strong><br>Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE)</p>
+    </div>
+    <div>
+      <p class="eyebrow">Páginas</p>
+      <ul class="rodape__links">
+        <li><a href="#/evento">O evento</a></li>
+        <li><a href="#/programacao">Programação</a></li>
+        <li><a href="#/inscricoes">Inscrições</a></li>
+        <li><a href="#/trabalhos">Trabalhos científicos</a></li>
+        <li><a href="#/local">Local</a></li>
+        <li><a href="#/cronograma">Datas importantes</a></li>
+        <li><a href="#/faq">Perguntas frequentes</a></li>
+        <li data-vinculo="avisos"><a href="#/avisos">Avisos</a></li>
+        <li><a href="#/contato">Contato</a></li>
+        <li><a href="#/privacidade">Privacidade</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container rodape__nota">
+    Comissão Organizadora · 1º Simpósio de Urgência e Emergência · Secretaria Municipal de Saúde do Rio de Janeiro · 2026
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

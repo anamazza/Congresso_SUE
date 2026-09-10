@@ -1,0 +1,13 @@
+# Gerado por build.py (recriável a qualquer momento)
+dist/
+
+# Lixo de sistema e de ferramentas
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arquivos da pasta que não fazem parte do site
+vigilancia-processos-registros-*.json
+POP.CCIH.*.pdf
