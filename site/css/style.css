@@ -526,6 +526,9 @@ ul, ol { margin: 0; padding: 0; }
   margin-inline: auto;
   line-height: 0;
 }
+.hero__capa picture {
+  display: block;
+}
 .hero__capa img {
   display: block;
   width: 100%;
