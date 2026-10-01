@@ -88,31 +88,39 @@ Gera `dist/index.html` com CSS, JavaScript, logos e edital embutidos.
 
 ## Como publicar
 
-### GitHub Pages (em uso)
+### Endereço oficial
 
-O projeto está no repositório <https://github.com/anamazza/Congresso_SUE> e o site é publicado
-em **<https://anamazza.github.io/Congresso_SUE/>**.
+O site oficial fica em **<https://diid.subhue.org/static-html/congresso-sue/>**, e é atualizado
+a partir deste repositório (<https://github.com/anamazza/Congresso_SUE>). O que vai para o ar é o
+conteúdo da pasta `site/` da branch `main`, copiado para esse endereço.
 
-O arquivo `.github/workflows/pages.yml` copia a pasta `site/` para a branch `gh-pages` a cada
-envio para a branch `main`, e o GitHub Pages publica essa branch. Se a publicação não
-acontecer, confira no repositório **Settings > Pages > Build and deployment**: Source em
-**Deploy from a branch**, branch **gh-pages**, pasta **/ (root)**.
+Para atualizar: edite os arquivos em `site/`, faça o commit e envie para a `main`. Depois
+atualize a cópia do servidor a partir do repositório. Todos os caminhos do site são relativos, então ele funciona dentro da
+subpasta `static-html/congresso-sue/` sem ajuste.
 
-Para atualizar o site: edite os arquivos em `site/`, faça o commit e envie (`git push`).
-Em um ou dois minutos a versão nova está no ar.
+As tags `og:image`, `og:url` e `canonical` em `site/index.html` já apontam para esse endereço.
+Se ele mudar, troque as três.
 
-A pasta `site/` já traz o que o Pages precisa: `.nojekyll`, `404.html` (página de erro que
-leva de volta ao início) e `robots.txt`.
+### Cópia no GitHub Pages
+
+O arquivo `.github/workflows/pages.yml` também copia a pasta `site/` para a branch `gh-pages` a
+cada envio para a `main`, e o GitHub Pages publica uma cópia em
+<https://anamazza.github.io/Congresso_SUE/>. Ela serve para conferir mudanças. Como a tag
+`canonical` aponta para o endereço oficial, os buscadores tratam o endereço oficial como o
+principal. Para desligar a cópia, apague o workflow ou desative o Pages em **Settings > Pages**.
+
+A pasta `site/` traz também `.nojekyll`, `404.html` (página de erro que leva de volta ao início)
+e `robots.txt`, usados pelo GitHub Pages.
 
 ### Outras opções
 
-- **Hospedagem da prefeitura**: envie a pasta `site/` inteira (ou apenas `dist/index.html`) para a TI.
+- **Arquivo único**: `dist/index.html`, gerado por `python build.py`, também pode ser enviado à TI.
 - **Netlify, Vercel ou similares**: publique a pasta `site/`. Não precisa de build.
 
 ### Pendências antes da divulgação
 
-- As tags `og:image`, `og:url` e `canonical` em `site/index.html` apontam para o endereço do
-  GitHub Pages. Se o site ganhar um domínio próprio, troque as três.
+- Preencha `inscricoes.url` e `submissao.url` em `site/js/main.js` com o link do formulário
+  de inscrição e da área do inscrito. Enquanto estiverem vazios, os botões mostram "em breve".
 - Confira os textos das páginas **Normas de submissão** e **Privacidade** com a Comissão
   Científica e com o setor responsável pela LGPD. Os dois foram escritos a partir do edital e
   das práticas comuns em eventos de saúde, e trazem marcações "a divulgar" onde faltam decisões.
