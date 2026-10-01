@@ -7,12 +7,12 @@
    ===================================================================== */
 const CONFIG = {
   inscricoes: {
-    url: "",              // vazio = usa o formulário desta página quando ele estiver ativo
+    url: "",              // vazio = usa o formulário do site quando o banco estiver ligado
     inicio: "25/09/2026",
     fim: "",              // ex.: "20/11/2026". Vazio aparece como "a divulgar"
   },
   submissao: {
-    url: "",              // link da área do inscrito, onde os trabalhos são enviados
+    url: "",              // vazio = usa a área do inscrito do site quando o banco estiver ligado
     inicio: "25/09/2026",
     prazo: "31/10/2026",
     normas: "",           // link do PDF com as normas de submissão (item do menu Trabalhos)
@@ -33,12 +33,14 @@ const CONFIG = {
   edital: {
     url: "assets/Edital.docx", // troque pelo PDF final quando estiver pronto
   },
-  // Formulário de inscrição da página "Inscrições". As respostas vão para um
-  // Google Forms, que as guarda numa planilha. Passo a passo no README.
-  // Enquanto o link estiver vazio, o formulário aparece com o envio desligado.
-  formulario: {
-    linkPreenchido: "",   // link pré-preenchido do Google Forms (ver README)
-    encerrado: false,     // mude para true quando as vagas acabarem
+  // Banco que recebe os formulários de inscrição e de envio de trabalhos.
+  // É o endereço do app da Web do Apps Script ligado à planilha (termina em
+  // /exec). Passo a passo no README, seção "Banco de dados".
+  // Enquanto estiver vazio, os formulários aparecem com o envio desligado.
+  banco: {
+    url: "",
+    inscricoesEncerradas: false, // true fecha o formulário de inscrição
+    submissaoEncerrada: false,   // true fecha o envio de trabalhos (fecha sozinho após submissao.prazo)
   },
   contato: {
     email: "",            // ex.: "simposio.subhue@rio.rj.gov.br"
@@ -95,54 +97,45 @@ const CONFIG = {
     return valor == null ? "" : String(valor).trim();
   }
 
-  // ---------- Formulário de inscrição: destino e estado ----------
-  // O link pré-preenchido do Google Forms traz cada pergunta preenchida com o
-  // nome do campo (nome, cpf, ...). Daí sai o endereço de envio e o número
-  // "entry." de cada pergunta.
-  const CAMPOS_FORM = ["nome", "cpf", "email", "celular", "categoria", "instituicao", "trabalho"];
-
-  function lerLinkPreenchido(link) {
-    link = String(link || "").trim();
-    if (!link) return null;
-    let url;
-    try {
-      url = new URL(link);
-    } catch (erro) {
-      console.warn("Formulário: o link pré-preenchido não é um endereço válido.");
-      return null;
-    }
-    if (url.hostname !== "docs.google.com" || !/\/viewform$/.test(url.pathname)) {
-      console.warn("Formulário: use o link pré-preenchido do Google Forms (termina em /viewform?...).");
-      return null;
-    }
-    const mapa = {};
-    url.searchParams.forEach(function (valor, chave) {
-      const campo = valor.trim().toLowerCase();
-      if (/^entry\.\d+$/.test(chave) && CAMPOS_FORM.indexOf(campo) >= 0) mapa[campo] = chave;
-    });
-    const faltando = CAMPOS_FORM.filter(function (c) { return !mapa[c]; });
-    if (faltando.length) {
-      console.warn("Formulário: faltam no link pré-preenchido os campos " + faltando.join(", ") + ".");
-      return null;
-    }
-    return { acao: url.origin + url.pathname.replace(/\/viewform$/, "/formResponse"), mapa: mapa };
-  }
-
-  const formCfg = CONFIG.formulario || {};
+  // ---------- Banco dos formulários: endereço e estado ----------
   const modoTeste = /[?&]teste\b/.test(window.location.search);
-  const destinoForm = lerLinkPreenchido(formCfg.linkPreenchido);
-  const estadoForm = formCfg.encerrado ? "encerrado" : (destinoForm || modoTeste) ? "aberto" : "pendente";
+  const bancoCfg = CONFIG.banco || {};
+  const urlBanco = (function (url) {
+    url = String(url || "").trim();
+    if (url && !/^https:\/\//i.test(url)) {
+      console.warn("Banco: o endereço precisa começar com https://");
+      return "";
+    }
+    return url;
+  })(bancoCfg.url);
 
-  // Com o formulário aberto, os botões "Inscreva-se" levam até ele.
-  if (estadoForm === "aberto" && !ler("inscricoes.url")) {
-    CONFIG.inscricoes = CONFIG.inscricoes || {};
-    CONFIG.inscricoes.url = "#/inscricoes/formulario";
+  // "31/10/2026" vira o fim daquele dia
+  function fimDoDia(data) {
+    const m = String(data || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), 23, 59, 59) : null;
   }
-  if (estadoForm === "encerrado") {
-    document.querySelectorAll('[data-config-href="inscricoes.url"]').forEach(function (el) {
-      if (el.dataset.textoPendente) el.dataset.textoPendente = "Inscrições encerradas";
-    });
+
+  function estadoDe(encerrado) {
+    if (modoTeste) return "aberto";
+    if (encerrado) return "encerrado";
+    return urlBanco ? "aberto" : "pendente";
   }
+  const prazoTrabalhos = fimDoDia(ler("submissao.prazo"));
+  const estadoInscricao = estadoDe(bancoCfg.inscricoesEncerradas);
+  const estadoSubmissao = estadoDe(bancoCfg.submissaoEncerrada || (prazoTrabalhos && new Date() > prazoTrabalhos));
+
+  // Com os formulários abertos, "Inscreva-se" e "Submeter trabalho" levam até eles
+  function apontarBotoes(grupo, estado, destino, textoEncerrado) {
+    CONFIG[grupo] = CONFIG[grupo] || {};
+    if (estado === "aberto" && !ler(grupo + ".url")) CONFIG[grupo].url = destino;
+    if (estado === "encerrado") {
+      document.querySelectorAll('[data-config-href="' + grupo + '.url"]').forEach(function (el) {
+        if (el.dataset.textoPendente) el.dataset.textoPendente = textoEncerrado;
+      });
+    }
+  }
+  apontarBotoes("inscricoes", estadoInscricao, "#/inscricoes/formulario", "Inscrições encerradas");
+  apontarBotoes("submissao", estadoSubmissao, "#/submissao", "Submissão encerrada");
 
   // ---------- Textos simples: <span data-config="inscricoes.inicio"> ----------
   document.querySelectorAll("[data-config]").forEach(function (el) {
@@ -365,9 +358,10 @@ const CONFIG = {
     if (contagemSub) contagemSub.textContent = sub;
   }
 
-  // ---------- Formulário de inscrição: máscaras, validação e envio ----------
-  const form = document.getElementById("form-inscricao");
-  if (form) iniciarFormulario(form);
+  // ---------- Formulários: máscaras, validação e envio ao banco ----------
+  const formatoNumero = new Intl.NumberFormat("pt-BR");
+  const LIMITE_RESUMO = 2050; // caracteres sem espaços, conforme o edital
+  const PARTES_RESUMO = ["introducao", "metodos", "resultados", "conclusoes"];
 
   function soDigitos(v) {
     return String(v || "").replace(/\D/g, "");
@@ -402,57 +396,83 @@ const CONFIG = {
     return true;
   }
 
-  function iniciarFormulario(form) {
-    const campos = document.getElementById("inscricao-campos");
-    const aviso = document.getElementById("inscricao-aviso");
-    const botao = document.getElementById("ins-enviar");
-    const status = document.getElementById("ins-status");
-    const sucesso = document.getElementById("inscricao-sucesso");
+  function nomeCompleto(v) {
+    return String(v || "").trim().split(/\s+/).length >= 2;
+  }
+
+  function limpar(v) {
+    return String(v || "").trim().replace(/\s+/g, " ");
+  }
+
+  const regraCpf = function (v) {
+    if (!soDigitos(v)) return "Informe o seu CPF.";
+    return cpfValido(v) ? "" : "Confira o CPF. Os números digitados não formam um CPF válido.";
+  };
+  const regraEmail = function (v) {
+    if (!v.trim()) return "Informe o seu e-mail.";
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
+  };
+
+  function enviarAoBanco(acao, dados) {
+    if (modoTeste) {
+      return new Promise(function (ok) {
+        setTimeout(function () {
+          ok({ ok: true, protocolo: (acao === "inscricao" ? "INS" : "TRB") + "-TESTE" });
+        }, 700);
+      });
+    }
+    return fetch(urlBanco, {
+      method: "POST",
+      // Texto simples evita a checagem prévia de CORS, que o Apps Script não responde
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ acao: acao, dados: dados }),
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  // Liga um formulário: estado, validação, envio e tela de confirmação
+  function ligarFormulario(o) {
+    const form = o.form;
     const el = form.elements;
+    const campos = form.querySelector(".inscricao__campos");
+    const aviso = document.getElementById(o.prefixo + "-aviso");
+    const sucesso = document.getElementById(o.prefixo + "-sucesso");
+    const botao = form.querySelector('button[type="submit"]');
+    const status = form.querySelector(".inscricao__status");
+    const textoBotao = botao.textContent;
     let tentouEnviar = false;
     let enviando = false;
 
-    const regras = {
-      nome: function (v) {
-        if (!v.trim()) return "Informe o seu nome completo.";
-        if (v.trim().split(/\s+/).length < 2) return "Escreva o nome e o sobrenome.";
-        return "";
-      },
-      cpf: function (v) {
-        if (!soDigitos(v)) return "Informe o seu CPF.";
-        return cpfValido(v) ? "" : "Confira o CPF. Os números digitados não formam um CPF válido.";
-      },
-      celular: function (v) {
-        const n = soDigitos(v).length;
-        if (!n) return "Informe um celular para contato.";
-        return n === 10 || n === 11 ? "" : "Informe o celular com DDD, por exemplo (21) 99999-9999.";
-      },
-      email: function (v) {
-        if (!v.trim()) return "Informe o seu e-mail.";
-        return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
-      },
-      categoria: function (v) {
-        return v ? "" : "Escolha a sua categoria profissional.";
-      },
-      instituicao: function (v) {
-        return v.trim() ? "" : "Informe a instituição ou unidade onde você trabalha ou estuda.";
-      },
-      aceite: function (_v, campo) {
-        return campo.checked ? "" : "Para se inscrever, é preciso concordar com o edital e com o aviso de privacidade.";
-      },
-    };
+    function campoUnico(nome) {
+      const c = el[nome];
+      return c && c.nodeType === 1 ? c : null;
+    }
 
-    function validar(nome) {
-      const campo = el[nome];
-      const msg = regras[nome](campo.value, campo);
-      const erro = document.getElementById("ins-" + nome + "-erro");
-      if (msg) campo.setAttribute("aria-invalid", "true");
-      else campo.removeAttribute("aria-invalid");
+    function mostrarErro(nome, msg) {
+      const campo = campoUnico(nome);
+      if (campo) {
+        if (msg) campo.setAttribute("aria-invalid", "true");
+        else campo.removeAttribute("aria-invalid");
+      }
+      const erro = document.getElementById(o.prefixo + "-" + nome + "-erro");
       if (erro) {
-        erro.textContent = msg;
+        erro.textContent = msg || "";
         erro.hidden = !msg;
       }
+    }
+
+    function validar(nome) {
+      const campo = campoUnico(nome);
+      const msg = o.regras[nome](campo ? campo.value : "", campo);
+      mostrarErro(nome, msg);
       return !msg;
+    }
+
+    function focar(nome) {
+      const alvo = (o.foco && o.foco(nome)) || campoUnico(nome);
+      if (alvo) alvo.focus();
     }
 
     function definirStatus(texto, ehErro) {
@@ -460,15 +480,16 @@ const CONFIG = {
       status.classList.toggle("is-erro", !!ehErro);
     }
 
-    // Estado inicial: pendente (sem destino), encerrado ou aberto
-    if (estadoForm !== "aberto") {
+    function contarErros() {
+      return Object.keys(o.regras).filter(function (n) { return !validar(n); });
+    }
+
+    if (o.estado !== "aberto") {
       campos.disabled = true;
       botao.disabled = true;
       botao.classList.add("btn--pendente");
-      botao.textContent = estadoForm === "encerrado" ? "Inscrições encerradas" : "Inscrições em breve";
-      aviso.textContent = estadoForm === "encerrado"
-        ? "As inscrições estão encerradas porque as vagas se esgotaram."
-        : "O formulário ainda não está recebendo inscrições. Ele será liberado em breve nesta página. Você já pode conferir os dados que serão pedidos.";
+      botao.textContent = o.estado === "encerrado" ? o.textos.botaoEncerrado : o.textos.botaoPendente;
+      aviso.textContent = o.estado === "encerrado" ? o.textos.avisoEncerrado : o.textos.avisoPendente;
       aviso.hidden = false;
     } else if (modoTeste) {
       aviso.textContent = "Modo de teste: os dados preenchidos aqui não são enviados para ninguém.";
@@ -476,55 +497,31 @@ const CONFIG = {
       aviso.hidden = false;
     }
 
-    el.cpf.addEventListener("input", function () {
-      el.cpf.value = mascaraCpf(el.cpf.value);
-    });
-    el.celular.addEventListener("input", function () {
-      el.celular.value = mascaraCelular(el.celular.value);
-    });
-
-    // Depois da primeira tentativa de envio, os erros somem assim que o campo é corrigido
-    Object.keys(regras).forEach(function (nome) {
-      const campo = el[nome];
-      const reavaliar = function () {
-        if (tentouEnviar || campo.getAttribute("aria-invalid") === "true") validar(nome);
-      };
-      campo.addEventListener(campo.tagName === "SELECT" || campo.type === "checkbox" ? "change" : "input", reavaliar);
-      campo.addEventListener("blur", function () {
-        if (tentouEnviar && campo.value) validar(nome);
+    Object.keys(o.mascaras || {}).forEach(function (nome) {
+      el[nome].addEventListener("input", function () {
+        el[nome].value = o.mascaras[nome](el[nome].value);
       });
     });
 
-    function coletar() {
-      const marcado = form.querySelector('input[name="trabalho"]:checked');
-      return {
-        nome: el.nome.value.trim().replace(/\s+/g, " "),
-        cpf: mascaraCpf(el.cpf.value),
-        email: el.email.value.trim().toLowerCase(),
-        celular: mascaraCelular(el.celular.value),
-        categoria: el.categoria.value,
-        instituicao: el.instituicao.value.trim().replace(/\s+/g, " "),
-        trabalho: marcado ? marcado.value : "Não informado",
-      };
+    // Antes do primeiro envio, confere cada campo ao sair dele. Depois, a cada mudança.
+    form.addEventListener("focusout", function (e) {
+      const nome = e.target.name;
+      if (tentouEnviar || !o.regras[nome] || !e.target.value) return;
+      if (e.target.type === "checkbox" || e.target.type === "radio") return;
+      validar(nome);
+    });
+    function reavaliar() {
+      if (!tentouEnviar) return;
+      const n = contarErros().length;
+      definirStatus(n ? (n === 1 ? "Falta corrigir 1 campo." : "Faltam corrigir " + n + " campos.") : "", n > 0);
     }
+    form.addEventListener("input", reavaliar);
+    form.addEventListener("change", reavaliar);
 
-    function enviar(dados) {
-      if (modoTeste) {
-        return new Promise(function (ok) { setTimeout(ok, 700); });
-      }
-      const corpo = new URLSearchParams();
-      CAMPOS_FORM.forEach(function (campo) {
-        corpo.append(destinoForm.mapa[campo], dados[campo] || "");
+    function mostrarSucesso(dados, resposta) {
+      sucesso.querySelectorAll("[data-sucesso]").forEach(function (alvo) {
+        alvo.textContent = o.sucesso(alvo.dataset.sucesso, dados, resposta || {});
       });
-      // O Google Forms não devolve resposta legível para outro site ("no-cors").
-      // Se a rede funcionou, a inscrição chegou.
-      return fetch(destinoForm.acao, { method: "POST", mode: "no-cors", body: corpo });
-    }
-
-    function mostrarSucesso(dados) {
-      const primeiroNome = (dados.nome || "").split(" ")[0];
-      document.getElementById("sucesso-nome").textContent = primeiroNome ? ", " + primeiroNome : "";
-      document.getElementById("sucesso-email").textContent = dados.email || "informado";
       form.hidden = true;
       aviso.hidden = true;
       sucesso.hidden = false;
@@ -534,20 +531,20 @@ const CONFIG = {
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      if (estadoForm !== "aberto" || enviando) return;
+      if (o.estado !== "aberto" || enviando) return;
       tentouEnviar = true;
 
-      const dados = coletar();
+      const dados = o.coletar();
       // Robôs costumam preencher o campo invisível: finge que deu certo e não envia
-      if (el.site.value) {
-        mostrarSucesso(dados);
+      if (el.site && el.site.value) {
+        mostrarSucesso(dados, {});
         return;
       }
 
-      const invalidos = Object.keys(regras).filter(function (nome) { return !validar(nome); });
+      const invalidos = contarErros();
       if (invalidos.length) {
         definirStatus(invalidos.length === 1 ? "Falta corrigir 1 campo." : "Faltam corrigir " + invalidos.length + " campos.", true);
-        el[invalidos[0]].focus();
+        focar(invalidos[0]);
         return;
       }
 
@@ -555,11 +552,26 @@ const CONFIG = {
       botao.disabled = true;
       botao.textContent = "Enviando…";
       definirStatus("");
-      enviar(dados)
-        .then(function () {
-          mostrarSucesso(dados);
-          form.reset();
-          tentouEnviar = false;
+      enviarAoBanco(o.acao, dados)
+        .then(function (resposta) {
+          if (resposta && resposta.ok) {
+            mostrarSucesso(dados, resposta);
+            form.reset();
+            if (o.aoLimpar) o.aoLimpar();
+            tentouEnviar = false;
+            definirStatus("");
+            return;
+          }
+          // O banco recusou: mostra o motivo no campo indicado ou embaixo do botão
+          const msg = (resposta && resposta.mensagem) || "Não foi possível concluir o envio. Tente de novo.";
+          const campo = resposta && resposta.campo;
+          if (campo && document.getElementById(o.prefixo + "-" + campo + "-erro")) {
+            mostrarErro(campo, msg);
+            focar(campo);
+            definirStatus("Confira o campo destacado.", true);
+          } else {
+            definirStatus(msg, true);
+          }
         })
         .catch(function () {
           definirStatus("Não foi possível enviar agora. Verifique a conexão com a internet e tente de novo.", true);
@@ -567,17 +579,288 @@ const CONFIG = {
         .then(function () {
           enviando = false;
           botao.disabled = false;
-          botao.textContent = "Enviar inscrição";
+          botao.textContent = textoBotao;
         });
     });
 
-    document.getElementById("ins-nova").addEventListener("click", function () {
+    sucesso.querySelector("[data-novo]").addEventListener("click", function () {
       sucesso.hidden = true;
       form.hidden = false;
       if (modoTeste) aviso.hidden = false;
       definirStatus("");
-      el.nome.focus();
+      const primeiro = form.querySelector("input:not([type=hidden]):not([tabindex='-1'])");
+      if (primeiro) primeiro.focus();
     });
+  }
+
+  // ----- Formulário de inscrição -----
+  const formInscricao = document.getElementById("form-inscricao");
+  if (formInscricao) {
+    ligarFormulario({
+      form: formInscricao,
+      prefixo: "ins",
+      acao: "inscricao",
+      estado: estadoInscricao,
+      textos: {
+        botaoPendente: "Inscrições em breve",
+        botaoEncerrado: "Inscrições encerradas",
+        avisoPendente: "O formulário ainda não está recebendo inscrições. Ele será liberado em breve nesta página. Você já pode conferir os dados que serão pedidos.",
+        avisoEncerrado: "As inscrições estão encerradas.",
+      },
+      mascaras: { cpf: mascaraCpf, celular: mascaraCelular },
+      regras: {
+        nome: function (v) {
+          if (!v.trim()) return "Informe o seu nome completo.";
+          return nomeCompleto(v) ? "" : "Escreva o nome e o sobrenome.";
+        },
+        cpf: regraCpf,
+        celular: function (v) {
+          const n = soDigitos(v).length;
+          if (!n) return "Informe um celular para contato.";
+          return n === 10 || n === 11 ? "" : "Informe o celular com DDD, por exemplo (21) 99999-9999.";
+        },
+        email: regraEmail,
+        categoria: function (v) {
+          return v ? "" : "Escolha a sua categoria profissional.";
+        },
+        instituicao: function (v) {
+          return v.trim() ? "" : "Informe a instituição ou unidade onde você trabalha ou estuda.";
+        },
+        aceite: function (_v, campo) {
+          return campo.checked ? "" : "Para se inscrever, é preciso concordar com o edital e com o aviso de privacidade.";
+        },
+      },
+      coletar: function () {
+        const el = formInscricao.elements;
+        const marcado = formInscricao.querySelector('input[name="trabalho"]:checked');
+        return {
+          nome: limpar(el.nome.value),
+          cpf: mascaraCpf(el.cpf.value),
+          email: el.email.value.trim().toLowerCase(),
+          celular: mascaraCelular(el.celular.value),
+          categoria: el.categoria.value,
+          instituicao: limpar(el.instituicao.value),
+          trabalho: marcado ? marcado.value : "",
+        };
+      },
+      sucesso: function (chave, dados, resposta) {
+        if (chave === "nome") {
+          const primeiro = limpar(dados.nome).split(" ")[0];
+          return primeiro ? ", " + primeiro : "";
+        }
+        if (chave === "protocolo") return resposta.protocolo || "enviado por e-mail";
+        if (chave === "email") return dados.email || "o seu e-mail";
+        return "";
+      },
+    });
+  }
+
+  // ----- Formulário de envio de trabalhos (área do inscrito) -----
+  const formTrabalho = document.getElementById("form-trabalho");
+  if (formTrabalho) {
+    const elT = formTrabalho.elements;
+    const listaCoautores = document.getElementById("trb-coautores");
+    const botaoCoautor = document.getElementById("trb-add-coautor");
+    const campoApresentador = document.getElementById("trb-apresentadorCpf-campo");
+    const contador = document.getElementById("trb-contador");
+    const MAX_COAUTORES = 9;
+
+    // Coautores: linhas que entram e saem
+    function renumerarCoautores() {
+      listaCoautores.querySelectorAll(".coautor").forEach(function (li, i) {
+        const n = i + 2;
+        li.querySelector(".coautor__titulo").textContent = "Autor " + n;
+        ["nome", "instituicao"].forEach(function (parte) {
+          const input = li.querySelector(".coautor__" + parte);
+          input.id = "trb-autor" + n + "-" + parte;
+          li.querySelector('label[data-parte="' + parte + '"]').htmlFor = input.id;
+        });
+        li.querySelector(".coautor__remover").setAttribute("aria-label", "Remover o autor " + n);
+      });
+      const total = listaCoautores.children.length;
+      botaoCoautor.hidden = total >= MAX_COAUTORES;
+    }
+
+    function adicionarCoautor(focarNovo) {
+      const li = document.createElement("li");
+      li.className = "coautor";
+      li.innerHTML =
+        '<div class="coautor__cabecalho"><p class="coautor__titulo"></p>' +
+        '<button class="coautor__remover" type="button">Remover</button></div>' +
+        '<div class="campo"><label data-parte="nome">Nome completo</label>' +
+        '<input class="coautor__nome" type="text" maxlength="120" autocomplete="off"></div>' +
+        '<div class="campo"><label data-parte="instituicao">Instituição</label>' +
+        '<input class="coautor__instituicao" type="text" maxlength="120" autocomplete="off"></div>';
+      listaCoautores.appendChild(li);
+      renumerarCoautores();
+      if (focarNovo) li.querySelector(".coautor__nome").focus();
+    }
+
+    botaoCoautor.addEventListener("click", function () {
+      adicionarCoautor(true);
+    });
+    listaCoautores.addEventListener("click", function (e) {
+      const botao = e.target.closest(".coautor__remover");
+      if (!botao) return;
+      const li = botao.closest(".coautor");
+      const vizinho = li.nextElementSibling || li.previousElementSibling;
+      li.remove();
+      renumerarCoautores();
+      formTrabalho.dispatchEvent(new Event("change"));
+      (vizinho ? vizinho.querySelector(".coautor__nome") : botaoCoautor).focus();
+    });
+
+    function lerCoautores() {
+      return Array.prototype.map.call(listaCoautores.querySelectorAll(".coautor"), function (li) {
+        return {
+          li: li,
+          nome: limpar(li.querySelector(".coautor__nome").value),
+          instituicao: limpar(li.querySelector(".coautor__instituicao").value),
+        };
+      }).filter(function (c) {
+        return c.nome || c.instituicao;
+      });
+    }
+
+    // Apresentador: o CPF só aparece quando é um coautor
+    function apresentaCoautor() {
+      const marcado = formTrabalho.querySelector('input[name="apresentador"]:checked');
+      return !!marcado && marcado.value === "coautor";
+    }
+    function atualizarApresentador() {
+      campoApresentador.hidden = !apresentaCoautor();
+    }
+    formTrabalho.addEventListener("change", function (e) {
+      if (e.target.name === "apresentador") atualizarApresentador();
+    });
+
+    // Contador do resumo
+    function contarResumo() {
+      return PARTES_RESUMO.reduce(function (soma, nome) {
+        return soma + elT[nome].value.replace(/\s/g, "").length;
+      }, 0);
+    }
+    function atualizarContador() {
+      const n = contarResumo();
+      const excedeu = n > LIMITE_RESUMO;
+      contador.querySelector(".contador__total").textContent = formatoNumero.format(n);
+      contador.querySelector(".contador__resto").textContent = excedeu
+        ? "· passou " + formatoNumero.format(n - LIMITE_RESUMO)
+        : "· restam " + formatoNumero.format(LIMITE_RESUMO - n);
+      contador.querySelector(".contador__barra span").style.width = Math.min(100, (n / LIMITE_RESUMO) * 100) + "%";
+      contador.classList.toggle("is-excedido", excedeu);
+    }
+    PARTES_RESUMO.forEach(function (nome) {
+      elT[nome].addEventListener("input", atualizarContador);
+    });
+    atualizarContador();
+
+    const regrasTrabalho = {
+      cpf: regraCpf,
+      email: regraEmail,
+      titulo: function (v) {
+        return v.trim() ? "" : "Informe o título do trabalho.";
+      },
+      tipo: function (v) {
+        return v ? "" : "Escolha o tipo de trabalho.";
+      },
+      eixo: function (v) {
+        return v ? "" : "Escolha o eixo temático.";
+      },
+      coautores: function () {
+        let erro = false;
+        listaCoautores.querySelectorAll(".coautor").forEach(function (li) {
+          const nome = li.querySelector(".coautor__nome");
+          const inst = li.querySelector(".coautor__instituicao");
+          const vazia = !nome.value.trim() && !inst.value.trim();
+          const nomeRuim = !vazia && !nomeCompleto(nome.value);
+          const instRuim = !vazia && !inst.value.trim();
+          [[nome, nomeRuim], [inst, instRuim]].forEach(function (par) {
+            if (par[1]) par[0].setAttribute("aria-invalid", "true");
+            else par[0].removeAttribute("aria-invalid");
+          });
+          if (nomeRuim || instRuim) erro = true;
+        });
+        return erro ? "Informe o nome completo e a instituição de cada coautor. Para tirar um coautor, use Remover." : "";
+      },
+      apresentadorCpf: function (v) {
+        if (!apresentaCoautor()) return "";
+        if (!soDigitos(v)) return "Informe o CPF de quem vai apresentar.";
+        return cpfValido(v) ? "" : "Confira o CPF de quem vai apresentar.";
+      },
+      introducao: function (v) {
+        return v.trim() ? "" : "Escreva a introdução.";
+      },
+      metodos: function (v) {
+        return v.trim() ? "" : "Escreva os métodos.";
+      },
+      resultados: function (v) {
+        return v.trim() ? "" : "Escreva os resultados.";
+      },
+      conclusoes: function (v) {
+        return v.trim() ? "" : "Escreva as conclusões.";
+      },
+      resumo: function () {
+        const n = contarResumo();
+        return n > LIMITE_RESUMO
+          ? "O resumo tem " + formatoNumero.format(n) + " caracteres sem espaços. Corte " + formatoNumero.format(n - LIMITE_RESUMO) + " para ficar no limite de 2.050."
+          : "";
+      },
+      aceite: function (_v, campo) {
+        return campo.checked ? "" : "Para enviar, é preciso confirmar a declaração.";
+      },
+    };
+
+    ligarFormulario({
+      form: formTrabalho,
+      prefixo: "trb",
+      acao: "trabalho",
+      estado: estadoSubmissao,
+      textos: {
+        botaoPendente: "Submissão em breve",
+        botaoEncerrado: "Submissão encerrada",
+        avisoPendente: "O envio de trabalhos ainda não está aberto. Ele será liberado em breve nesta página. Você já pode conferir o que será pedido.",
+        avisoEncerrado: "O prazo de envio de trabalhos está encerrado.",
+      },
+      mascaras: { cpf: mascaraCpf, apresentadorCpf: mascaraCpf },
+      regras: regrasTrabalho,
+      foco: function (nome) {
+        if (nome === "coautores") return listaCoautores.querySelector("[aria-invalid]");
+        if (nome === "resumo") return elT.introducao;
+        return null;
+      },
+      coletar: function () {
+        const dados = {
+          cpf: mascaraCpf(elT.cpf.value),
+          email: elT.email.value.trim().toLowerCase(),
+          titulo: limpar(elT.titulo.value),
+          tipo: elT.tipo.value,
+          eixo: elT.eixo.value,
+          coautores: lerCoautores().map(function (c) {
+            return { nome: c.nome, instituicao: c.instituicao };
+          }),
+          apresentador: apresentaCoautor() ? "coautor" : "primeiro",
+          apresentadorCpf: apresentaCoautor() ? mascaraCpf(elT.apresentadorCpf.value) : "",
+        };
+        PARTES_RESUMO.forEach(function (nome) {
+          dados[nome] = elT[nome].value.trim();
+        });
+        return dados;
+      },
+      aoLimpar: function () {
+        listaCoautores.textContent = "";
+        renumerarCoautores();
+        atualizarApresentador();
+        atualizarContador();
+      },
+      sucesso: function (chave, dados, resposta) {
+        if (chave === "protocolo") return resposta.protocolo || "enviado por e-mail";
+        if (chave === "titulo") return dados.titulo || "";
+        if (chave === "email") return dados.email || "o seu e-mail";
+        return "";
+      },
+    });
+    renumerarCoautores();
   }
 
   // ---------- Menu no celular ----------

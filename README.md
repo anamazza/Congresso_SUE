@@ -7,7 +7,7 @@ Feito em HTML, CSS e JavaScript puros, sem dependências. Funciona em qualquer h
 de arquivos estáticos e também como um único arquivo HTML.
 
 O site tem menu suspenso no topo (Informações, Programação, Trabalhos) e páginas separadas:
-Home, O evento, Programação, Palestrantes, Inscrições, Trabalhos, Normas de submissão,
+Home, O evento, Programação, Palestrantes, Inscrições, Trabalhos, Enviar trabalho, Normas de submissão,
 Comissões, Local, Datas importantes, Perguntas frequentes, Realização e apoio, Avisos,
 Contato e Privacidade. Todas as páginas ficam no mesmo `index.html`, uma por `<section
 data-pagina="...">`; o menu abre uma de cada vez pelos links `#/pagina` (por exemplo,
@@ -31,6 +31,9 @@ site/
                     logo.png (logo compacto colorido), logo-branco.png (logo compacto branco,
                     usado no menu e no rodapé), favicon e edital
 gerar_fundo.py      recria capa-fundo.jpg a partir de capa-clara.jpg, sem o logo
+banco/
+  apps-script.gs    banco dos formulários (Apps Script ligado a uma planilha Google)
+  testar-banco.js   testes do banco num simulador: node banco/testar-banco.js
 
 Os arquivos originais enviados pela equipe de design ficam na raiz do projeto
 (`arte-capa-colorida-v2.png`, `linha-batimentos.png`, `logo-compacto-*.png` e os anteriores).
@@ -71,74 +74,97 @@ Se a arte mudar, substitua `site/assets/capa.jpg`. Se a versão clara também mu
 
 1. **Links, datas e contatos**: abra `site/js/main.js` e preencha o bloco `CONFIG` no topo.
    Tudo o que ficar `""` aparece no site como "a divulgar" ou "em breve".
-   - `formulario.linkPreenchido` liga o formulário de inscrição. Veja a seção abaixo.
-   - `submissao.url` ativa o botão "Submeter trabalho".
-   - `inscricoes.url` só precisa ser preenchido se as inscrições passarem a ser feitas em outro
-     site. Com o formulário ligado, os botões "Inscreva-se" levam até ele.
+   - `banco.url` liga os formulários de inscrição e de envio de trabalhos. Veja a seção
+     **Formulários e banco de dados**.
+   - `inscricoes.url` e `submissao.url` só precisam ser preenchidos se as inscrições ou os
+     trabalhos passarem a ser recebidos em outro site. Com o banco ligado, os botões
+     "Inscreva-se" e "Submeter trabalho" levam aos formulários do próprio site.
    - `comissao` e `palestrantes` fazem aparecer as seções correspondentes (ocultas enquanto vazias).
 2. **Horários da programação**: em `site/index.html`, preencha os `<span class="hora"></span>`
    de cada atividade, por exemplo `<span class="hora">08h30</span>`. Vazio mostra "a confirmar".
 3. **Textos das seções**: edite diretamente em `site/index.html`.
 4. **Edital final**: substitua `site/assets/Edital.docx` (ou aponte `edital.url` para o PDF).
 
-## Formulário de inscrição
+## Formulários e banco de dados
 
-A página Inscrições tem um formulário próprio, com a identidade visual do site. Como o site não
-tem servidor, as respostas vão para um Google Forms, que as guarda numa planilha do Google.
-Enquanto o link não estiver configurado, o formulário aparece com o envio desligado e um aviso,
-para ninguém achar que se inscreveu.
+O site tem dois formulários com a identidade visual do evento:
 
-O formulário pede nome completo, CPF, e-mail, celular, categoria profissional, instituição e se
-a pessoa pretende submeter trabalho. Ele confere o CPF, o e-mail e o celular antes de enviar, e
-exige o aceite do edital e do aviso de privacidade.
+- **Inscrição**, na página Inscrições.
+- **Envio de trabalhos**, na página Enviar trabalho. É a "área do inscrito" citada no edital:
+  o primeiro autor se identifica com o CPF e o e-mail da inscrição.
 
-### Como ligar o formulário
+Como o site não tem servidor, os formulários enviam os dados para um banco: uma planilha do
+Google com um programa em Apps Script, guardado em `banco/apps-script.gs`. O banco faz o
+seguinte:
 
-1. Numa conta Google institucional, crie um formulário no Google Forms com sete perguntas do tipo
-   **Resposta curta**, nesta ordem: Nome completo, CPF, E-mail, Celular, Categoria profissional,
-   Instituição ou unidade, Pretende submeter trabalho. Use Resposta curta em todas, inclusive na
-   categoria, porque as opções já são controladas pelo site.
-2. Não marque nenhuma pergunta como obrigatória e não ative validação de resposta. O site já
-   confere os dados, e uma regra diferente no Google faz a inscrição ser descartada sem aviso.
-3. Em **Configurações > Respostas**, deixe "Coletar endereços de e-mail" em **Não coletar** e
-   desligue **Limitar a 1 resposta**. Essas duas opções exigem login no Google e bloqueiam o
-   envio pelo site.
-4. No menu de três pontos do formulário, escolha **Gerar link pré-preenchido**. Em cada pergunta,
-   escreva apenas a palavra-chave da tabela, sem acento:
+- grava cada inscrição na aba Inscrições e cada trabalho na aba Trabalhos;
+- gera o número de inscrição, como INS-0001, e o protocolo do trabalho, como TRB-0001;
+- recusa CPF que já está inscrito;
+- só aceita trabalho de quem está inscrito, conferindo CPF e e-mail, e exige apresentador inscrito;
+- aplica as regras do edital: até 3 trabalhos como primeiro autor, até 10 autores, 2.050
+  caracteres sem espaços e prazo até 31/10, no horário de Brasília;
+- manda e-mail de confirmação e anota na planilha se ele saiu.
 
-   | Pergunta                    | Escreva       |
-   |-----------------------------|---------------|
-   | Nome completo               | `nome`        |
-   | CPF                         | `cpf`         |
-   | E-mail                      | `email`       |
-   | Celular                     | `celular`     |
-   | Categoria profissional      | `categoria`   |
-   | Instituição ou unidade      | `instituicao` |
-   | Pretende submeter trabalho  | `trabalho`    |
+Enquanto `banco.url` estiver vazio em `site/js/main.js`, os dois formulários aparecem com o
+envio desligado e um aviso, para ninguém achar que se inscreveu ou enviou trabalho.
 
-5. Clique em **Gerar link** e depois em **Copiar link**.
-6. Em `site/js/main.js`, cole o link em `formulario.linkPreenchido`, entre as aspas.
-7. Na aba **Respostas** do Google Forms, use **Vincular ao Planilhas** para acompanhar as
-   inscrições numa planilha. Compartilhe essa planilha só com a Comissão Organizadora, porque ela
-   guarda CPF e contatos dos inscritos.
-8. Publique o site e faça uma inscrição de teste. Ela deve aparecer na planilha em poucos
-   segundos. Depois apague a linha de teste.
+### Como instalar o banco
 
-Se o link estiver incompleto, o formulário continua desligado e o console do navegador diz qual
-palavra-chave faltou.
+1. Numa conta Google institucional, crie uma planilha nova, por exemplo "Simpósio UE 2026 · Banco".
+2. Na planilha, abra **Extensões > Apps Script**. Apague o código que aparece, cole todo o
+   conteúdo de `banco/apps-script.gs` e salve.
+3. Confira o bloco `CONFIG` no começo do código: datas, vagas e `EMAIL_RESPOSTA`, o e-mail da
+   organização que recebe as respostas dos participantes.
+4. No alto do editor, escolha a função `configurar` e clique em **Executar**. O Google pede
+   autorização: aceite com a conta dona da planilha. As abas Inscrições e Trabalhos são criadas.
+5. Clique em **Implantar > Nova implantação**. Em tipo, escolha **App da Web**. Em "Executar
+   como", escolha **Eu**. Em "Quem pode acessar", escolha **Qualquer pessoa**. Clique em
+   **Implantar** e copie o URL do app da Web, que termina em `/exec`.
+6. Em `site/js/main.js`, cole esse endereço em `banco.url`, entre as aspas, e publique o site.
+7. Faça uma inscrição de teste e depois envie um trabalho de teste com o mesmo CPF e e-mail.
+   Confira as linhas na planilha e os e-mails recebidos. Depois apague as linhas de teste.
 
-### Cuidados
+Abrir o endereço `/exec` no navegador mostra a mensagem "Banco ... no ar", útil para conferir
+se a implantação funcionou.
 
-- **Encerrar as inscrições:** mude `formulario.encerrado` para `true` e publique. O formulário
-  fecha e os botões passam a dizer "Inscrições encerradas". Não basta desligar "Aceitando
-  respostas" no Google: o site continuaria mostrando o formulário e as inscrições se perderiam.
-- **Confirmação do envio:** o Google não informa ao site se a resposta foi gravada. O site
-  mostra a confirmação quando o envio sai sem erro de rede. Por isso, repita o teste do passo 8
-  sempre que mexer no Google Forms.
-- **Perguntas recriadas:** se apagar e recriar uma pergunta no Google, ela ganha outro número
-  interno. Gere o link pré-preenchido de novo e troque no `main.js`.
-- **Modo de teste:** para ver o formulário funcionando sem enviar nada, abra o site com `?teste`
-  antes do `#`, por exemplo `https://diid.subhue.org/static-html/congresso-sue/?teste#/inscricoes`.
+### Depois de instalado
+
+- **Mudanças no código do banco:** só valem depois de **Implantar > Gerenciar implantações**,
+  lápis, **Versão: Nova versão** e **Implantar**. O endereço continua o mesmo.
+- **Encerrar as inscrições:** mude `banco.inscricoesEncerradas` para `true` no site. Para o
+  banco também recusar, preencha `INSCRICOES_FIM` ou `VAGAS` no Apps Script.
+- **Prazo dos trabalhos:** o envio fecha sozinho depois de `submissao.prazo`, no site, e de
+  `SUBMISSAO_FIM`, no banco. Se o prazo mudar, altere os dois.
+- **Avaliação:** a aba Trabalhos tem a coluna Avaliação, livre para a Comissão Científica.
+- **Limite de e-mails:** o Google limita os e-mails enviados por dia, cerca de 100 numa conta
+  Gmail comum e 1.500 numa conta Workspace. Quando o limite acaba, o registro é gravado mesmo
+  assim e a coluna "E-mail de confirmação" mostra que o e-mail não saiu.
+- **Privacidade:** a planilha guarda CPF, e-mail e celular. Compartilhe só com a Comissão
+  Organizadora.
+- **Modo de teste:** para ver os formulários funcionando sem gravar nada, abra o site com
+  `?teste` antes do `#`, por exemplo
+  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`.
+- **Testes do banco:** `node banco/testar-banco.js` roda o código do Apps Script num simulador
+  e confere as regras do edital. Rode sempre que mudar o código do banco.
+
+### Usar outro banco de dados
+
+Se a equipe de TI preferir gravar num banco de dados próprio, basta um endereço `https` que
+siga o mesmo formato e colocá-lo em `banco.url`. O código em `banco/apps-script.gs` serve de
+referência para as regras.
+
+- **Pedido:** `POST` com o corpo em JSON e `Content-Type: text/plain`, no formato
+  `{"acao": "inscricao", "dados": {...}}` ou `{"acao": "trabalho", "dados": {...}}`.
+- **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao` e
+  `trabalho`, que pode vir vazio.
+- **Dados do trabalho:** `cpf`, `email`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
+  `{"nome", "instituicao"}`), `apresentador` (`"primeiro"` ou `"coautor"`), `apresentadorCpf`,
+  `introducao`, `metodos`, `resultados` e `conclusoes`.
+- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`.
+- **Resposta de recusa:** `{"ok": false, "mensagem": "texto para a pessoa", "campo": "cpf"}`.
+  O campo é opcional: quando vem, o site mostra a mensagem embaixo dele.
+- **Outro domínio:** se o banco ficar fora de `diid.subhue.org`, ele precisa responder com
+  `Access-Control-Allow-Origin` liberando o endereço do site.
 
 ## Como gerar a versão de arquivo único
 
@@ -181,9 +207,7 @@ e `robots.txt`, usados pelo GitHub Pages.
 
 ### Pendências antes da divulgação
 
-- Ligue o formulário de inscrição ao Google Forms, conforme a seção **Formulário de inscrição**.
-- Preencha `submissao.url` em `site/js/main.js` com o link da área do inscrito, onde os
-  trabalhos são enviados. Enquanto estiver vazio, o botão mostra "Submissão em breve".
+- Instale o banco e preencha `banco.url`, conforme a seção **Formulários e banco de dados**.
 - Confira os textos das páginas **Normas de submissão** e **Privacidade** com a Comissão
   Científica e com o setor responsável pela LGPD. Os dois foram escritos a partir do edital e
   das práticas comuns em eventos de saúde, e trazem marcações "a divulgar" onde faltam decisões.

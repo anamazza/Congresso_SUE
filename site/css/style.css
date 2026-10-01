@@ -970,16 +970,17 @@ ul, ol { margin: 0; padding: 0; }
   background: var(--branco);
   border: 1px solid var(--linha);
   border-radius: 8px;
-  overflow: hidden;
   box-shadow: 0 10px 30px -18px rgba(27, 31, 42, 0.35);
 }
-/* Faixa com o degradê da marca no topo do cartão */
+/* Faixa com o degradê da marca no topo do cartão. Sem overflow: hidden no
+   cartão, para o contador do resumo poder ficar preso abaixo do menu. */
 .inscricao::before {
   content: "";
   position: absolute;
-  inset: 0 0 auto;
+  inset: -1px -1px auto;
   height: 5px;
   background: var(--grad);
+  border-radius: 8px 8px 0 0;
 }
 .inscricao__cabecalho { margin-bottom: 1.5rem; }
 .inscricao__cabecalho h2,
@@ -1133,6 +1134,7 @@ ul, ol { margin: 0; padding: 0; }
   width: 1px;
   height: 1px;
   overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .inscricao__envio {
@@ -1157,6 +1159,118 @@ ul, ol { margin: 0; padding: 0; }
 .inscricao__sucesso p { margin-inline: auto; }
 .inscricao__icone { display: block; margin: 0 auto 1rem; color: var(--azul); }
 .inscricao__sucesso .btn { margin-top: 0.5rem; }
+
+/* Número de inscrição ou protocolo na tela de confirmação */
+.inscricao__protocolo {
+  display: inline-block;
+  margin: 0.25rem auto 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--superficie-2);
+  border-radius: 6px;
+  font-family: var(--fonte-titulo);
+  font-size: 0.9rem;
+  color: var(--texto-2);
+}
+.inscricao__protocolo strong { margin-left: 0.4rem; font-size: 1.1rem; color: var(--tinta); letter-spacing: 0.04em; }
+
+/* ------------------------------ Envio de trabalhos ------------------------------ */
+.form-secao {
+  grid-column: 1 / -1;
+  margin: 1rem 0 -0.4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--linha);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--tinta);
+}
+.inscricao__campos > .form-secao:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+p.campo--largo { margin: 0; max-width: none; }
+
+.campo textarea {
+  width: 100%;
+  min-height: 7.5rem;
+  padding: 0.7rem 0.85rem;
+  font-family: var(--fonte-texto);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--texto);
+  background: var(--branco);
+  border: 1px solid #B8C2CE;
+  border-radius: 6px;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.campo textarea:hover { border-color: var(--ardosia); }
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0, 120, 160, 0.2);
+}
+.campo > .campo__dica:not(:last-child) { margin-top: -0.15rem; }
+
+.coautores { list-style: none; display: grid; gap: 0.75rem; }
+.coautores:empty { display: none; }
+.coautor {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem 1rem;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--fundo);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+@media (min-width: 640px) {
+  .coautor { grid-template-columns: 1.3fr 1fr; }
+  .coautor__cabecalho { grid-column: 1 / -1; }
+}
+.coautor__cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.coautor__titulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--azul);
+}
+.coautor__remover {
+  padding: 0.3rem 0.2rem;
+  font: 600 0.9rem var(--fonte-texto);
+  color: var(--vermelho);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.coautor__remover:hover { color: var(--vermelho-escuro); }
+.campo .coautores + .campo__erro + p { margin: 0.6rem 0 0; }
+
+/* Contador do resumo: fica visível abaixo do menu enquanto a pessoa escreve */
+.contador {
+  position: sticky;
+  top: 76px;
+  z-index: 5;
+  padding: 0.7rem 0.9rem 0.8rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  box-shadow: 0 6px 14px -12px rgba(27, 31, 42, 0.5);
+}
+.contador__texto { margin: 0 0 0.45rem; font-size: 0.95rem; color: var(--texto-2); max-width: none; }
+.contador__total { font-family: var(--fonte-titulo); font-size: 1.05rem; color: var(--tinta); }
+.contador__barra { height: 6px; background: var(--superficie-2); border-radius: 999px; overflow: hidden; }
+.contador__barra span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--grad);
+  border-radius: inherit;
+  transition: width 0.2s;
+}
+.contador.is-excedido { border-color: var(--vermelho); }
+.contador.is-excedido .contador__total,
+.contador.is-excedido .contador__resto { color: var(--vermelho); font-weight: 700; }
+.contador.is-excedido .contador__barra span { background: var(--vermelho); }
 
 /* ------------------------------ Movimento reduzido ------------------------------ */
 @media (prefers-reduced-motion: reduce) {
