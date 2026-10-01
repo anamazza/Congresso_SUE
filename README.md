@@ -71,12 +71,74 @@ Se a arte mudar, substitua `site/assets/capa.jpg`. Se a versão clara também mu
 
 1. **Links, datas e contatos**: abra `site/js/main.js` e preencha o bloco `CONFIG` no topo.
    Tudo o que ficar `""` aparece no site como "a divulgar" ou "em breve".
-   - `inscricoes.url` e `submissao.url` ativam os botões "Inscreva-se" e "Submeter trabalho".
+   - `formulario.linkPreenchido` liga o formulário de inscrição. Veja a seção abaixo.
+   - `submissao.url` ativa o botão "Submeter trabalho".
+   - `inscricoes.url` só precisa ser preenchido se as inscrições passarem a ser feitas em outro
+     site. Com o formulário ligado, os botões "Inscreva-se" levam até ele.
    - `comissao` e `palestrantes` fazem aparecer as seções correspondentes (ocultas enquanto vazias).
 2. **Horários da programação**: em `site/index.html`, preencha os `<span class="hora"></span>`
    de cada atividade, por exemplo `<span class="hora">08h30</span>`. Vazio mostra "a confirmar".
 3. **Textos das seções**: edite diretamente em `site/index.html`.
 4. **Edital final**: substitua `site/assets/Edital.docx` (ou aponte `edital.url` para o PDF).
+
+## Formulário de inscrição
+
+A página Inscrições tem um formulário próprio, com a identidade visual do site. Como o site não
+tem servidor, as respostas vão para um Google Forms, que as guarda numa planilha do Google.
+Enquanto o link não estiver configurado, o formulário aparece com o envio desligado e um aviso,
+para ninguém achar que se inscreveu.
+
+O formulário pede nome completo, CPF, e-mail, celular, categoria profissional, instituição e se
+a pessoa pretende submeter trabalho. Ele confere o CPF, o e-mail e o celular antes de enviar, e
+exige o aceite do edital e do aviso de privacidade.
+
+### Como ligar o formulário
+
+1. Numa conta Google institucional, crie um formulário no Google Forms com sete perguntas do tipo
+   **Resposta curta**, nesta ordem: Nome completo, CPF, E-mail, Celular, Categoria profissional,
+   Instituição ou unidade, Pretende submeter trabalho. Use Resposta curta em todas, inclusive na
+   categoria, porque as opções já são controladas pelo site.
+2. Não marque nenhuma pergunta como obrigatória e não ative validação de resposta. O site já
+   confere os dados, e uma regra diferente no Google faz a inscrição ser descartada sem aviso.
+3. Em **Configurações > Respostas**, deixe "Coletar endereços de e-mail" em **Não coletar** e
+   desligue **Limitar a 1 resposta**. Essas duas opções exigem login no Google e bloqueiam o
+   envio pelo site.
+4. No menu de três pontos do formulário, escolha **Gerar link pré-preenchido**. Em cada pergunta,
+   escreva apenas a palavra-chave da tabela, sem acento:
+
+   | Pergunta                    | Escreva       |
+   |-----------------------------|---------------|
+   | Nome completo               | `nome`        |
+   | CPF                         | `cpf`         |
+   | E-mail                      | `email`       |
+   | Celular                     | `celular`     |
+   | Categoria profissional      | `categoria`   |
+   | Instituição ou unidade      | `instituicao` |
+   | Pretende submeter trabalho  | `trabalho`    |
+
+5. Clique em **Gerar link** e depois em **Copiar link**.
+6. Em `site/js/main.js`, cole o link em `formulario.linkPreenchido`, entre as aspas.
+7. Na aba **Respostas** do Google Forms, use **Vincular ao Planilhas** para acompanhar as
+   inscrições numa planilha. Compartilhe essa planilha só com a Comissão Organizadora, porque ela
+   guarda CPF e contatos dos inscritos.
+8. Publique o site e faça uma inscrição de teste. Ela deve aparecer na planilha em poucos
+   segundos. Depois apague a linha de teste.
+
+Se o link estiver incompleto, o formulário continua desligado e o console do navegador diz qual
+palavra-chave faltou.
+
+### Cuidados
+
+- **Encerrar as inscrições:** mude `formulario.encerrado` para `true` e publique. O formulário
+  fecha e os botões passam a dizer "Inscrições encerradas". Não basta desligar "Aceitando
+  respostas" no Google: o site continuaria mostrando o formulário e as inscrições se perderiam.
+- **Confirmação do envio:** o Google não informa ao site se a resposta foi gravada. O site
+  mostra a confirmação quando o envio sai sem erro de rede. Por isso, repita o teste do passo 8
+  sempre que mexer no Google Forms.
+- **Perguntas recriadas:** se apagar e recriar uma pergunta no Google, ela ganha outro número
+  interno. Gere o link pré-preenchido de novo e troque no `main.js`.
+- **Modo de teste:** para ver o formulário funcionando sem enviar nada, abra o site com `?teste`
+  antes do `#`, por exemplo `https://diid.subhue.org/static-html/congresso-sue/?teste#/inscricoes`.
 
 ## Como gerar a versão de arquivo único
 
@@ -119,8 +181,9 @@ e `robots.txt`, usados pelo GitHub Pages.
 
 ### Pendências antes da divulgação
 
-- Preencha `inscricoes.url` e `submissao.url` em `site/js/main.js` com o link do formulário
-  de inscrição e da área do inscrito. Enquanto estiverem vazios, os botões mostram "em breve".
+- Ligue o formulário de inscrição ao Google Forms, conforme a seção **Formulário de inscrição**.
+- Preencha `submissao.url` em `site/js/main.js` com o link da área do inscrito, onde os
+  trabalhos são enviados. Enquanto estiver vazio, o botão mostra "Submissão em breve".
 - Confira os textos das páginas **Normas de submissão** e **Privacidade** com a Comissão
   Científica e com o setor responsável pela LGPD. Os dois foram escritos a partir do edital e
   das práticas comuns em eventos de saúde, e trazem marcações "a divulgar" onde faltam decisões.
