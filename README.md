@@ -1,7 +1,7 @@
 # Site do 1º Simpósio de Urgência e Emergência
 
 Site institucional do simpósio da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE),
-27 e 28 de novembro de 2026, UNIGRANRIO Campus Barra da Tijuca.
+03 e 04 de dezembro de 2026, UNIGRANRIO Campus Barra da Tijuca.
 
 Feito em HTML, CSS e JavaScript puros, sem dependências. Funciona em qualquer hospedagem
 de arquivos estáticos e também como um único arquivo HTML.

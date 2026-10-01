@@ -9,24 +9,22 @@ const CONFIG = {
   inscricoes: {
     url: "",              // ex.: "https://www.even3.com.br/simposio-urgencia-2026"
     plataforma: "",       // ex.: "Even3"
-    inicio: "",           // ex.: "15/09/2026"
-    fim: "",              // ex.: "20/11/2026"
-    vagas: "250",
+    inicio: "25/09/2026",
+    fim: "",              // ex.: "20/11/2026". Vazio aparece como "a divulgar"
   },
   submissao: {
-    url: "",              // link da plataforma de envio dos trabalhos
-    plataforma: "",       // ex.: "Even3"
-    inicio: "",           // ex.: "15/09/2026"
-    prazo: "",            // ex.: "20/10/2026"
+    url: "",              // link da área do inscrito, onde os trabalhos são enviados
+    inicio: "25/09/2026",
+    prazo: "31/10/2026",
     normas: "",           // link do PDF com as normas de submissão (item do menu Trabalhos)
     modeloPoster: "",     // link do modelo de pôster (item do menu Trabalhos)
   },
   datas: {
     edital: "",           // divulgação do edital
     avaliacao: "",        // ex.: "21/10 a 04/11/2026"
-    aprovados: "",        // divulgação dos trabalhos aprovados
+    aprovados: "16/11/2026", // resultado final dos trabalhos
     programacao: "",      // divulgação da programação final
-    apresentacao: "",     // ex.: "27 e 28/11/2026"
+    apresentacao: "03 e 04/12/2026",
     certificados: "",     // disponibilização dos certificados
   },
   certificacao: {
@@ -42,9 +40,9 @@ const CONFIG = {
     instagram: "",        // ex.: "https://www.instagram.com/simposio..."
   },
   normas: {
-    maxPalavras: "",          // ex.: "até 300 palavras"
-    maxAutores: "",           // ex.: "até 6 autores por trabalho"
-    maxTrabalhosPorAutor: "", // ex.: "até 2 trabalhos como autor principal"
+    maxCaracteres: "até 2.050 caracteres, sem contar espaços",
+    maxAutores: "até 10, somando autores e coautores",
+    maxTrabalhosPorAutor: "até 3 trabalhos como primeiro autor",
     poster: "",               // ex.: "90 cm de largura por 120 cm de altura"
     idioma: "",               // ex.: "português"
   },
@@ -52,7 +50,7 @@ const CONFIG = {
   // Avisos aparecem na página "Avisos" e o mais recente também na Home.
   // Coloque o mais novo primeiro. A página some quando a lista está vazia.
   avisos: [
-    // { data: "15/09/2026", titulo: "Inscrições abertas", texto: "As inscrições vão até 20/11 ou até esgotarem as 250 vagas.", link: "" },
+    // { data: "15/09/2026", titulo: "Inscrições abertas", texto: "Vagas limitadas, preenchidas por ordem de inscrição.", link: "" },
   ],
 
   // Instituições de apoio e parcerias, na página "Realização e apoio".
@@ -285,14 +283,14 @@ const CONFIG = {
     li.hidden = !pagina || !!pagina.dataset.indisponivel;
   });
 
-  // ---------- Contagem regressiva (27 e 28 de novembro de 2026) ----------
+  // ---------- Contagem regressiva (03 e 04 de dezembro de 2026) ----------
   const contagem = document.getElementById("contagem");
   const contagemSub = document.getElementById("contagem-sub");
   if (contagem) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    const inicio = new Date(2026, 10, 27);
-    const fim = new Date(2026, 10, 28);
+    const inicio = new Date(2026, 11, 3);
+    const fim = new Date(2026, 11, 4);
     const dias = Math.round((inicio - hoje) / 86400000);
     let titulo, sub;
     if (dias > 1) {

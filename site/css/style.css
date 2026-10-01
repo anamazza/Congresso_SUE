@@ -123,6 +123,10 @@ ul, ol { margin: 0; padding: 0; }
 }
 
 .nota { font-size: 0.95rem; color: var(--texto-2); }
+/* Nota logo abaixo de uma lista e subtítulo que vem depois de lista ou nota */
+.regras + .nota { margin-top: 0.75rem; }
+.regras + .subtitulo,
+.nota + .subtitulo { margin-top: 2rem; }
 
 .pendente,
 .painel__lista dd.pendente,
@@ -504,6 +508,7 @@ ul, ol { margin: 0; padding: 0; }
   padding: 0.4rem 0.9rem;
   font-size: 0.95rem;
   color: var(--tinta);
+  text-align: center;
 }
 
 /* ------------------------------ Home ------------------------------ */
