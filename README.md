@@ -102,7 +102,7 @@ seguinte:
 - recusa CPF que já está inscrito;
 - só aceita trabalho de quem está inscrito, conferindo CPF e e-mail, e exige apresentador inscrito;
 - aplica as regras do edital: até 3 trabalhos como primeiro autor, até 10 autores, 2.050
-  caracteres sem espaços e prazo até 31/10, no horário de Brasília;
+  caracteres sem espaços e prazo até 06/11, no horário de Brasília;
 - manda e-mail de confirmação e anota na planilha se ele saiu.
 
 Enquanto `banco.url` estiver vazio em `site/js/main.js`, os dois formulários aparecem com o

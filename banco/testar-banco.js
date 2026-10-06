@@ -205,13 +205,13 @@ function rodar() {
 
   // Prazo do envio de trabalhos, no fuso de Brasília
   {
-    const b = criarBanco({ agora: "2026-10-31T23:30:00-03:00" });
+    const b = criarBanco({ agora: "2026-11-06T23:30:00-03:00" });
     b.api.configurar();
     b.enviar("inscricao", inscricao());
-    ok(b.enviar("trabalho", trabalho()).ok, "31/10 às 23h30 de Brasília ainda aceita trabalho");
-    b.estado.agora = new Date("2026-11-01T00:30:00-03:00");
+    ok(b.enviar("trabalho", trabalho()).ok, "06/11 às 23h30 de Brasília ainda aceita trabalho");
+    b.estado.agora = new Date("2026-11-07T00:30:00-03:00");
     const r = b.enviar("trabalho", trabalho({ titulo: "Atrasado" }));
-    ok(!r.ok && r.erro === "fora_do_prazo", "01/11 às 00h30 de Brasília recusa trabalho");
+    ok(!r.ok && r.erro === "fora_do_prazo", "07/11 às 00h30 de Brasília recusa trabalho");
     b.estado.agora = new Date("2026-10-05T23:30:00-03:00");
     ok(b.enviar("inscricao", inscricao({ cpf: CPFS[1] })).erro === "fora_do_prazo", "inscrição em 05/10 às 23h30 é recusada");
     b.estado.agora = new Date("2026-10-06T00:10:00-03:00");
