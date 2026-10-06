@@ -8,8 +8,8 @@
 const CONFIG = {
   inscricoes: {
     url: "",              // vazio = usa o formulário do site quando o banco estiver ligado
-    inicio: "25/09/2026",
-    fim: "",              // ex.: "20/11/2026". Vazio aparece como "a divulgar"
+    inicio: "06/10/2026",
+    fim: "30/11/2026",    // o formulário de inscrição fecha sozinho depois deste dia
   },
   submissao: {
     url: "",              // vazio = usa a área do inscrito do site quando o banco estiver ligado
@@ -39,7 +39,7 @@ const CONFIG = {
   // Enquanto estiver vazio, os formulários aparecem com o envio desligado.
   banco: {
     url: "",
-    inscricoesEncerradas: false, // true fecha o formulário de inscrição
+    inscricoesEncerradas: false, // true fecha o formulário de inscrição (fecha sozinho após inscricoes.fim)
     submissaoEncerrada: false,   // true fecha o envio de trabalhos (fecha sozinho após submissao.prazo)
   },
   contato: {
@@ -109,10 +109,14 @@ const CONFIG = {
     return url;
   })(bancoCfg.url);
 
-  // "31/10/2026" vira o fim daquele dia
-  function fimDoDia(data) {
+  // "31/10/2026" vira o início ou o fim daquele dia no horário de Brasília,
+  // o mesmo que o banco usa, qualquer que seja o fuso de quem acessa
+  function diaEmBrasilia(data, hora) {
     const m = String(data || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), 23, 59, 59) : null;
+    return m ? new Date(m[3] + "-" + m[2] + "-" + m[1] + "T" + hora + "-03:00") : null;
+  }
+  function fimDoDia(data) {
+    return diaEmBrasilia(data, "23:59:59");
   }
 
   function estadoDe(encerrado) {
@@ -121,7 +125,8 @@ const CONFIG = {
     return urlBanco ? "aberto" : "pendente";
   }
   const prazoTrabalhos = fimDoDia(ler("submissao.prazo"));
-  const estadoInscricao = estadoDe(bancoCfg.inscricoesEncerradas);
+  const prazoInscricoes = fimDoDia(ler("inscricoes.fim"));
+  const estadoInscricao = estadoDe(bancoCfg.inscricoesEncerradas || (prazoInscricoes && new Date() > prazoInscricoes));
   const estadoSubmissao = estadoDe(bancoCfg.submissaoEncerrada || (prazoTrabalhos && new Date() > prazoTrabalhos));
 
   // Com os formulários abertos, "Inscreva-se" e "Submeter trabalho" levam até eles
@@ -331,7 +336,44 @@ const CONFIG = {
     li.hidden = !pagina || !!pagina.dataset.indisponivel;
   });
 
-  // ---------- Contagem regressiva (03 e 04 de dezembro de 2026) ----------
+  // ---------- Relógio do fim das inscrições ----------
+  const relogios = document.querySelectorAll('[data-relogio="inscricoes"]');
+  const inicioInscricoes = diaEmBrasilia(ler("inscricoes.inicio"), "00:00:00");
+  if (relogios.length && prazoInscricoes) {
+    let intervalo = null;
+    const dois = function (n) { return String(n).padStart(2, "0"); };
+    const tique = function () {
+      const agora = Date.now();
+      const resta = prazoInscricoes - agora;
+      const visivel = resta > 0 && !bancoCfg.inscricoesEncerradas && (!inicioInscricoes || agora >= inicioInscricoes);
+      relogios.forEach(function (r) { r.hidden = !visivel; });
+      if (!visivel) {
+        if (resta <= 0 && intervalo) clearInterval(intervalo);
+        return;
+      }
+      const s = Math.floor(resta / 1000);
+      const v = {
+        dias: Math.floor(s / 86400),
+        horas: Math.floor((s % 86400) / 3600),
+        minutos: Math.floor((s % 3600) / 60),
+        segundos: s % 60,
+      };
+      const leitura = v.dias + (v.dias === 1 ? " dia, " : " dias, ") + v.horas + (v.horas === 1 ? " hora e " : " horas e ") +
+        v.minutos + (v.minutos === 1 ? " minuto" : " minutos");
+      relogios.forEach(function (r) {
+        r.querySelectorAll("[data-unidade]").forEach(function (el) {
+          const u = el.dataset.unidade;
+          el.textContent = u === "dias" ? String(v.dias) : dois(v[u]);
+        });
+        r.querySelector('[data-rotulo="dias"]').textContent = v.dias === 1 ? "dia" : "dias";
+        r.querySelector(".relogio__numeros").setAttribute("aria-label", "Faltam " + leitura);
+      });
+    };
+    tique();
+    intervalo = setInterval(tique, 1000);
+  }
+
+  // ---------- Contagem regressiva (3 e 4 de dezembro de 2026) ----------
   const contagem = document.getElementById("contagem");
   const contagemSub = document.getElementById("contagem-sub");
   if (contagem) {

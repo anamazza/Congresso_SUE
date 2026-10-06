@@ -1,7 +1,7 @@
 # Site do 1º Simpósio de Urgência e Emergência
 
 Site institucional do simpósio da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE),
-03 e 04 de dezembro de 2026, UNIGRANRIO Campus Barra da Tijuca.
+3 e 4 de dezembro de 2026, UNIGRANRIO Campus Barra da Tijuca.
 
 Feito em HTML, CSS e JavaScript puros, sem dependências. Funciona em qualquer hospedagem
 de arquivos estáticos e também como um único arquivo HTML.
@@ -131,8 +131,10 @@ se a implantação funcionou.
 
 - **Mudanças no código do banco:** só valem depois de **Implantar > Gerenciar implantações**,
   lápis, **Versão: Nova versão** e **Implantar**. O endereço continua o mesmo.
-- **Encerrar as inscrições:** mude `banco.inscricoesEncerradas` para `true` no site. Para o
-  banco também recusar, preencha `INSCRICOES_FIM` ou `VAGAS` no Apps Script.
+- **Encerramento das inscrições:** o formulário fecha sozinho depois de `inscricoes.fim`, no
+  site, e o banco recusa depois de `INSCRICOES_FIM`, no Apps Script. Hoje os dois estão em
+  30/11/2026. Para fechar antes, por exemplo quando as vagas acabarem, mude
+  `banco.inscricoesEncerradas` para `true` no site e preencha `VAGAS` ou `INSCRICOES_FIM` no banco.
 - **Prazo dos trabalhos:** o envio fecha sozinho depois de `submissao.prazo`, no site, e de
   `SUBMISSAO_FIM`, no banco. Se o prazo mudar, altere os dois.
 - **Avaliação:** a aba Trabalhos tem a coluna Avaliação, livre para a Comissão Científica.

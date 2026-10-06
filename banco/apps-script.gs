@@ -12,14 +12,14 @@
 
 const CONFIG = {
   EVENTO: "1º Simpósio de Urgência e Emergência",
-  DATAS: "03 e 04 de dezembro de 2026",
+  DATAS: "3 e 4 de dezembro de 2026",
   LOCAL: "UNIGRANRIO, Campus Barra da Tijuca, Rio de Janeiro",
   SITE: "https://diid.subhue.org/static-html/congresso-sue/",
   FUSO: "America/Sao_Paulo",
 
   // Inscrições. Datas no formato AAAA-MM-DD. Vazio = sem data.
-  INSCRICOES_INICIO: "2026-09-25",
-  INSCRICOES_FIM: "",
+  INSCRICOES_INICIO: "2026-10-06",
+  INSCRICOES_FIM: "2026-11-30", // último dia, até 23h59 de Brasília
   VAGAS: 0, // número máximo de inscrições. 0 = sem limite automático
 
   // Trabalhos

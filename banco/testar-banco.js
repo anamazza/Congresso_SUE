@@ -57,7 +57,7 @@ function criarBanco(opcoes) {
   const planilha = new Planilha();
   const props = {};
   const emails = [];
-  const estado = { agora: new Date(opcoes.agora || "2026-10-01T12:00:00-03:00"), cota: 100, falharEmail: false };
+  const estado = { agora: new Date(opcoes.agora || "2026-10-07T12:00:00-03:00"), cota: 100, falharEmail: false };
   const DataBase = Date;
   class DataFalsa extends DataBase {
     constructor(...a) { if (a.length) super(...a); else super(estado.agora.getTime()); }
@@ -212,8 +212,14 @@ function rodar() {
     b.estado.agora = new Date("2026-11-01T00:30:00-03:00");
     const r = b.enviar("trabalho", trabalho({ titulo: "Atrasado" }));
     ok(!r.ok && r.erro === "fora_do_prazo", "01/11 às 00h30 de Brasília recusa trabalho");
-    b.estado.agora = new Date("2026-09-24T12:00:00-03:00");
-    ok(b.enviar("inscricao", inscricao({ cpf: CPFS[1] })).erro === "fora_do_prazo", "inscrição antes de 25/09 é recusada");
+    b.estado.agora = new Date("2026-10-05T23:30:00-03:00");
+    ok(b.enviar("inscricao", inscricao({ cpf: CPFS[1] })).erro === "fora_do_prazo", "inscrição em 05/10 às 23h30 é recusada");
+    b.estado.agora = new Date("2026-10-06T00:10:00-03:00");
+    ok(b.enviar("inscricao", inscricao({ cpf: CPFS[1], email: "joao@exemplo.com" })).ok, "inscrição em 06/10 às 00h10 é aceita");
+    b.estado.agora = new Date("2026-11-30T23:30:00-03:00");
+    ok(b.enviar("inscricao", inscricao({ cpf: CPFS[2], email: "c@exemplo.com" })).ok, "inscrição em 30/11 às 23h30 é aceita");
+    b.estado.agora = new Date("2026-12-01T00:10:00-03:00");
+    ok(b.enviar("inscricao", inscricao({ cpf: CPFS[3], email: "d@exemplo.com" })).erro === "fora_do_prazo", "inscrição em 01/12 às 00h10 é recusada");
   }
 
   // Vagas, cota de e-mail e falha de e-mail

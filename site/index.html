@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>1º Simpósio de Urgência e Emergência</title>
-<meta name="description" content="1º Simpósio de Urgência e Emergência da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE). 03 e 04 de dezembro de 2026, UNIGRANRIO Barra da Tijuca. Atendimento ao paciente grave na urgência, inscrições e submissão de trabalhos.">
+<meta name="description" content="1º Simpósio de Urgência e Emergência da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE). 3 e 4 de dezembro de 2026, UNIGRANRIO Barra da Tijuca. Atendimento ao paciente grave na urgência, inscrições e submissão de trabalhos.">
 <meta property="og:title" content="1º Simpósio de Urgência e Emergência">
-<meta property="og:description" content="03 e 04 de dezembro de 2026 · UNIGRANRIO, Barra da Tijuca · vagas limitadas. Secretaria Municipal de Saúde do Rio de Janeiro / SUBHUE.">
+<meta property="og:description" content="3 e 4 de dezembro de 2026 · UNIGRANRIO, Barra da Tijuca · vagas limitadas. Secretaria Municipal de Saúde do Rio de Janeiro / SUBHUE.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://diid.subhue.org/static-html/congresso-sue/assets/capa.jpg">
 <meta property="og:url" content="https://diid.subhue.org/static-html/congresso-sue/">
@@ -109,7 +109,7 @@
         <ul class="fatos" aria-label="Informações principais do evento">
           <li>
             <span class="fato__rotulo">Quando</span>
-            <strong>03 e 04 de dezembro de 2026</strong>
+            <strong>3 e 4 de dezembro de 2026</strong>
             <span>quinta e sexta-feira</span>
           </li>
           <li>
@@ -120,7 +120,7 @@
           <li>
             <span class="fato__rotulo">Inscrições</span>
             <strong>Vagas limitadas</strong>
-            <span>a partir de 25/09/2026</span>
+            <span>de <span data-config="inscricoes.inicio">a divulgar</span> a <span data-config="inscricoes.fim">a divulgar</span></span>
           </li>
           <li>
             <span class="fato__rotulo">Contagem</span>
@@ -128,6 +128,18 @@
             <span id="contagem-sub">em breve</span>
           </li>
         </ul>
+
+        <!-- Relógio do fim das inscrições (prazo em CONFIG.inscricoes.fim) -->
+        <div class="relogio" id="relogio-inicio" data-relogio="inscricoes" hidden>
+          <p class="relogio__rotulo">As inscrições encerram em</p>
+          <div class="relogio__numeros" role="timer">
+            <span class="relogio__bloco"><strong data-unidade="dias">0</strong><small data-rotulo="dias">dias</small></span>
+            <span class="relogio__bloco"><strong data-unidade="horas">00</strong><small>horas</small></span>
+            <span class="relogio__bloco"><strong data-unidade="minutos">00</strong><small>min</small></span>
+            <span class="relogio__bloco"><strong data-unidade="segundos">00</strong><small>seg</small></span>
+          </div>
+          <p class="relogio__nota">Até <span data-config="inscricoes.fim">a divulgar</span>, às 23h59, horário de Brasília</p>
+        </div>
 
         <div class="hero__acoes">
           <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Inscreva-se" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
@@ -150,7 +162,7 @@
     <div class="container atalhos-wrap">
       <ul class="atalhos" aria-label="Páginas do site">
         <li><a class="atalho" href="#/evento"><strong>O evento</strong><span>Objetivos, público-alvo e o foco no paciente grave.</span><em>Saiba mais</em></a></li>
-        <li><a class="atalho" href="#/programacao"><strong>Programação</strong><span>Palestras, mesas-redondas e pôsteres nos dias 03 e 04 de dezembro.</span><em>Ver programação</em></a></li>
+        <li><a class="atalho" href="#/programacao"><strong>Programação</strong><span>Palestras, mesas-redondas e pôsteres nos dias 3 e 4 de dezembro.</span><em>Ver programação</em></a></li>
         <li><a class="atalho" href="#/trabalhos"><strong>Trabalhos científicos</strong><span>Envio até 31/10. Eixos temáticos e regras de submissão.</span><em>Como participar</em></a></li>
         <li><a class="atalho" href="#/local"><strong>Local</strong><span>UNIGRANRIO, Campus Barra da Tijuca. Endereço e mapa.</span><em>Ver local</em></a></li>
       </ul>
@@ -213,10 +225,10 @@
       <div class="dias">
         <article class="dia">
           <header class="dia__cabecalho">
-            <span class="dia__numero">03</span>
+            <span class="dia__numero">3</span>
             <div>
               <strong>Quinta-feira</strong><br>
-              <span>03 de dezembro de 2026</span>
+              <span>3 de dezembro de 2026</span>
             </div>
           </header>
           <ol class="agenda">
@@ -238,10 +250,10 @@
 
         <article class="dia">
           <header class="dia__cabecalho">
-            <span class="dia__numero">04</span>
+            <span class="dia__numero">4</span>
             <div>
               <strong>Sexta-feira</strong><br>
-              <span>04 de dezembro de 2026</span>
+              <span>4 de dezembro de 2026</span>
             </div>
           </header>
           <ol class="agenda">
@@ -290,6 +302,16 @@
           </ul>
         </div>
         <div class="painel">
+          <div class="relogio relogio--compacto" id="relogio-inscricoes" data-relogio="inscricoes" hidden>
+            <p class="relogio__rotulo">As inscrições encerram em</p>
+            <div class="relogio__numeros" role="timer">
+              <span class="relogio__bloco"><strong data-unidade="dias">0</strong><small data-rotulo="dias">dias</small></span>
+              <span class="relogio__bloco"><strong data-unidade="horas">00</strong><small>horas</small></span>
+              <span class="relogio__bloco"><strong data-unidade="minutos">00</strong><small>min</small></span>
+              <span class="relogio__bloco"><strong data-unidade="segundos">00</strong><small>seg</small></span>
+            </div>
+            <p class="relogio__nota">Até <span data-config="inscricoes.fim">a divulgar</span>, às 23h59, horário de Brasília</p>
+          </div>
           <dl class="painel__lista">
             <div><dt>Abertura</dt><dd data-config="inscricoes.inicio">a divulgar</dd></div>
             <div><dt>Encerramento</dt><dd data-config="inscricoes.fim">a divulgar</dd></div>
@@ -772,7 +794,7 @@
         <details class="faq__item">
           <summary>Como faço a inscrição?</summary>
           <div>
-            <p>Pelo <a href="#/inscricoes/formulario">formulário de inscrição</a> da página Inscrições, neste site. Abertura das inscrições: <span data-config="inscricoes.inicio">a divulgar</span>. As vagas são limitadas e preenchidas por ordem de inscrição. A inscrição é pessoal e intransferível.</p>
+            <p>Pelo <a href="#/inscricoes/formulario">formulário de inscrição</a> da página Inscrições, neste site. Inscrições de <span data-config="inscricoes.inicio">a divulgar</span> a <span data-config="inscricoes.fim">a divulgar</span>. As vagas são limitadas e preenchidas por ordem de inscrição. A inscrição é pessoal e intransferível.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -784,7 +806,7 @@
         <details class="faq__item">
           <summary>Quando e onde acontece?</summary>
           <div>
-            <p>Nos dias 03 e 04 de dezembro de 2026, quinta e sexta-feira, na UNIGRANRIO, Campus Barra da Tijuca, Av. Ayrton Senna, 2.200, Rio de Janeiro. O simpósio é presencial. Veja a página <a href="#/local">Local</a>.</p>
+            <p>Nos dias 3 e 4 de dezembro de 2026, quinta e sexta-feira, na UNIGRANRIO, Campus Barra da Tijuca, Av. Ayrton Senna, 2.200, Rio de Janeiro. O simpósio é presencial. Veja a página <a href="#/local">Local</a>.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -916,7 +938,7 @@
         <div class="painel">
           <p class="eyebrow">Sede do evento</p>
           <h2 class="subtitulo">UNIGRANRIO · Campus Barra da Tijuca</h2>
-          <p>Instituição que recebe o simpósio nos dias 03 e 04 de dezembro de 2026, na Av. Ayrton Senna, 2.200, Barra da Tijuca. Veja como chegar na página <a href="#/local">Local</a>.</p>
+          <p>Instituição que recebe o simpósio nos dias 3 e 4 de dezembro de 2026, na Av. Ayrton Senna, 2.200, Barra da Tijuca. Veja como chegar na página <a href="#/local">Local</a>.</p>
         </div>
       </div>
       <div class="bloco" id="apoio-lista" hidden>
@@ -977,7 +999,7 @@
   <div class="container rodape__inner">
     <div>
       <img class="rodape__logo" src="assets/logo-branco.png" alt="1º Simpósio de Urgência e Emergência" width="1039" height="570" loading="lazy">
-      <p>03 e 04 de dezembro de 2026<br>UNIGRANRIO · Campus Barra da Tijuca · Rio de Janeiro</p>
+      <p>3 e 4 de dezembro de 2026<br>UNIGRANRIO · Campus Barra da Tijuca · Rio de Janeiro</p>
     </div>
     <div>
       <p class="eyebrow">Realização</p>
