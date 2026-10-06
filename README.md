@@ -101,8 +101,8 @@ seguinte:
 - gera o número de inscrição, como INS-0001, e o protocolo do trabalho, como TRB-0001;
 - recusa CPF que já está inscrito;
 - só aceita trabalho de quem está inscrito, conferindo CPF e e-mail, e exige apresentador inscrito;
-- aplica as regras do edital: até 3 trabalhos como primeiro autor, até 10 autores, 2.050
-  caracteres sem espaços e prazo até 06/11, no horário de Brasília;
+- aplica as regras do edital: até 3 trabalhos como primeiro autor, até 8 autores, 2.500
+  caracteres sem espaços no resumo, até 200 caracteres no título e prazo até 06/11, no horário de Brasília;
 - manda e-mail de confirmação e anota na planilha se ele saiu.
 
 Enquanto `banco.url` estiver vazio em `site/js/main.js`, os dois formulários aparecem com o
@@ -160,7 +160,8 @@ referência para as regras.
 - **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao` e
   `trabalho`, que pode vir vazio.
 - **Dados do trabalho:** `cpf`, `email`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
-  `{"nome", "instituicao"}`), `apresentador` (`"primeiro"` ou `"coautor"`), `apresentadorCpf`,
+  `{"nome", "cpf", "email", "instituicao"}`, com instituição opcional), `apresentador`
+  (`"primeiro"` ou `"coautor"`), `apresentadorCpf` (CPF do coautor que apresenta),
   `introducao`, `metodos`, `resultados` e `conclusoes`.
 - **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`.
 - **Resposta de recusa:** `{"ok": false, "mensagem": "texto para a pessoa", "campo": "cpf"}`.

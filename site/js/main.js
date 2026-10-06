@@ -48,8 +48,9 @@ const CONFIG = {
     instagram: "",        // ex.: "https://www.instagram.com/simposio..."
   },
   normas: {
-    maxCaracteres: "até 2.050 caracteres, sem contar espaços",
-    maxAutores: "até 10, somando autores e coautores",
+    maxCaracteres: "até 2.500 caracteres, sem contar espaços",
+    maxTitulo: "até 200 caracteres, contando espaços",
+    maxAutores: "até 8, somando autores e coautores",
     maxTrabalhosPorAutor: "até 3 trabalhos como primeiro autor",
     poster: "",               // ex.: "90 cm de largura por 120 cm de altura"
     idioma: "",               // ex.: "português"
@@ -402,7 +403,8 @@ const CONFIG = {
 
   // ---------- Formulários: máscaras, validação e envio ao banco ----------
   const formatoNumero = new Intl.NumberFormat("pt-BR");
-  const LIMITE_RESUMO = 2050; // caracteres sem espaços, conforme o edital
+  const LIMITE_RESUMO = 2500; // caracteres sem espaços, conforme o edital
+  const LIMITE_TITULO = 200;  // caracteres contando os espaços
   const PARTES_RESUMO = ["introducao", "metodos", "resultados", "conclusoes"];
 
   function soDigitos(v) {
@@ -450,9 +452,12 @@ const CONFIG = {
     if (!soDigitos(v)) return "Informe o seu CPF.";
     return cpfValido(v) ? "" : "Confira o CPF. Os números digitados não formam um CPF válido.";
   };
+  function emailValido(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || "").trim());
+  }
   const regraEmail = function (v) {
     if (!v.trim()) return "Informe o seu e-mail.";
-    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
+    return emailValido(v) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
   };
 
   function enviarAoBanco(acao, dados) {
@@ -703,24 +708,27 @@ const CONFIG = {
     const elT = formTrabalho.elements;
     const listaCoautores = document.getElementById("trb-coautores");
     const botaoCoautor = document.getElementById("trb-add-coautor");
-    const campoApresentador = document.getElementById("trb-apresentadorCpf-campo");
+    const selApresentador = elT.apresentador;
     const contador = document.getElementById("trb-contador");
-    const MAX_COAUTORES = 9;
+    const MAX_COAUTORES = 7; // 8 autores no total, conforme o edital
+    const PARTES_COAUTOR = ["nome", "cpf", "email", "instituicao"];
+    let liApresentador = null; // linha do coautor escolhido para apresentar
 
     // Coautores: linhas que entram e saem
     function renumerarCoautores() {
       listaCoautores.querySelectorAll(".coautor").forEach(function (li, i) {
         const n = i + 2;
+        li.dataset.numero = String(n);
         li.querySelector(".coautor__titulo").textContent = "Autor " + n;
-        ["nome", "instituicao"].forEach(function (parte) {
+        PARTES_COAUTOR.forEach(function (parte) {
           const input = li.querySelector(".coautor__" + parte);
           input.id = "trb-autor" + n + "-" + parte;
           li.querySelector('label[data-parte="' + parte + '"]').htmlFor = input.id;
         });
         li.querySelector(".coautor__remover").setAttribute("aria-label", "Remover o autor " + n);
       });
-      const total = listaCoautores.children.length;
-      botaoCoautor.hidden = total >= MAX_COAUTORES;
+      botaoCoautor.hidden = listaCoautores.children.length >= MAX_COAUTORES;
+      atualizarApresentador();
     }
 
     function adicionarCoautor(focarNovo) {
@@ -729,9 +737,13 @@ const CONFIG = {
       li.innerHTML =
         '<div class="coautor__cabecalho"><p class="coautor__titulo"></p>' +
         '<button class="coautor__remover" type="button">Remover</button></div>' +
-        '<div class="campo"><label data-parte="nome">Nome completo</label>' +
+        '<div class="campo coautor__largo"><label data-parte="nome">Nome completo</label>' +
         '<input class="coautor__nome" type="text" maxlength="120" autocomplete="off"></div>' +
-        '<div class="campo"><label data-parte="instituicao">Instituição</label>' +
+        '<div class="campo"><label data-parte="cpf">CPF</label>' +
+        '<input class="coautor__cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></div>' +
+        '<div class="campo"><label data-parte="email">E-mail</label>' +
+        '<input class="coautor__email" type="email" maxlength="120" autocomplete="off"></div>' +
+        '<div class="campo coautor__largo"><label data-parte="instituicao">Instituição <span class="campo__opcional">opcional</span></label>' +
         '<input class="coautor__instituicao" type="text" maxlength="120" autocomplete="off"></div>';
       listaCoautores.appendChild(li);
       renumerarCoautores();
@@ -751,30 +763,47 @@ const CONFIG = {
       formTrabalho.dispatchEvent(new Event("change"));
       (vizinho ? vizinho.querySelector(".coautor__nome") : botaoCoautor).focus();
     });
+    listaCoautores.addEventListener("input", function (e) {
+      if (e.target.classList.contains("coautor__cpf")) e.target.value = mascaraCpf(e.target.value);
+      if (e.target.classList.contains("coautor__nome")) atualizarApresentador();
+    });
 
     function lerCoautores() {
       return Array.prototype.map.call(listaCoautores.querySelectorAll(".coautor"), function (li) {
         return {
-          li: li,
+          numero: li.dataset.numero,
           nome: limpar(li.querySelector(".coautor__nome").value),
+          cpf: mascaraCpf(li.querySelector(".coautor__cpf").value),
+          email: li.querySelector(".coautor__email").value.trim().toLowerCase(),
           instituicao: limpar(li.querySelector(".coautor__instituicao").value),
         };
       }).filter(function (c) {
-        return c.nome || c.instituicao;
+        return c.nome || c.cpf || c.email || c.instituicao;
       });
     }
 
-    // Apresentador: o CPF só aparece quando é um coautor
-    function apresentaCoautor() {
-      const marcado = formTrabalho.querySelector('input[name="apresentador"]:checked');
-      return !!marcado && marcado.value === "coautor";
-    }
-    function atualizarApresentador() {
-      campoApresentador.hidden = !apresentaCoautor();
-    }
-    formTrabalho.addEventListener("change", function (e) {
-      if (e.target.name === "apresentador") atualizarApresentador();
+    // Apresentador: lista com o primeiro autor e os coautores preenchidos
+    selApresentador.addEventListener("change", function () {
+      liApresentador = selApresentador.value === "primeiro"
+        ? null
+        : listaCoautores.querySelector('.coautor[data-numero="' + selApresentador.value + '"]');
     });
+    function atualizarApresentador() {
+      if (liApresentador && !liApresentador.isConnected) liApresentador = null;
+      selApresentador.textContent = "";
+      const opcoes = [["primeiro", "Eu mesmo(a), autor 1"]];
+      listaCoautores.querySelectorAll(".coautor").forEach(function (li) {
+        const nome = limpar(li.querySelector(".coautor__nome").value);
+        opcoes.push([li.dataset.numero, "Autor " + li.dataset.numero + (nome ? " · " + nome : "")]);
+      });
+      opcoes.forEach(function (o) {
+        const op = document.createElement("option");
+        op.value = o[0];
+        op.textContent = o[1];
+        selApresentador.appendChild(op);
+      });
+      selApresentador.value = liApresentador ? liApresentador.dataset.numero : "primeiro";
+    }
 
     // Contador do resumo
     function contarResumo() {
@@ -797,11 +826,23 @@ const CONFIG = {
     });
     atualizarContador();
 
+    // Contador do título (conta os espaços, como o banco)
+    const contagemTitulo = document.getElementById("trb-titulo-contagem");
+    function atualizarTitulo() {
+      const n = limpar(elT.titulo.value).length;
+      contagemTitulo.textContent = formatoNumero.format(n) + " de " + LIMITE_TITULO + " caracteres";
+      contagemTitulo.classList.toggle("is-excedido", n > LIMITE_TITULO);
+    }
+    elT.titulo.addEventListener("input", atualizarTitulo);
+    atualizarTitulo();
+
     const regrasTrabalho = {
       cpf: regraCpf,
       email: regraEmail,
       titulo: function (v) {
-        return v.trim() ? "" : "Informe o título do trabalho.";
+        const n = limpar(v).length;
+        if (!n) return "Informe o título do trabalho.";
+        return n > LIMITE_TITULO ? "O título tem " + n + " caracteres. O limite é " + LIMITE_TITULO + ", contando os espaços." : "";
       },
       tipo: function (v) {
         return v ? "" : "Escolha o tipo de trabalho.";
@@ -810,25 +851,40 @@ const CONFIG = {
         return v ? "" : "Escolha o eixo temático.";
       },
       coautores: function () {
-        let erro = false;
+        const cpfProprio = soDigitos(elT.cpf.value);
+        const vistos = {};
+        let incompleto = false;
+        let repetido = false;
         listaCoautores.querySelectorAll(".coautor").forEach(function (li) {
-          const nome = li.querySelector(".coautor__nome");
-          const inst = li.querySelector(".coautor__instituicao");
-          const vazia = !nome.value.trim() && !inst.value.trim();
-          const nomeRuim = !vazia && !nomeCompleto(nome.value);
-          const instRuim = !vazia && !inst.value.trim();
-          [[nome, nomeRuim], [inst, instRuim]].forEach(function (par) {
-            if (par[1]) par[0].setAttribute("aria-invalid", "true");
-            else par[0].removeAttribute("aria-invalid");
+          const c = {};
+          PARTES_COAUTOR.forEach(function (parte) { c[parte] = li.querySelector(".coautor__" + parte); });
+          const vazia = PARTES_COAUTOR.every(function (parte) { return !c[parte].value.trim(); });
+          const digitos = soDigitos(c.cpf.value);
+          const ruim = {
+            nome: !vazia && !nomeCompleto(c.nome.value),
+            cpf: !vazia && !cpfValido(c.cpf.value),
+            email: !vazia && !emailValido(c.email.value),
+            instituicao: false,
+          };
+          const duplicado = !vazia && !ruim.cpf && (vistos[digitos] || digitos === cpfProprio);
+          if (!vazia && !ruim.cpf) vistos[digitos] = true;
+          if (duplicado) ruim.cpf = true;
+          PARTES_COAUTOR.forEach(function (parte) {
+            if (ruim[parte]) c[parte].setAttribute("aria-invalid", "true");
+            else c[parte].removeAttribute("aria-invalid");
           });
-          if (nomeRuim || instRuim) erro = true;
+          if (ruim.nome || ruim.email || (ruim.cpf && !duplicado)) incompleto = true;
+          if (duplicado) repetido = true;
         });
-        return erro ? "Informe o nome completo e a instituição de cada coautor. Para tirar um coautor, use Remover." : "";
+        if (incompleto) return "Informe nome completo, CPF válido e e-mail de cada coautor. Para tirar um coautor, use Remover.";
+        if (repetido) return "O mesmo CPF aparece em mais de um autor. Confira os CPFs dos coautores.";
+        return "";
       },
-      apresentadorCpf: function (v) {
-        if (!apresentaCoautor()) return "";
-        if (!soDigitos(v)) return "Informe o CPF de quem vai apresentar.";
-        return cpfValido(v) ? "" : "Confira o CPF de quem vai apresentar.";
+      apresentador: function (v) {
+        if (v === "primeiro") return "";
+        const li = listaCoautores.querySelector('.coautor[data-numero="' + v + '"]');
+        if (!li) return "Escolha quem vai apresentar o trabalho.";
+        return cpfValido(li.querySelector(".coautor__cpf").value) ? "" : "Preencha um CPF válido para o autor " + v + ", que vai apresentar.";
       },
       introducao: function (v) {
         return v.trim() ? "" : "Escreva a introdução.";
@@ -845,7 +901,7 @@ const CONFIG = {
       resumo: function () {
         const n = contarResumo();
         return n > LIMITE_RESUMO
-          ? "O resumo tem " + formatoNumero.format(n) + " caracteres sem espaços. Corte " + formatoNumero.format(n - LIMITE_RESUMO) + " para ficar no limite de 2.050."
+          ? "O resumo tem " + formatoNumero.format(n) + " caracteres sem espaços. Corte " + formatoNumero.format(n - LIMITE_RESUMO) + " para ficar no limite de " + formatoNumero.format(LIMITE_RESUMO) + "."
           : "";
       },
       aceite: function (_v, campo) {
@@ -864,7 +920,7 @@ const CONFIG = {
         avisoPendente: "O envio de trabalhos ainda não está aberto. Ele será liberado em breve nesta página. Você já pode conferir o que será pedido.",
         avisoEncerrado: "O prazo de envio de trabalhos está encerrado.",
       },
-      mascaras: { cpf: mascaraCpf, apresentadorCpf: mascaraCpf },
+      mascaras: { cpf: mascaraCpf },
       regras: regrasTrabalho,
       foco: function (nome) {
         if (nome === "coautores") return listaCoautores.querySelector("[aria-invalid]");
@@ -878,12 +934,17 @@ const CONFIG = {
           titulo: limpar(elT.titulo.value),
           tipo: elT.tipo.value,
           eixo: elT.eixo.value,
-          coautores: lerCoautores().map(function (c) {
-            return { nome: c.nome, instituicao: c.instituicao };
-          }),
-          apresentador: apresentaCoautor() ? "coautor" : "primeiro",
-          apresentadorCpf: apresentaCoautor() ? mascaraCpf(elT.apresentadorCpf.value) : "",
+          coautores: [],
+          apresentador: "primeiro",
+          apresentadorCpf: "",
         };
+        lerCoautores().forEach(function (c) {
+          dados.coautores.push({ nome: c.nome, cpf: c.cpf, email: c.email, instituicao: c.instituicao });
+          if (c.numero === selApresentador.value) {
+            dados.apresentador = "coautor";
+            dados.apresentadorCpf = c.cpf;
+          }
+        });
         PARTES_RESUMO.forEach(function (nome) {
           dados[nome] = elT[nome].value.trim();
         });
@@ -891,9 +952,10 @@ const CONFIG = {
       },
       aoLimpar: function () {
         listaCoautores.textContent = "";
+        liApresentador = null;
         renumerarCoautores();
-        atualizarApresentador();
         atualizarContador();
+        atualizarTitulo();
       },
       sucesso: function (chave, dados, resposta) {
         if (chave === "protocolo") return resposta.protocolo || "enviado por e-mail";

@@ -448,7 +448,7 @@
             <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/submissao">área do inscrito</a>.</li>
             <li>Cada trabalho precisa ter um apresentador inscrito no simpósio.</li>
             <li>Trabalhos enviados após o prazo final não serão considerados.</li>
-            <li>O resumo tem até 2.050 caracteres sem espaços, com introdução, métodos, resultados e conclusões. Veja as <a href="#/normas">normas de submissão</a> antes de enviar.</li>
+            <li>O resumo tem até 2.500 caracteres sem espaços, com introdução, métodos, resultados e conclusões. O título tem até 200 caracteres. Veja as <a href="#/normas">normas de submissão</a> antes de enviar.</li>
             <li>O resultado final é comunicado aos autores pelo canal informado pela organização.</li>
           </ul>
         </div>
@@ -539,8 +539,9 @@
 
             <div class="campo campo--largo">
               <label for="trb-titulo">Título</label>
-              <input id="trb-titulo" name="titulo" type="text" maxlength="250" autocomplete="off" required aria-describedby="trb-titulo-dica trb-titulo-erro">
-              <p class="campo__dica" id="trb-titulo-dica">O título não entra na contagem de caracteres do resumo.</p>
+              <input id="trb-titulo" name="titulo" type="text" maxlength="200" autocomplete="off" required aria-describedby="trb-titulo-dica trb-titulo-contagem trb-titulo-erro">
+              <p class="campo__dica" id="trb-titulo-dica">Até 200 caracteres, contando os espaços. O título não entra na contagem do resumo.</p>
+              <p class="campo__dica campo__contagem" id="trb-titulo-contagem">0 de 200 caracteres</p>
               <p class="campo__erro" id="trb-titulo-erro" hidden></p>
             </div>
 
@@ -570,7 +571,7 @@
             </div>
 
             <h2 class="form-secao">3. Autores</h2>
-            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 9 coautores, na ordem em que devem aparecer no trabalho.</p>
+            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 7 coautores, na ordem em que devem aparecer no trabalho. De cada coautor são pedidos nome completo, CPF e e-mail.</p>
 
             <div class="campo campo--largo">
               <ol class="coautores" id="trb-coautores"></ol>
@@ -578,26 +579,20 @@
               <p><button class="btn btn--secundario btn--pequeno" type="button" id="trb-add-coautor">Adicionar coautor</button></p>
             </div>
 
-            <fieldset class="campo campo--largo campo--opcoes">
-              <legend>Quem vai apresentar o trabalho?</legend>
-              <div class="opcoes">
-                <label class="opcao"><input type="radio" name="apresentador" value="primeiro" checked> Eu mesmo(a)</label>
-                <label class="opcao"><input type="radio" name="apresentador" value="coautor"> Um coautor</label>
-              </div>
-            </fieldset>
-
-            <div class="campo" id="trb-apresentadorCpf-campo" hidden>
-              <label for="trb-apresentadorCpf">CPF de quem vai apresentar</label>
-              <input id="trb-apresentadorCpf" name="apresentadorCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" aria-describedby="trb-apresentadorCpf-dica trb-apresentadorCpf-erro">
-              <p class="campo__dica" id="trb-apresentadorCpf-dica">Quem apresenta também precisa estar inscrito no simpósio.</p>
-              <p class="campo__erro" id="trb-apresentadorCpf-erro" hidden></p>
+            <div class="campo campo--largo">
+              <label for="trb-apresentador">Quem vai apresentar o trabalho?</label>
+              <select id="trb-apresentador" name="apresentador" aria-describedby="trb-apresentador-dica trb-apresentador-erro">
+                <option value="primeiro">Eu mesmo(a), autor 1</option>
+              </select>
+              <p class="campo__dica" id="trb-apresentador-dica">Quem apresenta precisa estar inscrito no simpósio. Os coautores preenchidos acima aparecem nesta lista.</p>
+              <p class="campo__erro" id="trb-apresentador-erro" hidden></p>
             </div>
 
             <h2 class="form-secao">4. Resumo</h2>
-            <p class="campo__dica campo--largo">Até 2.050 caracteres sem espaços, somando as quatro partes. Escreva só texto corrido, sem negrito, itálico, listas, tabelas, imagens ou referências. Toda abreviação deve vir por extenso na primeira vez em que aparece.</p>
+            <p class="campo__dica campo--largo">Até 2.500 caracteres sem espaços, somando as quatro partes. Escreva só texto corrido, sem negrito, itálico, listas, tabelas, imagens ou referências. Toda abreviação deve vir por extenso na primeira vez em que aparece.</p>
 
             <div class="contador campo--largo" id="trb-contador">
-              <p class="contador__texto"><strong class="contador__total">0</strong> de 2.050 caracteres sem espaços <span class="contador__resto"></span></p>
+              <p class="contador__texto"><strong class="contador__total">0</strong> de 2.500 caracteres sem espaços <span class="contador__resto"></span></p>
               <div class="contador__barra" aria-hidden="true"><span></span></div>
             </div>
             <p class="campo__erro campo--largo" id="trb-resumo-erro" hidden></p>
@@ -813,7 +808,7 @@
           <summary>Que tipos de trabalho posso enviar?</summary>
           <div>
             <p>Estudos originais (observacionais ou de intervenção), relatos de caso e revisões sistemáticas na área de urgência e emergência, dentro de um dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio. Só quem está inscrito pode submeter, pelo site, na <a href="#/submissao">área do inscrito</a>. Prazo final: <span data-config="submissao.prazo">a divulgar</span>.</p>
-            <p>Cada autor pode enviar até 3 trabalhos como primeiro autor, e cada trabalho pode ter até 10 autores e coautores. O resumo tem limite de 2.050 caracteres, sem contar os espaços. Veja as <a href="#/normas">normas de submissão</a>.</p>
+            <p>Cada autor pode enviar até 3 trabalhos como primeiro autor, e cada trabalho pode ter até 8 autores, somando autores e coautores. De cada coautor são pedidos nome completo, CPF e e-mail. O resumo tem limite de 2.500 caracteres, sem contar os espaços, e o título, de 200 caracteres. Veja as <a href="#/normas">normas de submissão</a>.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -883,12 +878,13 @@
           <h2 class="subtitulo">Limites e formato</h2>
           <dl class="painel__lista">
             <div><dt>Resumo</dt><dd data-config="normas.maxCaracteres">a divulgar</dd></div>
+            <div><dt>Título</dt><dd data-config="normas.maxTitulo">a divulgar</dd></div>
             <div><dt>Autores</dt><dd data-config="normas.maxAutores">a divulgar</dd></div>
             <div><dt>Por autor</dt><dd data-config="normas.maxTrabalhosPorAutor">a divulgar</dd></div>
             <div><dt>Pôster</dt><dd data-config="normas.poster">a divulgar</dd></div>
             <div><dt>Idioma</dt><dd data-config="normas.idioma">a divulgar</dd></div>
           </dl>
-          <p class="nota">O título e os nomes dos autores não entram na contagem de caracteres. Os arquivos oficiais aparecem abaixo assim que forem publicados.</p>
+          <p class="nota">O título e os nomes dos autores não entram na contagem de caracteres do resumo. Os arquivos oficiais aparecem abaixo assim que forem publicados.</p>
           <p><a class="btn btn--secundario" data-config-href="submissao.normas" data-pendente="ocultar" href="#">Baixar as normas em PDF</a></p>
           <p><a class="btn btn--secundario" data-config-href="submissao.modeloPoster" data-pendente="ocultar" href="#">Baixar o modelo de pôster</a></p>
           <a class="btn btn--primario btn--pendente" data-config-href="submissao.url" data-texto-ativo="Submeter trabalho" data-texto-pendente="Submissão em breve" href="#/trabalhos">Submissão em breve</a>
@@ -901,7 +897,7 @@
           <ul class="regras">
             <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/submissao">área do inscrito</a>, dentro do prazo do <a href="#/cronograma">cronograma</a>. Trabalhos enviados após o prazo não serão considerados.</li>
             <li>Cada trabalho deve ter um apresentador inscrito no simpósio.</li>
-            <li>Cada autor pode submeter no máximo 3 trabalhos como primeiro autor. Cada trabalho pode ter até 10 autores, somando autores e coautores.</li>
+            <li>Cada autor pode submeter no máximo 3 trabalhos como primeiro autor. Cada trabalho pode ter até 8 autores, somando autores e coautores. De cada coautor são pedidos nome completo, CPF e e-mail.</li>
             <li>O trabalho deve se encaixar em um dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio.</li>
             <li>A Comissão Científica avalia os trabalhos pelos <a href="#/trabalhos/avaliacao">critérios publicados</a> e pode solicitar ajustes ou adequações.</li>
             <li>Os trabalhos aprovados são apresentados em pôster ou painel, no dia e horário definidos pela Comissão Organizadora. A ausência do autor responsável pode implicar a não certificação do trabalho.</li>

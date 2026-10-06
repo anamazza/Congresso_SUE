@@ -1051,6 +1051,8 @@ ul, ol { margin: 0; padding: 0; }
 }
 .campo__dica { color: var(--texto-2); }
 .campo__erro { color: var(--vermelho); font-weight: 600; }
+.campo__contagem { text-align: right; font-variant-numeric: tabular-nums; }
+.campo__contagem.is-excedido { color: var(--vermelho); font-weight: 700; }
 
 .campo input[type="text"],
 .campo input[type="email"],
@@ -1220,8 +1222,9 @@ p.campo--largo { margin: 0; max-width: none; }
   border-radius: 6px;
 }
 @media (min-width: 640px) {
-  .coautor { grid-template-columns: 1.3fr 1fr; }
-  .coautor__cabecalho { grid-column: 1 / -1; }
+  .coautor { grid-template-columns: 1fr 1fr; }
+  .coautor__cabecalho,
+  .coautor__largo { grid-column: 1 / -1; }
 }
 .coautor__cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .coautor__titulo {
