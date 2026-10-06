@@ -48,6 +48,9 @@ def main() -> None:
 
     html = re.sub(r'\b(src|href)="(assets/[^"]+)"', embutir, html)
 
+    # srcset com um único arquivo, como a capa em WebP dentro de <picture>
+    html = re.sub(r'\b(srcset)="(assets/[^"\s,]+)"', embutir, html)
+
     (DIST / "index.html").write_text(html, encoding="utf-8")
 
     head = re.search(r"<head>(.*?)</head>", html, re.S).group(1)

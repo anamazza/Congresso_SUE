@@ -14,7 +14,7 @@ const CONFIG = {
   submissao: {
     url: "",              // vazio = usa a área do inscrito do site quando o banco estiver ligado
     inicio: "25/09/2026",
-    prazo: "31/10/2026",
+    prazo: "06/11/2026",    // o envio de trabalhos fecha sozinho depois deste dia
     normas: "",           // link do PDF com as normas de submissão (item do menu Trabalhos)
     modeloPoster: "",     // link do modelo de pôster (item do menu Trabalhos)
   },
@@ -109,7 +109,7 @@ const CONFIG = {
     return url;
   })(bancoCfg.url);
 
-  // "31/10/2026" vira o início ou o fim daquele dia no horário de Brasília,
+  // "06/11/2026" vira o início ou o fim daquele dia no horário de Brasília,
   // o mesmo que o banco usa, qualquer que seja o fuso de quem acessa
   function diaEmBrasilia(data, hora) {
     const m = String(data || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);

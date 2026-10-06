@@ -24,7 +24,7 @@ const CONFIG = {
 
   // Trabalhos
   SUBMISSAO_INICIO: "2026-09-25",
-  SUBMISSAO_FIM: "2026-10-31", // último dia de envio, até 23h59 de Brasília
+  SUBMISSAO_FIM: "2026-11-06", // último dia de envio, até 23h59 de Brasília
   RESULTADO: "16/11/2026",
   MAX_TRABALHOS_PRIMEIRO_AUTOR: 3,
   MAX_AUTORES: 10,
