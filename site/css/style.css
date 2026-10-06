@@ -123,6 +123,10 @@ ul, ol { margin: 0; padding: 0; }
 }
 
 .nota { font-size: 0.95rem; color: var(--texto-2); }
+/* Nota logo abaixo de uma lista e subtítulo que vem depois de lista ou nota */
+.regras + .nota { margin-top: 0.75rem; }
+.regras + .subtitulo,
+.nota + .subtitulo { margin-top: 2rem; }
 
 .pendente,
 .painel__lista dd.pendente,
@@ -504,6 +508,7 @@ ul, ol { margin: 0; padding: 0; }
   padding: 0.4rem 0.9rem;
   font-size: 0.95rem;
   color: var(--tinta);
+  text-align: center;
 }
 
 /* ------------------------------ Home ------------------------------ */
@@ -943,6 +948,396 @@ ul, ol { margin: 0; padding: 0; }
   font-weight: 700;
   color: var(--vermelho);
 }
+
+/* ------------------------------ Formulário de inscrição ------------------------------ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.inscricao {
+  position: relative;
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px -18px rgba(27, 31, 42, 0.35);
+}
+/* Faixa com o degradê da marca no topo do cartão. Sem overflow: hidden no
+   cartão, para o contador do resumo poder ficar preso abaixo do menu. */
+.inscricao::before {
+  content: "";
+  position: absolute;
+  inset: -1px -1px auto;
+  height: 5px;
+  background: var(--grad);
+  border-radius: 8px 8px 0 0;
+}
+.inscricao__cabecalho { margin-bottom: 1.5rem; }
+.inscricao__cabecalho h2,
+.inscricao__sucesso h2 {
+  font-size: clamp(1.35rem, 1.1rem + 1vw, 1.8rem);
+  font-weight: 800;
+}
+.inscricao__cabecalho .nota { margin: 0; }
+
+.inscricao__aviso {
+  max-width: none;
+  margin: 0 0 1.5rem;
+  padding: 0.85rem 1rem;
+  background: #FBEFF0;
+  border: 1px solid #EFC6CA;
+  border-left: 4px solid var(--vermelho);
+  border-radius: 6px;
+  color: var(--tinta);
+  font-weight: 600;
+}
+.inscricao__aviso--teste {
+  background: #E8F4F8;
+  border-color: #B9DCE9;
+  border-left-color: var(--azul);
+}
+
+.inscricao__campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.15rem 1.25rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+@media (min-width: 640px) {
+  .inscricao__campos { grid-template-columns: 1fr 1fr; }
+  .campo--largo { grid-column: 1 / -1; }
+}
+.inscricao__campos:disabled { opacity: 0.6; }
+.inscricao__campos:disabled * { cursor: not-allowed; }
+
+.campo {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-width: 0;
+}
+.campo > label,
+.campo--opcoes > legend {
+  font-family: var(--fonte-titulo);
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--tinta);
+}
+.campo__opcional {
+  margin-left: 0.35rem;
+  font-family: var(--fonte-texto);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--texto-2);
+}
+.campo__dica,
+.campo__erro {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.campo__dica { color: var(--texto-2); }
+.campo__erro { color: var(--vermelho); font-weight: 600; }
+
+.campo input[type="text"],
+.campo input[type="email"],
+.campo input[type="tel"],
+.campo select {
+  width: 100%;
+  min-height: 2.95rem;
+  padding: 0.65rem 0.85rem;
+  font-family: var(--fonte-texto);
+  font-size: 1rem; /* 16px: evita o zoom automático no iPhone */
+  color: var(--texto);
+  background-color: var(--branco);
+  border: 1px solid #B8C2CE;
+  border-radius: 6px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.campo select {
+  appearance: none;
+  padding-right: 2.6rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23404058' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+}
+.campo input::placeholder { color: #8A93A1; }
+.campo input:hover,
+.campo select:hover { border-color: var(--ardosia); }
+.campo input:focus,
+.campo select:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0, 120, 160, 0.2);
+}
+.campo [aria-invalid="true"],
+.campo [aria-invalid="true"]:hover {
+  border-color: var(--vermelho);
+  box-shadow: 0 0 0 3px rgba(136, 10, 18, 0.12);
+}
+
+.campo--opcoes { margin: 0; padding: 0; border: 0; }
+.campo--opcoes > legend { padding: 0; margin-bottom: 0.5rem; }
+.opcoes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.campo .opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--fonte-texto);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--texto);
+  cursor: pointer;
+}
+.opcoes .opcao {
+  padding: 0.5rem 1rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.opcoes .opcao:hover { border-color: var(--azul); }
+.opcoes .opcao:has(input:checked) {
+  background: #E8F4F8;
+  border-color: var(--azul);
+  color: var(--azul-escuro);
+  font-weight: 600;
+}
+.opcao input {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: var(--vermelho);
+}
+.campo--aceite .opcao { align-items: flex-start; line-height: 1.5; }
+.campo--aceite .opcao input { margin-top: 0.2rem; }
+.campo--aceite [aria-invalid="true"] { outline: 2px solid var(--vermelho); outline-offset: 2px; }
+
+/* Campo contra robôs: fora da tela */
+.campo--isca {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.inscricao__envio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--linha);
+}
+.inscricao__envio .btn { min-width: 14rem; }
+.btn:disabled { cursor: not-allowed; transform: none; }
+.inscricao__status { margin: 0; font-weight: 600; color: var(--texto-2); }
+.inscricao__status.is-erro { color: var(--vermelho); }
+@media (max-width: 639px) {
+  .inscricao__envio .btn { width: 100%; }
+}
+
+.inscricao__sucesso { text-align: center; padding: 0.5rem 0; }
+.inscricao__sucesso:focus { outline: none; }
+.inscricao__sucesso p { margin-inline: auto; }
+.inscricao__icone { display: block; margin: 0 auto 1rem; color: var(--azul); }
+.inscricao__sucesso .btn { margin-top: 0.5rem; }
+
+/* Número de inscrição ou protocolo na tela de confirmação */
+.inscricao__protocolo {
+  display: inline-block;
+  margin: 0.25rem auto 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--superficie-2);
+  border-radius: 6px;
+  font-family: var(--fonte-titulo);
+  font-size: 0.9rem;
+  color: var(--texto-2);
+}
+.inscricao__protocolo strong { margin-left: 0.4rem; font-size: 1.1rem; color: var(--tinta); letter-spacing: 0.04em; }
+
+/* ------------------------------ Envio de trabalhos ------------------------------ */
+.form-secao {
+  grid-column: 1 / -1;
+  margin: 1rem 0 -0.4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--linha);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--tinta);
+}
+.inscricao__campos > .form-secao:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+p.campo--largo { margin: 0; max-width: none; }
+
+.campo textarea {
+  width: 100%;
+  min-height: 7.5rem;
+  padding: 0.7rem 0.85rem;
+  font-family: var(--fonte-texto);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--texto);
+  background: var(--branco);
+  border: 1px solid #B8C2CE;
+  border-radius: 6px;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.campo textarea:hover { border-color: var(--ardosia); }
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0, 120, 160, 0.2);
+}
+.campo > .campo__dica:not(:last-child) { margin-top: -0.15rem; }
+
+.coautores { list-style: none; display: grid; gap: 0.75rem; }
+.coautores:empty { display: none; }
+.coautor {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem 1rem;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--fundo);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+@media (min-width: 640px) {
+  .coautor { grid-template-columns: 1.3fr 1fr; }
+  .coautor__cabecalho { grid-column: 1 / -1; }
+}
+.coautor__cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.coautor__titulo {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--azul);
+}
+.coautor__remover {
+  padding: 0.3rem 0.2rem;
+  font: 600 0.9rem var(--fonte-texto);
+  color: var(--vermelho);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.coautor__remover:hover { color: var(--vermelho-escuro); }
+.campo .coautores + .campo__erro + p { margin: 0.6rem 0 0; }
+
+/* Contador do resumo: fica visível abaixo do menu enquanto a pessoa escreve */
+.contador {
+  position: sticky;
+  top: 76px;
+  z-index: 5;
+  padding: 0.7rem 0.9rem 0.8rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  box-shadow: 0 6px 14px -12px rgba(27, 31, 42, 0.5);
+}
+.contador__texto { margin: 0 0 0.45rem; font-size: 0.95rem; color: var(--texto-2); max-width: none; }
+.contador__total { font-family: var(--fonte-titulo); font-size: 1.05rem; color: var(--tinta); }
+.contador__barra { height: 6px; background: var(--superficie-2); border-radius: 999px; overflow: hidden; }
+.contador__barra span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--grad);
+  border-radius: inherit;
+  transition: width 0.2s;
+}
+.contador.is-excedido { border-color: var(--vermelho); }
+.contador.is-excedido .contador__total,
+.contador.is-excedido .contador__resto { color: var(--vermelho); font-weight: 700; }
+.contador.is-excedido .contador__barra span { background: var(--vermelho); }
+
+/* ------------------------------ Relógio do fim das inscrições ------------------------------ */
+.relogio { margin: 0 auto 2rem; text-align: center; }
+.relogio__rotulo {
+  margin: 0 auto 0.7rem;
+  font-family: var(--fonte-titulo);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vermelho);
+}
+.relogio__numeros {
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.4rem, 1.5vw, 0.75rem);
+}
+.relogio__bloco {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  min-width: clamp(4rem, 15vw, 5.5rem);
+  padding: 0.7rem 0.5rem 0.6rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px -16px rgba(27, 31, 42, 0.45);
+}
+/* Faixa com o degradê da marca no topo de cada número */
+.relogio__bloco::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--grad);
+}
+.relogio__bloco strong {
+  font-family: var(--fonte-titulo);
+  font-size: clamp(1.6rem, 1.1rem + 2vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+.relogio__bloco small {
+  font-family: var(--fonte-titulo);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+.relogio__nota { margin: 0.7rem auto 0; font-size: 0.9rem; color: var(--texto-2); }
+
+/* Versão menor, dentro do painel da página Inscrições */
+.relogio--compacto {
+  margin: 0 0 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--linha);
+  text-align: left;
+}
+.relogio--compacto .relogio__rotulo,
+.relogio--compacto .relogio__nota { margin-left: 0; }
+.relogio--compacto .relogio__numeros { justify-content: flex-start; gap: 0.4rem; }
+.relogio--compacto .relogio__bloco { min-width: 3.6rem; padding: 0.55rem 0.35rem 0.45rem; }
+.relogio--compacto .relogio__bloco strong { font-size: 1.5rem; }
 
 /* ------------------------------ Movimento reduzido ------------------------------ */
 @media (prefers-reduced-motion: reduce) {

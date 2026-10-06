@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>1º Simpósio de Urgência e Emergência</title>
-<meta name="description" content="1º Simpósio de Urgência e Emergência da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE). 27 e 28 de novembro de 2026, UNIGRANRIO Barra da Tijuca. Atendimento ao paciente grave na urgência, inscrições e submissão de trabalhos.">
+<meta name="description" content="1º Simpósio de Urgência e Emergência da Secretaria Municipal de Saúde do Rio de Janeiro (SUBHUE). 3 e 4 de dezembro de 2026, UNIGRANRIO Barra da Tijuca. Atendimento ao paciente grave na urgência, inscrições e submissão de trabalhos.">
 <meta property="og:title" content="1º Simpósio de Urgência e Emergência">
-<meta property="og:description" content="27 e 28 de novembro de 2026 · UNIGRANRIO, Barra da Tijuca · 250 vagas. Secretaria Municipal de Saúde do Rio de Janeiro / SUBHUE.">
+<meta property="og:description" content="3 e 4 de dezembro de 2026 · UNIGRANRIO, Barra da Tijuca · vagas limitadas. Secretaria Municipal de Saúde do Rio de Janeiro / SUBHUE.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://anamazza.github.io/Congresso_SUE/assets/capa.jpg">
-<meta property="og:url" content="https://anamazza.github.io/Congresso_SUE/">
-<link rel="canonical" href="https://anamazza.github.io/Congresso_SUE/">
-<!-- Se o site ganhar um domínio próprio, troque o endereço nas três linhas acima. -->
+<meta property="og:image" content="https://diid.subhue.org/static-html/congresso-sue/assets/capa.jpg">
+<meta property="og:url" content="https://diid.subhue.org/static-html/congresso-sue/">
+<link rel="canonical" href="https://diid.subhue.org/static-html/congresso-sue/">
+<!-- Endereço oficial do site. Se ele mudar, troque nas três linhas acima. -->
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,6 +71,7 @@
             <summary>Trabalhos</summary>
             <ul class="submenu">
               <li><a href="#/trabalhos">Submissão de trabalhos</a></li>
+              <li><a href="#/submissao">Enviar trabalho</a></li>
               <li><a href="#/trabalhos/eixos">Eixos temáticos</a></li>
               <li><a href="#/trabalhos/avaliacao">Avaliação e apresentação</a></li>
               <li><a href="#/normas">Normas de submissão</a></li>
@@ -108,8 +109,8 @@
         <ul class="fatos" aria-label="Informações principais do evento">
           <li>
             <span class="fato__rotulo">Quando</span>
-            <strong>27 e 28 de novembro de 2026</strong>
-            <span>sexta-feira e sábado</span>
+            <strong>3 e 4 de dezembro de 2026</strong>
+            <span>quinta e sexta-feira</span>
           </li>
           <li>
             <span class="fato__rotulo">Onde</span>
@@ -117,16 +118,28 @@
             <span>Rio de Janeiro, RJ · presencial</span>
           </li>
           <li>
-            <span class="fato__rotulo">Vagas</span>
-            <strong>250 participantes</strong>
-            <span>por ordem de inscrição</span>
+            <span class="fato__rotulo">Inscrições</span>
+            <strong>Vagas limitadas</strong>
+            <span>de <span data-config="inscricoes.inicio">a divulgar</span> a <span data-config="inscricoes.fim">a divulgar</span></span>
           </li>
           <li>
             <span class="fato__rotulo">Contagem</span>
-            <strong id="contagem">Novembro de 2026</strong>
+            <strong id="contagem">Dezembro de 2026</strong>
             <span id="contagem-sub">em breve</span>
           </li>
         </ul>
+
+        <!-- Relógio do fim das inscrições (prazo em CONFIG.inscricoes.fim) -->
+        <div class="relogio" id="relogio-inicio" data-relogio="inscricoes" hidden>
+          <p class="relogio__rotulo">As inscrições encerram em</p>
+          <div class="relogio__numeros" role="timer">
+            <span class="relogio__bloco"><strong data-unidade="dias">0</strong><small data-rotulo="dias">dias</small></span>
+            <span class="relogio__bloco"><strong data-unidade="horas">00</strong><small>horas</small></span>
+            <span class="relogio__bloco"><strong data-unidade="minutos">00</strong><small>min</small></span>
+            <span class="relogio__bloco"><strong data-unidade="segundos">00</strong><small>seg</small></span>
+          </div>
+          <p class="relogio__nota">Até <span data-config="inscricoes.fim">a divulgar</span>, às 23h59, horário de Brasília</p>
+        </div>
 
         <div class="hero__acoes">
           <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Inscreva-se" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
@@ -149,8 +162,8 @@
     <div class="container atalhos-wrap">
       <ul class="atalhos" aria-label="Páginas do site">
         <li><a class="atalho" href="#/evento"><strong>O evento</strong><span>Objetivos, público-alvo e o foco no paciente grave.</span><em>Saiba mais</em></a></li>
-        <li><a class="atalho" href="#/programacao"><strong>Programação</strong><span>Palestras, mesas-redondas e pôsteres nos dias 27 e 28.</span><em>Ver programação</em></a></li>
-        <li><a class="atalho" href="#/trabalhos"><strong>Trabalhos científicos</strong><span>Eixos temáticos, prazos e regras de submissão.</span><em>Como participar</em></a></li>
+        <li><a class="atalho" href="#/programacao"><strong>Programação</strong><span>Palestras, mesas-redondas e pôsteres nos dias 3 e 4 de dezembro.</span><em>Ver programação</em></a></li>
+        <li><a class="atalho" href="#/trabalhos"><strong>Trabalhos científicos</strong><span>Envio até 31/10. Eixos temáticos e regras de submissão.</span><em>Como participar</em></a></li>
         <li><a class="atalho" href="#/local"><strong>Local</strong><span>UNIGRANRIO, Campus Barra da Tijuca. Endereço e mapa.</span><em>Ver local</em></a></li>
       </ul>
     </div>
@@ -212,10 +225,10 @@
       <div class="dias">
         <article class="dia">
           <header class="dia__cabecalho">
-            <span class="dia__numero">27</span>
+            <span class="dia__numero">3</span>
             <div>
-              <strong>Sexta-feira</strong><br>
-              <span>27 de novembro de 2026</span>
+              <strong>Quinta-feira</strong><br>
+              <span>3 de dezembro de 2026</span>
             </div>
           </header>
           <ol class="agenda">
@@ -237,10 +250,10 @@
 
         <article class="dia">
           <header class="dia__cabecalho">
-            <span class="dia__numero">28</span>
+            <span class="dia__numero">4</span>
             <div>
-              <strong>Sábado</strong><br>
-              <span>28 de novembro de 2026</span>
+              <strong>Sexta-feira</strong><br>
+              <span>4 de dezembro de 2026</span>
             </div>
           </header>
           <ol class="agenda">
@@ -274,26 +287,147 @@
 
   <!-- ===================== INSCRIÇÕES ===================== -->
   <section class="pagina" data-pagina="inscricoes" data-titulo="Inscrições" hidden>
-    <div class="container grid-2">
-      <div>
-        <p class="eyebrow">Inscrições</p>
-        <h1>Garanta uma das 250 vagas</h1>
-        <p class="lead">As inscrições serão feitas exclusivamente pela plataforma oficial do evento. As vagas são limitadas à capacidade do auditório e preenchidas por ordem de inscrição.</p>
-        <ul class="regras">
-          <li>A inscrição é pessoal e intransferível.</li>
-          <li>Após se inscrever, acompanhe as orientações da organização sobre a confirmação da participação.</li>
-          <li>O credenciamento acontece no local, nos dias do evento.</li>
-          <li>Participantes que cumprirem os critérios de frequência recebem certificado. <a href="#/cronograma/certificacao">Saiba mais sobre a certificação</a>.</li>
-        </ul>
+    <div class="container">
+      <div class="grid-2">
+        <div>
+          <p class="eyebrow">Inscrições</p>
+          <h1>Garanta a sua vaga</h1>
+          <p class="lead">As inscrições são feitas exclusivamente pelo formulário desta página. As vagas são limitadas à capacidade do auditório e preenchidas por ordem de inscrição.</p>
+          <ul class="regras">
+            <li>A inscrição é pessoal e intransferível.</li>
+            <li>Só quem está inscrito pode submeter trabalhos. A submissão é feita pelo site, na <a href="#/submissao">área do inscrito</a>.</li>
+            <li>Após se inscrever, acompanhe as orientações da organização sobre a confirmação da participação.</li>
+            <li>O credenciamento acontece no local, nos dias do evento.</li>
+            <li>Participantes que cumprirem os critérios de frequência recebem certificado. <a href="#/cronograma/certificacao">Saiba mais sobre a certificação</a>.</li>
+          </ul>
+        </div>
+        <div class="painel">
+          <div class="relogio relogio--compacto" id="relogio-inscricoes" data-relogio="inscricoes" hidden>
+            <p class="relogio__rotulo">As inscrições encerram em</p>
+            <div class="relogio__numeros" role="timer">
+              <span class="relogio__bloco"><strong data-unidade="dias">0</strong><small data-rotulo="dias">dias</small></span>
+              <span class="relogio__bloco"><strong data-unidade="horas">00</strong><small>horas</small></span>
+              <span class="relogio__bloco"><strong data-unidade="minutos">00</strong><small>min</small></span>
+              <span class="relogio__bloco"><strong data-unidade="segundos">00</strong><small>seg</small></span>
+            </div>
+            <p class="relogio__nota">Até <span data-config="inscricoes.fim">a divulgar</span>, às 23h59, horário de Brasília</p>
+          </div>
+          <dl class="painel__lista">
+            <div><dt>Abertura</dt><dd data-config="inscricoes.inicio">a divulgar</dd></div>
+            <div><dt>Encerramento</dt><dd data-config="inscricoes.fim">a divulgar</dd></div>
+            <div><dt>Vagas</dt><dd>Limitadas</dd></div>
+          </dl>
+          <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Preencher a inscrição" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
+        </div>
       </div>
-      <div class="painel">
-        <dl class="painel__lista">
-          <div><dt>Abertura</dt><dd data-config="inscricoes.inicio">a divulgar</dd></div>
-          <div><dt>Encerramento</dt><dd data-config="inscricoes.fim">a divulgar</dd></div>
-          <div><dt>Plataforma</dt><dd data-config="inscricoes.plataforma">a divulgar</dd></div>
-          <div><dt>Vagas</dt><dd><span data-config="inscricoes.vagas">250</span> participantes</dd></div>
-        </dl>
-        <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Inscreva-se" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
+
+      <!-- Formulário de inscrição. O destino das respostas fica em CONFIG.formulario (js/main.js). -->
+      <div class="bloco" id="formulario">
+        <div class="inscricao">
+          <header class="inscricao__cabecalho">
+            <p class="eyebrow">Formulário de inscrição</p>
+            <h2>Preencha seus dados</h2>
+            <p class="nota">Todos os campos são obrigatórios, exceto quando indicado. Os dados servem para organizar o simpósio e emitir o certificado, conforme o <a href="#/privacidade">aviso de privacidade</a>.</p>
+          </header>
+
+          <p class="inscricao__aviso" id="ins-aviso" hidden></p>
+
+          <form class="inscricao__form" id="form-inscricao" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Dados do participante</legend>
+
+              <div class="campo campo--largo">
+                <label for="ins-nome">Nome completo</label>
+                <input id="ins-nome" name="nome" type="text" autocomplete="name" maxlength="120" required aria-describedby="ins-nome-dica ins-nome-erro">
+                <p class="campo__dica" id="ins-nome-dica">Escreva como deve sair no certificado.</p>
+                <p class="campo__erro" id="ins-nome-erro" hidden></p>
+              </div>
+
+              <div class="campo">
+                <label for="ins-cpf">CPF</label>
+                <input id="ins-cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" required aria-describedby="ins-cpf-erro">
+                <p class="campo__erro" id="ins-cpf-erro" hidden></p>
+              </div>
+
+              <div class="campo">
+                <label for="ins-celular">Celular com DDD</label>
+                <input id="ins-celular" name="celular" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="15" placeholder="(21) 99999-9999" required aria-describedby="ins-celular-erro">
+                <p class="campo__erro" id="ins-celular-erro" hidden></p>
+              </div>
+
+              <div class="campo campo--largo">
+                <label for="ins-email">E-mail</label>
+                <input id="ins-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="ins-email-dica ins-email-erro">
+                <p class="campo__dica" id="ins-email-dica">A confirmação da vaga e os avisos do simpósio chegam neste endereço.</p>
+                <p class="campo__erro" id="ins-email-erro" hidden></p>
+              </div>
+
+              <div class="campo">
+                <label for="ins-categoria">Categoria profissional</label>
+                <select id="ins-categoria" name="categoria" required aria-describedby="ins-categoria-erro">
+                  <option value="">Selecione</option>
+                  <option>Médico(a)</option>
+                  <option>Enfermeiro(a)</option>
+                  <option>Técnico(a) ou auxiliar de enfermagem</option>
+                  <option>Fisioterapeuta</option>
+                  <option>Farmacêutico(a)</option>
+                  <option>Psicólogo(a)</option>
+                  <option>Assistente social</option>
+                  <option>Outra categoria da saúde</option>
+                  <option>Gestor(a) de serviço de saúde</option>
+                  <option>Residente</option>
+                  <option>Estudante</option>
+                  <option>Outra área</option>
+                </select>
+                <p class="campo__erro" id="ins-categoria-erro" hidden></p>
+              </div>
+
+              <div class="campo">
+                <label for="ins-instituicao">Instituição ou unidade</label>
+                <input id="ins-instituicao" name="instituicao" type="text" autocomplete="organization" maxlength="120" required aria-describedby="ins-instituicao-erro">
+                <p class="campo__erro" id="ins-instituicao-erro" hidden></p>
+              </div>
+
+              <fieldset class="campo campo--largo campo--opcoes">
+                <legend>Pretende submeter trabalho científico? <span class="campo__opcional">opcional</span></legend>
+                <div class="opcoes">
+                  <label class="opcao"><input type="radio" name="trabalho" value="Sim"> Sim</label>
+                  <label class="opcao"><input type="radio" name="trabalho" value="Não"> Não</label>
+                  <label class="opcao"><input type="radio" name="trabalho" value="Ainda não sei"> Ainda não sei</label>
+                </div>
+              </fieldset>
+
+              <div class="campo campo--largo campo--aceite">
+                <label class="opcao" for="ins-aceite">
+                  <input id="ins-aceite" name="aceite" type="checkbox" required aria-describedby="ins-aceite-erro">
+                  <span>Li e concordo com as normas do <a data-config-href="edital.url" href="assets/Edital.docx">edital</a> e com o <a href="#/privacidade">aviso de privacidade</a>.</span>
+                </label>
+                <p class="campo__erro" id="ins-aceite-erro" hidden></p>
+              </div>
+
+              <!-- Campo invisível contra robôs de spam: pessoas não o veem nem preenchem -->
+              <div class="campo--isca" aria-hidden="true">
+                <label for="ins-site">Deixe este campo em branco</label>
+                <input id="ins-site" name="site" type="text" tabindex="-1" autocomplete="off">
+              </div>
+            </fieldset>
+
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit" id="ins-enviar">Enviar inscrição</button>
+              <p class="inscricao__status" id="ins-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+
+          <div class="inscricao__sucesso" id="ins-sucesso" tabindex="-1" hidden>
+            <svg class="inscricao__icone" width="56" height="56" viewBox="0 0 56 56" aria-hidden="true" focusable="false"><circle cx="28" cy="28" r="26" fill="none" stroke="currentColor" stroke-width="3"/><path d="M17 29l7.5 7.5L39.5 21" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p class="eyebrow">Inscrição enviada</p>
+            <h2>Recebemos a sua inscrição<span data-sucesso="nome"></span>.</h2>
+            <p class="inscricao__protocolo">Número de inscrição <strong data-sucesso="protocolo"></strong></p>
+            <p>Enviamos uma confirmação para <strong data-sucesso="email"></strong>. Se não chegar em alguns minutos, olhe a caixa de spam. A organização também vai enviar as orientações sobre a confirmação da vaga.</p>
+            <p class="nota">Guarde o número de inscrição. Para enviar trabalho, use o mesmo CPF e o mesmo e-mail na <a href="#/submissao">área do inscrito</a>. Para corrigir algum dado, fale com a organização pela página <a href="#/contato">Contato</a>.</p>
+            <button class="btn btn--secundario" type="button" data-novo>Fazer outra inscrição</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -304,17 +438,18 @@
       <header class="pagina__cabecalho">
         <p class="eyebrow">Trabalhos científicos</p>
         <h1>Apresente a experiência do seu serviço</h1>
-        <p class="lead">Serão aceitos trabalhos científicos e relatos de experiência relacionados à urgência e emergência. Os trabalhos aprovados são apresentados na modalidade pôster ou painel, durante o simpósio.</p>
+        <p class="lead">Serão aceitos estudos originais (observacionais ou de intervenção), relatos de caso e revisões sistemáticas na área de urgência e emergência. Os trabalhos aprovados são apresentados em pôster ou painel durante o simpósio.</p>
       </header>
 
       <div class="grid-2">
         <div>
           <h2 class="subtitulo">Como enviar</h2>
           <ul class="regras">
-            <li>O envio é feito exclusivamente pela plataforma de submissão, dentro do prazo do cronograma.</li>
-            <li>Trabalhos enviados após o prazo não serão considerados.</li>
-            <li>Siga as normas de formatação e identificação definidas pela Comissão Organizadora, que serão publicadas neste site.</li>
-            <li>O resultado da avaliação é comunicado aos autores pelo canal informado pela organização.</li>
+            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/submissao">área do inscrito</a>.</li>
+            <li>Cada trabalho precisa ter um apresentador inscrito no simpósio.</li>
+            <li>Trabalhos enviados após o prazo final não serão considerados.</li>
+            <li>O resumo tem até 2.050 caracteres sem espaços, com introdução, métodos, resultados e conclusões. Veja as <a href="#/normas">normas de submissão</a> antes de enviar.</li>
+            <li>O resultado final é comunicado aos autores pelo canal informado pela organização.</li>
           </ul>
         </div>
         <div class="painel">
@@ -322,7 +457,7 @@
           <dl class="painel__lista">
             <div><dt>Abertura</dt><dd data-config="submissao.inicio">a divulgar</dd></div>
             <div><dt>Prazo final</dt><dd data-config="submissao.prazo">a divulgar</dd></div>
-            <div><dt>Plataforma</dt><dd data-config="submissao.plataforma">a divulgar</dd></div>
+            <div><dt>Resultado</dt><dd data-config="datas.aprovados">a divulgar</dd></div>
             <div><dt>Modalidade</dt><dd>Pôster ou painel</dd></div>
           </dl>
           <a class="btn btn--secundario btn--pendente" data-config-href="submissao.url" data-texto-ativo="Submeter trabalho" data-texto-pendente="Submissão em breve" href="#/trabalhos">Submissão em breve</a>
@@ -331,28 +466,13 @@
 
       <div class="bloco" id="eixos">
         <h2 class="subtitulo subtitulo--centro">Eixos temáticos</h2>
-        <p class="centro">Os trabalhos podem contemplar, entre outros, os seguintes temas:</p>
+        <p class="centro">Cada trabalho deve ser inscrito em um dos cinco eixos abaixo.</p>
         <ul class="chips">
-          <li>Atendimento às urgências e emergências</li>
-          <li>Trauma</li>
-          <li>Acidente Vascular Cerebral (AVC)</li>
-          <li>Infarto Agudo do Miocárdio (IAM)</li>
-          <li>Sepse</li>
-          <li>Parada cardiorrespiratória e reanimação cardiopulmonar</li>
-          <li>Classificação de risco</li>
-          <li>Segurança do paciente</li>
-          <li>Enfermagem em urgência e emergência</li>
-          <li>Práticas multiprofissionais</li>
-          <li>Humanização da assistência</li>
-          <li>Gestão dos serviços de urgência e emergência</li>
-          <li>Gestão de leitos</li>
-          <li>Regulação e acesso aos serviços de saúde</li>
-          <li>Organização da Rede de Urgência e Emergência</li>
-          <li>Atendimento pré-hospitalar</li>
-          <li>Educação permanente em saúde</li>
-          <li>Tecnologia e inovação em saúde</li>
-          <li>Experiências exitosas e boas práticas</li>
-          <li>Outros temas de assistência, gestão, ensino e pesquisa</li>
+          <li>Emergências clínicas do adulto</li>
+          <li>Emergências pediátricas</li>
+          <li>Trauma, queimaduras e emergências cirúrgicas</li>
+          <li>Ressuscitação, via aérea e suporte ao paciente crítico</li>
+          <li>Saúde mental, intoxicações e emergências comportamentais</li>
         </ul>
       </div>
 
@@ -367,7 +487,7 @@
             <li>Metodologia utilizada</li>
             <li>Organização e qualidade da apresentação</li>
             <li>Contribuição para a área de urgência e emergência</li>
-            <li>Aplicabilidade dos resultados ou da experiência apresentada</li>
+            <li>Aplicabilidade dos resultados apresentados</li>
           </ul>
           <p class="nota">A Comissão Científica pode solicitar ajustes ou adequações nos trabalhos submetidos.</p>
         </div>
@@ -379,6 +499,168 @@
             <li>A ausência do autor responsável no período de apresentação pode implicar a não certificação do trabalho.</li>
             <li>Autores de trabalhos aprovados e apresentados recebem certificação específica.</li>
           </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ENVIO DE TRABALHOS (área do inscrito) ===================== -->
+  <section class="pagina" data-pagina="submissao" data-titulo="Envio de trabalhos" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Área do inscrito</p>
+        <h1>Envie o seu trabalho</h1>
+        <p class="lead">O envio é feito pelo primeiro autor, que precisa estar inscrito no simpósio. Antes de começar, leia as <a href="#/normas">normas de submissão</a>.</p>
+      </header>
+
+      <div class="inscricao" id="trabalho">
+        <p class="inscricao__aviso" id="trb-aviso" hidden></p>
+
+        <form class="inscricao__form" id="form-trabalho" novalidate>
+          <fieldset class="inscricao__campos">
+            <legend class="sr-only">Envio de trabalho</legend>
+
+            <h2 class="form-secao">1. Sua inscrição</h2>
+            <p class="campo__dica campo--largo">Use o CPF e o e-mail da sua inscrição. Ainda não se inscreveu? <a href="#/inscricoes/formulario">Faça a inscrição</a> antes de enviar o trabalho.</p>
+
+            <div class="campo">
+              <label for="trb-cpf">CPF</label>
+              <input id="trb-cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" required aria-describedby="trb-cpf-erro">
+              <p class="campo__erro" id="trb-cpf-erro" hidden></p>
+            </div>
+
+            <div class="campo">
+              <label for="trb-email">E-mail da inscrição</label>
+              <input id="trb-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="trb-email-erro">
+              <p class="campo__erro" id="trb-email-erro" hidden></p>
+            </div>
+
+            <h2 class="form-secao">2. Trabalho</h2>
+
+            <div class="campo campo--largo">
+              <label for="trb-titulo">Título</label>
+              <input id="trb-titulo" name="titulo" type="text" maxlength="250" autocomplete="off" required aria-describedby="trb-titulo-dica trb-titulo-erro">
+              <p class="campo__dica" id="trb-titulo-dica">O título não entra na contagem de caracteres do resumo.</p>
+              <p class="campo__erro" id="trb-titulo-erro" hidden></p>
+            </div>
+
+            <div class="campo">
+              <label for="trb-tipo">Tipo de trabalho</label>
+              <select id="trb-tipo" name="tipo" required aria-describedby="trb-tipo-erro">
+                <option value="">Selecione</option>
+                <option>Estudo original observacional</option>
+                <option>Estudo original de intervenção</option>
+                <option>Relato de caso</option>
+                <option>Revisão sistemática</option>
+              </select>
+              <p class="campo__erro" id="trb-tipo-erro" hidden></p>
+            </div>
+
+            <div class="campo">
+              <label for="trb-eixo">Eixo temático</label>
+              <select id="trb-eixo" name="eixo" required aria-describedby="trb-eixo-erro">
+                <option value="">Selecione</option>
+                  <option>Emergências clínicas do adulto</option>
+                  <option>Emergências pediátricas</option>
+                  <option>Trauma, queimaduras e emergências cirúrgicas</option>
+                  <option>Ressuscitação, via aérea e suporte ao paciente crítico</option>
+                  <option>Saúde mental, intoxicações e emergências comportamentais</option>
+              </select>
+              <p class="campo__erro" id="trb-eixo-erro" hidden></p>
+            </div>
+
+            <h2 class="form-secao">3. Autores</h2>
+            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 9 coautores, na ordem em que devem aparecer no trabalho.</p>
+
+            <div class="campo campo--largo">
+              <ol class="coautores" id="trb-coautores"></ol>
+              <p class="campo__erro" id="trb-coautores-erro" hidden></p>
+              <p><button class="btn btn--secundario btn--pequeno" type="button" id="trb-add-coautor">Adicionar coautor</button></p>
+            </div>
+
+            <fieldset class="campo campo--largo campo--opcoes">
+              <legend>Quem vai apresentar o trabalho?</legend>
+              <div class="opcoes">
+                <label class="opcao"><input type="radio" name="apresentador" value="primeiro" checked> Eu mesmo(a)</label>
+                <label class="opcao"><input type="radio" name="apresentador" value="coautor"> Um coautor</label>
+              </div>
+            </fieldset>
+
+            <div class="campo" id="trb-apresentadorCpf-campo" hidden>
+              <label for="trb-apresentadorCpf">CPF de quem vai apresentar</label>
+              <input id="trb-apresentadorCpf" name="apresentadorCpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" aria-describedby="trb-apresentadorCpf-dica trb-apresentadorCpf-erro">
+              <p class="campo__dica" id="trb-apresentadorCpf-dica">Quem apresenta também precisa estar inscrito no simpósio.</p>
+              <p class="campo__erro" id="trb-apresentadorCpf-erro" hidden></p>
+            </div>
+
+            <h2 class="form-secao">4. Resumo</h2>
+            <p class="campo__dica campo--largo">Até 2.050 caracteres sem espaços, somando as quatro partes. Escreva só texto corrido, sem negrito, itálico, listas, tabelas, imagens ou referências. Toda abreviação deve vir por extenso na primeira vez em que aparece.</p>
+
+            <div class="contador campo--largo" id="trb-contador">
+              <p class="contador__texto"><strong class="contador__total">0</strong> de 2.050 caracteres sem espaços <span class="contador__resto"></span></p>
+              <div class="contador__barra" aria-hidden="true"><span></span></div>
+            </div>
+            <p class="campo__erro campo--largo" id="trb-resumo-erro" hidden></p>
+
+              <div class="campo campo--largo">
+                <label for="trb-introducao">Introdução</label>
+                <p class="campo__dica" id="trb-introducao-dica">Apresente o tema, o que já se sabe, as lacunas e o objetivo ou a hipótese do estudo.</p>
+                <textarea id="trb-introducao" name="introducao" rows="5" maxlength="4000" required aria-describedby="trb-introducao-dica trb-contador trb-introducao-erro"></textarea>
+                <p class="campo__erro" id="trb-introducao-erro" hidden></p>
+              </div>
+
+              <div class="campo campo--largo">
+                <label for="trb-metodos">Métodos</label>
+                <p class="campo__dica" id="trb-metodos-dica">Delineamento, local, número de participantes, critérios de inclusão e exclusão, intervenções e métodos estatísticos.</p>
+                <textarea id="trb-metodos" name="metodos" rows="5" maxlength="4000" required aria-describedby="trb-metodos-dica trb-contador trb-metodos-erro"></textarea>
+                <p class="campo__erro" id="trb-metodos-erro" hidden></p>
+              </div>
+
+              <div class="campo campo--largo">
+                <label for="trb-resultados">Resultados</label>
+                <p class="campo__dica" id="trb-resultados-dica">Sujeitos do estudo e perdas, medidas com desvio-padrão ou intervalo de confiança e significância estatística, quando pertinente.</p>
+                <textarea id="trb-resultados" name="resultados" rows="6" maxlength="4000" required aria-describedby="trb-resultados-dica trb-contador trb-resultados-erro"></textarea>
+                <p class="campo__erro" id="trb-resultados-erro" hidden></p>
+              </div>
+
+              <div class="campo campo--largo">
+                <label for="trb-conclusoes">Conclusões</label>
+                <p class="campo__dica" id="trb-conclusoes-dica">Implicações dos achados, sustentadas pelos dados. Se houver espaço, limitações e possibilidade de generalização.</p>
+                <textarea id="trb-conclusoes" name="conclusoes" rows="4" maxlength="4000" required aria-describedby="trb-conclusoes-dica trb-contador trb-conclusoes-erro"></textarea>
+                <p class="campo__erro" id="trb-conclusoes-erro" hidden></p>
+              </div>
+
+            <h2 class="form-secao">5. Declaração</h2>
+
+            <div class="campo campo--largo campo--aceite">
+              <label class="opcao" for="trb-aceite">
+                <input id="trb-aceite" name="aceite" type="checkbox" required aria-describedby="trb-aceite-erro">
+                <span>Declaro que todos os autores concordam com o envio, que o conteúdo é de autoria deles e que o trabalho segue as <a href="#/normas">normas de submissão</a> e os princípios éticos da pesquisa em saúde.</span>
+              </label>
+              <p class="campo__erro" id="trb-aceite-erro" hidden></p>
+            </div>
+
+            <div class="campo--isca" aria-hidden="true">
+              <label for="trb-site">Deixe este campo em branco</label>
+              <input id="trb-site" name="site" type="text" tabindex="-1" autocomplete="off">
+            </div>
+          </fieldset>
+
+          <div class="inscricao__envio">
+            <button class="btn btn--primario" type="submit">Enviar trabalho</button>
+            <p class="inscricao__status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+
+        <div class="inscricao__sucesso" id="trb-sucesso" tabindex="-1" hidden>
+          <svg class="inscricao__icone" width="56" height="56" viewBox="0 0 56 56" aria-hidden="true" focusable="false"><circle cx="28" cy="28" r="26" fill="none" stroke="currentColor" stroke-width="3"/><path d="M17 29l7.5 7.5L39.5 21" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p class="eyebrow">Trabalho enviado</p>
+          <h2>Recebemos o seu trabalho.</h2>
+          <p class="inscricao__protocolo">Protocolo <strong data-sucesso="protocolo"></strong></p>
+          <p><strong data-sucesso="titulo"></strong></p>
+          <p>Enviamos uma confirmação para <strong data-sucesso="email"></strong>. O resultado final da avaliação sai em <span data-config="datas.aprovados">a divulgar</span>.</p>
+          <p class="nota">Guarde o protocolo. Cada autor pode enviar até 3 trabalhos como primeiro autor.</p>
+          <button class="btn btn--secundario" type="button" data-novo>Enviar outro trabalho</button>
         </div>
       </div>
     </div>
@@ -447,10 +729,10 @@
               <tr><td>Encerramento das inscrições</td><td data-config="inscricoes.fim">a divulgar</td></tr>
               <tr><td>Encerramento da submissão de trabalhos</td><td data-config="submissao.prazo">a divulgar</td></tr>
               <tr><td>Período de avaliação dos trabalhos</td><td data-config="datas.avaliacao">a divulgar</td></tr>
-              <tr><td>Divulgação dos trabalhos aprovados</td><td data-config="datas.aprovados">a divulgar</td></tr>
+              <tr><td>Resultado final dos trabalhos</td><td data-config="datas.aprovados">a divulgar</td></tr>
               <tr><td>Divulgação da programação final</td><td data-config="datas.programacao">a divulgar</td></tr>
-              <tr class="destaque"><td>Simpósio · 1º dia</td><td>27/11/2026</td></tr>
-              <tr class="destaque"><td>Simpósio · 2º dia</td><td>28/11/2026</td></tr>
+              <tr class="destaque"><td>Simpósio · 1º dia</td><td>03/12/2026</td></tr>
+              <tr class="destaque"><td>Simpósio · 2º dia</td><td>04/12/2026</td></tr>
               <tr><td>Apresentação dos trabalhos aprovados</td><td data-config="datas.apresentacao">a divulgar</td></tr>
               <tr><td>Disponibilização dos certificados</td><td data-config="datas.certificados">a divulgar</td></tr>
             </tbody>
@@ -512,7 +794,7 @@
         <details class="faq__item">
           <summary>Como faço a inscrição?</summary>
           <div>
-            <p>Exclusivamente pela plataforma oficial do evento, cujo link será publicado na página <a href="#/inscricoes">Inscrições</a>. São 250 vagas, preenchidas por ordem de inscrição. A inscrição é pessoal e intransferível.</p>
+            <p>Pelo <a href="#/inscricoes/formulario">formulário de inscrição</a> da página Inscrições, neste site. Inscrições de <span data-config="inscricoes.inicio">a divulgar</span> a <span data-config="inscricoes.fim">a divulgar</span>. As vagas são limitadas e preenchidas por ordem de inscrição. A inscrição é pessoal e intransferível.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -524,19 +806,20 @@
         <details class="faq__item">
           <summary>Quando e onde acontece?</summary>
           <div>
-            <p>Nos dias 27 e 28 de novembro de 2026, sexta-feira e sábado, na UNIGRANRIO, Campus Barra da Tijuca, Av. Ayrton Senna, 2.200, Rio de Janeiro. O simpósio é presencial. Veja a página <a href="#/local">Local</a>.</p>
+            <p>Nos dias 3 e 4 de dezembro de 2026, quinta e sexta-feira, na UNIGRANRIO, Campus Barra da Tijuca, Av. Ayrton Senna, 2.200, Rio de Janeiro. O simpósio é presencial. Veja a página <a href="#/local">Local</a>.</p>
           </div>
         </details>
         <details class="faq__item">
           <summary>Que tipos de trabalho posso enviar?</summary>
           <div>
-            <p>Trabalhos científicos e relatos de experiência relacionados à urgência e emergência, dentro dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio. O envio é feito pela plataforma de submissão, dentro do prazo do cronograma. Veja as <a href="#/normas">normas de submissão</a>.</p>
+            <p>Estudos originais (observacionais ou de intervenção), relatos de caso e revisões sistemáticas na área de urgência e emergência, dentro de um dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio. Só quem está inscrito pode submeter, pelo site, na <a href="#/submissao">área do inscrito</a>. Prazo final: <span data-config="submissao.prazo">a divulgar</span>.</p>
+            <p>Cada autor pode enviar até 3 trabalhos como primeiro autor, e cada trabalho pode ter até 10 autores e coautores. O resumo tem limite de 2.050 caracteres, sem contar os espaços. Veja as <a href="#/normas">normas de submissão</a>.</p>
           </div>
         </details>
         <details class="faq__item">
           <summary>Como os trabalhos são avaliados?</summary>
           <div>
-            <p>Pela Comissão Científica, considerando a adequação do tema, a relevância, a clareza dos objetivos, a metodologia, a organização, a contribuição para a área e a aplicabilidade dos resultados. A comissão pode pedir ajustes. O resultado é comunicado aos autores pelo canal informado pela organização.</p>
+            <p>Pela Comissão Científica, considerando a adequação do tema, a relevância, a clareza dos objetivos, a metodologia, a organização, a contribuição para a área e a aplicabilidade dos resultados. A comissão pode pedir ajustes. O resultado final sai em <span data-config="datas.aprovados">a divulgar</span> e é comunicado aos autores pelo canal informado pela organização.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -573,55 +856,68 @@
       <header class="pagina__cabecalho">
         <p class="eyebrow">Normas de submissão</p>
         <h1>Como preparar e enviar o seu trabalho</h1>
-        <p class="lead">Regras para o envio de trabalhos científicos e relatos de experiência. Os itens marcados como "a divulgar" serão definidos pela Comissão Científica e atualizados nesta página.</p>
+        <p class="lead">Regras para o envio de resumos ao simpósio, conforme o edital. Os itens marcados como "a divulgar" serão definidos pela Comissão Científica e atualizados nesta página.</p>
       </header>
 
       <div class="grid-2">
         <div>
-          <h2 class="subtitulo">Modalidades</h2>
+          <h2 class="subtitulo">Tipos de trabalho aceitos</h2>
           <ul class="regras">
-            <li><strong>Trabalho científico:</strong> pesquisa concluída ou em andamento, com método definido e resultados, ainda que parciais.</li>
-            <li><strong>Relato de experiência:</strong> descrição de uma prática, projeto ou intervenção desenvolvida em serviço de saúde, com os resultados observados e as lições aprendidas.</li>
+            <li>Estudos originais, observacionais ou de intervenção</li>
+            <li>Relatos de caso</li>
+            <li>Revisões sistemáticas</li>
           </ul>
+          <p class="nota">Os trabalhos devem ser da área de urgência e emergência. Trabalhos de outras áreas do conhecimento não serão aceitos.</p>
+
           <h2 class="subtitulo">Estrutura do resumo</h2>
+          <p>O resumo deve apresentar introdução, métodos, resultados e conclusões. Veja o que a Comissão Científica recomenda para cada parte.</p>
           <ol class="regras regras--numeradas">
-            <li>Título</li>
-            <li>Autores e instituição de cada um, com indicação do autor responsável pela apresentação</li>
-            <li>Eixo temático, conforme a <a href="#/trabalhos/eixos">lista de eixos</a></li>
-            <li>Introdução</li>
-            <li>Objetivo</li>
-            <li>Método, ou descrição da experiência no caso do relato</li>
-            <li>Resultados</li>
-            <li>Conclusão ou considerações finais</li>
-            <li>Palavras-chave</li>
+            <li><strong>Introdução.</strong> Apresente o tema de forma envolvente. Se possível, inclua uma breve revisão do que já se sabe, as lacunas na literatura e o objetivo ou a hipótese do estudo.</li>
+            <li><strong>Métodos.</strong> Descreva o delineamento do estudo, o local de realização, o número de participantes, os critérios de inclusão e exclusão, as intervenções, se houver, e os métodos estatísticos.</li>
+            <li><strong>Resultados.</strong> Comece pelos sujeitos do estudo, com os critérios de inclusão e exclusão e as eventuais razões de perdas. Traga as medidas numéricas com desvio-padrão ou intervalo de confiança (IC 95%) e informe a significância estatística ou o poder do estudo, quando pertinente.</li>
+            <li><strong>Conclusões.</strong> Aponte as implicações dos achados, sem opiniões pessoais que não tenham dados para sustentá-las. Havendo espaço, discuta as limitações do estudo e a possibilidade de generalizar os resultados.</li>
           </ol>
+          <p class="nota">Não serão aceitos trabalhos com informações incompletas ou do tipo "os resultados serão apresentados futuramente".</p>
         </div>
         <div class="painel">
           <h2 class="subtitulo">Limites e formato</h2>
           <dl class="painel__lista">
-            <div><dt>Palavras</dt><dd data-config="normas.maxPalavras">a divulgar</dd></div>
+            <div><dt>Resumo</dt><dd data-config="normas.maxCaracteres">a divulgar</dd></div>
             <div><dt>Autores</dt><dd data-config="normas.maxAutores">a divulgar</dd></div>
             <div><dt>Por autor</dt><dd data-config="normas.maxTrabalhosPorAutor">a divulgar</dd></div>
             <div><dt>Pôster</dt><dd data-config="normas.poster">a divulgar</dd></div>
             <div><dt>Idioma</dt><dd data-config="normas.idioma">a divulgar</dd></div>
           </dl>
-          <p class="nota">Os arquivos oficiais aparecem abaixo assim que forem publicados.</p>
+          <p class="nota">O título e os nomes dos autores não entram na contagem de caracteres. Os arquivos oficiais aparecem abaixo assim que forem publicados.</p>
           <p><a class="btn btn--secundario" data-config-href="submissao.normas" data-pendente="ocultar" href="#">Baixar as normas em PDF</a></p>
           <p><a class="btn btn--secundario" data-config-href="submissao.modeloPoster" data-pendente="ocultar" href="#">Baixar o modelo de pôster</a></p>
           <a class="btn btn--primario btn--pendente" data-config-href="submissao.url" data-texto-ativo="Submeter trabalho" data-texto-pendente="Submissão em breve" href="#/trabalhos">Submissão em breve</a>
         </div>
       </div>
 
-      <div class="bloco">
-        <h2 class="subtitulo">Regras gerais</h2>
-        <ul class="regras">
-          <li>O envio é feito exclusivamente pela plataforma de submissão, dentro do prazo do <a href="#/cronograma">cronograma</a>. Trabalhos enviados após o prazo não serão considerados.</li>
-          <li>O trabalho deve se relacionar à urgência e emergência e a um dos eixos temáticos do simpósio.</li>
-          <li>A Comissão Científica avalia os trabalhos pelos <a href="#/trabalhos/avaliacao">critérios publicados</a> e pode solicitar ajustes ou adequações.</li>
-          <li>O resultado da avaliação é comunicado aos autores pelo canal informado pela organização.</li>
-          <li>Os trabalhos aprovados são apresentados em pôster ou painel, no dia e horário definidos pela Comissão Organizadora. A ausência do autor responsável pode implicar a não certificação do trabalho.</li>
-          <li>Ao submeter, os autores declaram que o conteúdo é de sua autoria e que respeita as normas éticas aplicáveis à pesquisa e ao relato de experiências em saúde.</li>
-        </ul>
+      <div class="bloco grid-2 grid-2--igual">
+        <div>
+          <h2 class="subtitulo">Regras gerais</h2>
+          <ul class="regras">
+            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/submissao">área do inscrito</a>, dentro do prazo do <a href="#/cronograma">cronograma</a>. Trabalhos enviados após o prazo não serão considerados.</li>
+            <li>Cada trabalho deve ter um apresentador inscrito no simpósio.</li>
+            <li>Cada autor pode submeter no máximo 3 trabalhos como primeiro autor. Cada trabalho pode ter até 10 autores, somando autores e coautores.</li>
+            <li>O trabalho deve se encaixar em um dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio.</li>
+            <li>A Comissão Científica avalia os trabalhos pelos <a href="#/trabalhos/avaliacao">critérios publicados</a> e pode solicitar ajustes ou adequações.</li>
+            <li>Os trabalhos aprovados são apresentados em pôster ou painel, no dia e horário definidos pela Comissão Organizadora. A ausência do autor responsável pode implicar a não certificação do trabalho.</li>
+            <li>Ao submeter, os autores declaram que o conteúdo é de sua autoria e que respeita as normas éticas aplicáveis à pesquisa em saúde.</li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="subtitulo">Formatação do texto</h2>
+          <ul class="regras">
+            <li>Escreva de forma objetiva e clara.</li>
+            <li>Não use negrito, itálico, fontes diferenciadas ou ilustrações.</li>
+            <li>Não coloque imagens, gráficos ou listas com marcadores no texto do resumo.</li>
+            <li>Não insira referências, notas de rodapé, tabulações ou formatações especiais, como texto justificado ou hifenização.</li>
+            <li>Toda abreviação deve vir por extenso na primeira vez em que aparece.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -642,7 +938,7 @@
         <div class="painel">
           <p class="eyebrow">Sede do evento</p>
           <h2 class="subtitulo">UNIGRANRIO · Campus Barra da Tijuca</h2>
-          <p>Instituição que recebe o simpósio nos dias 27 e 28 de novembro de 2026, na Av. Ayrton Senna, 2.200, Barra da Tijuca. Veja como chegar na página <a href="#/local">Local</a>.</p>
+          <p>Instituição que recebe o simpósio nos dias 3 e 4 de dezembro de 2026, na Av. Ayrton Senna, 2.200, Barra da Tijuca. Veja como chegar na página <a href="#/local">Local</a>.</p>
         </div>
       </div>
       <div class="bloco" id="apoio-lista" hidden>
@@ -676,7 +972,7 @@
       <h2 class="subtitulo">Quem é responsável pelos dados</h2>
       <p>A Secretaria Municipal de Saúde do Rio de Janeiro, por meio da Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE), organizadora do simpósio.</p>
       <h2 class="subtitulo">Quais dados são coletados</h2>
-      <p>Os dados informados no formulário de inscrição e na submissão de trabalhos, como nome, e-mail, telefone, categoria profissional, instituição e, quando necessário para o certificado, documento de identificação. A plataforma de inscrição pode registrar também dados de acesso, como data e hora.</p>
+      <p>Os dados informados no formulário de inscrição: nome, CPF, e-mail, celular, categoria profissional, instituição e a intenção de submeter trabalho. Na submissão de trabalhos, também os dados dos autores. O sistema que recebe as inscrições registra a data e a hora de cada envio.</p>
       <h2 class="subtitulo">Para que os dados são usados</h2>
       <ul class="regras">
         <li>Organizar as inscrições, controlar as vagas e fazer o credenciamento no evento.</li>
@@ -685,7 +981,7 @@
         <li>Enviar comunicados sobre o simpósio, como confirmação de inscrição, programação e orientações.</li>
       </ul>
       <h2 class="subtitulo">Com quem os dados são compartilhados</h2>
-      <p>Com a plataforma contratada para inscrições e submissão de trabalhos e com os parceiros estritamente necessários à realização do evento, como a instituição que sedia o simpósio, para controle de acesso. Os dados não são vendidos nem usados para outras finalidades.</p>
+      <p>Com o serviço usado para receber e guardar as inscrições e os trabalhos e com os parceiros estritamente necessários à realização do evento, como a instituição que sedia o simpósio, para controle de acesso. Os dados não são vendidos nem usados para outras finalidades.</p>
       <h2 class="subtitulo">Por quanto tempo os dados ficam guardados</h2>
       <p>Pelo período necessário à realização do simpósio e à emissão e comprovação dos certificados, observados os prazos legais de guarda de documentos da administração pública.</p>
       <h2 class="subtitulo">Registros de imagem</h2>
@@ -703,7 +999,7 @@
   <div class="container rodape__inner">
     <div>
       <img class="rodape__logo" src="assets/logo-branco.png" alt="1º Simpósio de Urgência e Emergência" width="1039" height="570" loading="lazy">
-      <p>27 e 28 de novembro de 2026<br>UNIGRANRIO · Campus Barra da Tijuca · Rio de Janeiro</p>
+      <p>3 e 4 de dezembro de 2026<br>UNIGRANRIO · Campus Barra da Tijuca · Rio de Janeiro</p>
     </div>
     <div>
       <p class="eyebrow">Realização</p>
