@@ -27,8 +27,9 @@ const CONFIG = {
   SUBMISSAO_FIM: "2026-11-06", // último dia de envio, até 23h59 de Brasília
   RESULTADO: "16/11/2026",
   MAX_TRABALHOS_PRIMEIRO_AUTOR: 3,
-  MAX_AUTORES: 10,
-  MAX_CARACTERES: 2050,
+  MAX_AUTORES: 8,
+  MAX_CARACTERES: 2500, // resumo, sem contar os espaços
+  MAX_TITULO: 200,      // título, contando os espaços
 
   // E-mails de confirmação
   ENVIAR_EMAIL: true,
@@ -240,36 +241,52 @@ function registrarTrabalho(planilha, d) {
     );
   }
 
-  const titulo = texto(d.titulo, 250);
+  const titulo = texto(d.titulo, 1000);
   if (!titulo) return falha("titulo", "Informe o título do trabalho.", "titulo");
+  if (titulo.length > CONFIG.MAX_TITULO) {
+    return falha("titulo", "O título pode ter até " + CONFIG.MAX_TITULO + " caracteres, contando os espaços.", "titulo");
+  }
   const tipo = texto(d.tipo, 60);
   if (TIPOS.indexOf(tipo) < 0) return falha("tipo", "Escolha o tipo de trabalho.", "tipo");
   const eixo = texto(d.eixo, 80);
   if (EIXOS.indexOf(eixo) < 0) return falha("eixo", "Escolha o eixo temático.", "eixo");
 
+  // Coautores: nome completo, CPF e e-mail obrigatórios; instituição opcional
   const coautores = (Array.isArray(d.coautores) ? d.coautores : [])
     .map(function (c) {
-      return { nome: texto(c && c.nome, 120), instituicao: texto(c && c.instituicao, 120) };
+      return {
+        nome: texto(c && c.nome, 120),
+        cpf: soDigitos(c && c.cpf),
+        email: texto(c && c.email, 120).toLowerCase(),
+        instituicao: texto(c && c.instituicao, 120),
+      };
     })
-    .filter(function (c) { return c.nome || c.instituicao; });
-  if (coautores.some(function (c) { return c.nome.split(" ").length < 2 || !c.instituicao; })) {
-    return falha("coautores", "Informe o nome completo e a instituição de cada coautor.", "coautores");
-  }
+    .filter(function (c) { return c.nome || c.cpf || c.email || c.instituicao; });
   if (coautores.length + 1 > CONFIG.MAX_AUTORES) {
     return falha("coautores", "Cada trabalho pode ter até " + CONFIG.MAX_AUTORES + " autores, somando autores e coautores.", "coautores");
+  }
+  if (coautores.some(function (c) { return c.nome.split(" ").length < 2 || !cpfValido(c.cpf) || !emailValido(c.email); })) {
+    return falha("coautores", "Informe nome completo, CPF válido e e-mail de cada coautor.", "coautores");
+  }
+  const cpfsAutores = [cpf].concat(coautores.map(function (c) { return c.cpf; }));
+  if (cpfsAutores.some(function (c, i) { return cpfsAutores.indexOf(c) !== i; })) {
+    return falha("coautores", "O mesmo CPF aparece em mais de um autor.", "coautores");
   }
 
   let apresentador = inscricao[COL.INS_NOME];
   let cpfApresentador = formatarCpf(cpf);
   if (d.apresentador === "coautor") {
     const cpfA = soDigitos(d.apresentadorCpf);
-    if (!cpfValido(cpfA)) return falha("apresentador", "Confira o CPF de quem vai apresentar.", "apresentadorCpf");
+    const coautorA = coautores.filter(function (c) { return c.cpf === cpfA; })[0];
+    if (!coautorA) {
+      return falha("apresentador", "Escolha como apresentador um dos coautores informados.", "apresentador");
+    }
     const inscricaoA = inscritos.filter(function (l) { return soDigitos(l[COL.INS_CPF]) === cpfA; })[0];
     if (!inscricaoA) {
       return falha(
         "apresentador_nao_inscrito",
-        "Quem apresenta o trabalho também precisa estar inscrito no simpósio. Não encontramos inscrição com este CPF.",
-        "apresentadorCpf"
+        coautorA.nome + " precisa estar inscrito(a) no simpósio para apresentar. Não encontramos inscrição com o CPF informado.",
+        "apresentador"
       );
     }
     apresentador = inscricaoA[COL.INS_NOME];
@@ -306,7 +323,7 @@ function registrarTrabalho(planilha, d) {
 
   const protocolo = proximoProtocolo("TRB", trabalhos);
   const listaCoautores = coautores.map(function (c, i) {
-    return (i + 2) + ". " + c.nome + " · " + c.instituicao;
+    return (i + 2) + ". " + c.nome + " · CPF " + formatarCpf(c.cpf) + " · " + c.email + (c.instituicao ? " · " + c.instituicao : "");
   }).join("\n");
   folha.appendRow(protegerLinha([
     protocolo, new Date(), titulo, tipo, eixo, inscricao[COL.INS_NOME], formatarCpf(cpf), email,

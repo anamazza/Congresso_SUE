@@ -103,6 +103,20 @@ function criarBanco(opcoes) {
 
 // ---------- Dados de exemplo ----------
 const CPFS = ["529.982.247-25", "111.444.777-35", "935.411.347-80", "123.456.789-09"];
+// Gera um CPF válido a partir de 9 dígitos, para montar listas de coautores
+function gerarCpf(base) {
+  const d = String(base).padStart(9, "0").split("").map(Number);
+  for (let t = 9; t < 11; t++) {
+    let soma = 0;
+    for (let i = 0; i < t; i++) soma += d[i] * (t + 1 - i);
+    d.push(((soma * 10) % 11) % 10);
+  }
+  const x = d.join("");
+  return x.slice(0, 3) + "." + x.slice(3, 6) + "." + x.slice(6, 9) + "-" + x.slice(9);
+}
+function coautor(n, extra) {
+  return Object.assign({ nome: "Coautor Número" + n, cpf: gerarCpf(200000000 + n), email: "coautor" + n + "@exemplo.com", instituicao: "Unidade " + n }, extra);
+}
 function inscricao(extra) {
   return Object.assign({
     nome: "Maria da Silva", cpf: CPFS[0], email: "maria@exemplo.com", celular: "(21) 98765-4321",
@@ -114,7 +128,7 @@ function trabalho(extra) {
     cpf: CPFS[0], email: "maria@exemplo.com",
     titulo: "Sepse na sala vermelha: tempo até o antibiótico",
     tipo: "Estudo original observacional", eixo: "Emergências clínicas do adulto",
-    coautores: [{ nome: "João Souza", instituicao: "CER Barra" }],
+    coautores: [{ nome: "João Souza", cpf: gerarCpf(300000001), email: "Joao.Souza@exemplo.com", instituicao: "CER Barra" }],
     apresentador: "primeiro", apresentadorCpf: "",
     introducao: "Introdução do estudo.", metodos: "Métodos do estudo.",
     resultados: "Resultados com IC 95%.", conclusoes: "Conclusões.",
@@ -165,7 +179,7 @@ function rodar() {
     const t = b.aba("Trabalhos").dados[1];
     ok(r.ok && r.protocolo === "TRB-0001", "trabalho de inscrita recebe TRB-0001");
     ok(t[5] === "Maria da Silva" && t[6] === "529.982.247-25" && t[10] === "Maria da Silva", "primeiro autor e apresentador vêm da inscrição");
-    ok(t[8] === "2. João Souza · CER Barra" && t[9] === 2, "coautores numerados a partir do autor 2");
+    ok(t[8] === "2. João Souza · CPF " + gerarCpf(300000001) + " · joao.souza@exemplo.com · CER Barra" && t[9] === 2, "coautor gravado com nome, CPF, e-mail e instituição, a partir do autor 2");
     ok(t[16] === "Introduçãodoestudo.Métodosdoestudo.ResultadoscomIC95%.Conclusões.".length, "caracteres contados sem espaços");
     ok(t[18] === "enviado" && b.emails[b.emails.length - 1].subject.includes("TRB-0001"), "confirmação do trabalho enviada");
 
@@ -174,33 +188,70 @@ function rodar() {
     r = b.enviar("trabalho", trabalho({ titulo: "Outro", cpf: CPFS[2] }));
     ok(!r.ok && r.erro === "nao_inscrito", "CPF sem inscrição é recusado");
 
-    r = b.enviar("trabalho", trabalho({ titulo: "Com apresentador", apresentador: "coautor", apresentadorCpf: CPFS[2] }));
-    ok(!r.ok && r.erro === "apresentador_nao_inscrito" && r.campo === "apresentadorCpf", "apresentador sem inscrição é recusado");
+    const coautorNaoInscrito = { nome: "Carla Dias", cpf: CPFS[2], email: "carla@exemplo.com" };
+    r = b.enviar("trabalho", trabalho({ titulo: "Com apresentador", coautores: [coautorNaoInscrito], apresentador: "coautor", apresentadorCpf: CPFS[2] }));
+    ok(!r.ok && r.erro === "apresentador_nao_inscrito" && r.campo === "apresentador" && r.mensagem.includes("Carla Dias"), "coautor apresentador sem inscrição é recusado");
     r = b.enviar("trabalho", trabalho({ titulo: "Com apresentador", apresentador: "coautor", apresentadorCpf: CPFS[1] }));
-    ok(r.ok && b.aba("Trabalhos").dados[2][11] === "111.444.777-35", "apresentador inscrito é aceito");
+    ok(!r.ok && r.campo === "apresentador", "apresentador que não está entre os coautores é recusado");
+    const coautorInscrito = { nome: "João Inscrito", cpf: CPFS[1], email: "joao@exemplo.com" };
+    r = b.enviar("trabalho", trabalho({ titulo: "Com apresentador", coautores: [coautorInscrito], apresentador: "coautor", apresentadorCpf: CPFS[1] }));
+    ok(r.ok && b.aba("Trabalhos").dados[2][11] === "111.444.777-35", "coautor inscrito pode apresentar");
 
-    const nove = Array.from({ length: 9 }, (_, i) => ({ nome: "Coautor " + (i + 2), instituicao: "Unidade" }));
-    r = b.enviar("trabalho", trabalho({ titulo: "Dez autores", coautores: nove }));
-    ok(r.ok && b.aba("Trabalhos").dados[3][9] === 10, "dez autores no total são aceitos");
-    r = b.enviar("trabalho", trabalho({ titulo: "Onze autores", coautores: nove.concat([{ nome: "Mais Um", instituicao: "X" }]) }));
-    ok(!r.ok && r.campo === "coautores", "onze autores são recusados");
-    r = b.enviar("trabalho", trabalho({ titulo: "Sem instituição", coautores: [{ nome: "João Souza", instituicao: "" }] }));
-    ok(!r.ok && r.campo === "coautores", "coautor sem instituição é recusado");
+    const sete = Array.from({ length: 7 }, (_, i) => coautor(i + 2));
+    r = b.enviar("trabalho", trabalho({ titulo: "Oito autores", coautores: sete }));
+    ok(r.ok && b.aba("Trabalhos").dados[3][9] === 8, "oito autores no total são aceitos");
+    r = b.enviar("trabalho", trabalho({ titulo: "Nove autores", coautores: sete.concat([coautor(9)]) }));
+    ok(!r.ok && r.campo === "coautores", "nove autores são recusados");
 
     r = b.enviar("trabalho", trabalho({ titulo: "Repetido", metodos: "" }));
     ok(!r.ok && r.erro === "resumo_incompleto" && r.campo === "metodos", "resumo com parte vazia é recusado");
-    const exato = "a".repeat(2050 - 3);
+    const exato = "a".repeat(2500 - 3);
     r = b.enviar("trabalho", trabalho({ titulo: "Longo", introducao: "a b\n" + exato, metodos: "x", resultados: "y", conclusoes: "z" }));
-    ok(!r.ok && r.erro === "resumo_longo", "resumo acima de 2.050 caracteres é recusado");
+    ok(!r.ok && r.erro === "resumo_longo", "resumo acima de 2.500 caracteres é recusado");
     r = b.enviar("trabalho", trabalho({ titulo: "Sepse na sala vermelha: tempo até o antibiótico" }));
     ok(!r.ok && r.erro === "trabalho_repetido" && r.mensagem.includes("TRB-0001"), "mesmo título do mesmo autor é tratado como reenvio");
     r = b.enviar("trabalho", trabalho({ titulo: "Quarto trabalho" }));
     ok(!r.ok && r.erro === "limite_trabalhos", "quarto trabalho como primeiro autor é recusado");
-    r = b.enviar("trabalho", trabalho({ titulo: "Do João", cpf: CPFS[1], email: "joao@exemplo.com", introducao: "a".repeat(2047), metodos: "b", resultados: "c", conclusoes: "d" }));
-    ok(r.ok && r.caracteres === 2050, "resumo com exatamente 2.050 caracteres é aceito");
+    r = b.enviar("trabalho", trabalho({ titulo: "Do João", cpf: CPFS[1], email: "joao@exemplo.com", introducao: "a".repeat(2497), metodos: "b", resultados: "c", conclusoes: "d" }));
+    ok(r.ok && r.caracteres === 2500, "resumo com exatamente 2.500 caracteres é aceito");
 
     ok(b.bruto("{isso não é json").erro === "pedido_invalido", "pedido ilegível é recusado");
     ok(b.enviar("outra", {}).erro === "acao_invalida", "ação desconhecida é recusada");
+  }
+
+  // Dados dos coautores: nome, CPF e e-mail obrigatórios; instituição opcional
+  {
+    const b = criarBanco();
+    b.api.configurar();
+    b.enviar("inscricao", inscricao());
+    const casos = [
+      [{ cpf: "" }, "coautor sem CPF é recusado"],
+      [{ cpf: "123.456.789-00" }, "coautor com CPF inválido é recusado"],
+      [{ email: "" }, "coautor sem e-mail é recusado"],
+      [{ nome: "Carla" }, "coautor sem sobrenome é recusado"],
+      [{ cpf: CPFS[0] }, "coautor com o CPF do primeiro autor é recusado"],
+    ];
+    casos.forEach(([extra, msg], i) => {
+      const r = b.enviar("trabalho", trabalho({ titulo: "Caso " + i, coautores: [coautor(2, extra)] }));
+      ok(!r.ok && r.campo === "coautores", msg);
+    });
+    let r = b.enviar("trabalho", trabalho({ titulo: "Repetidos", coautores: [coautor(2), coautor(3, { cpf: coautor(2).cpf })] }));
+    ok(!r.ok && r.campo === "coautores" && r.mensagem.includes("mesmo CPF"), "dois coautores com o mesmo CPF são recusados");
+    r = b.enviar("trabalho", trabalho({ titulo: "Sem instituição", coautores: [coautor(2, { instituicao: "" })] }));
+    ok(r.ok && !b.aba("Trabalhos").dados[1][8].includes("Unidade"), "coautor sem instituição é aceito");
+  }
+
+  // Limite do título: 200 caracteres contando os espaços
+  {
+    const b = criarBanco();
+    b.api.configurar();
+    b.enviar("inscricao", inscricao());
+    const t201 = "Título " + "x".repeat(194);
+    let r = b.enviar("trabalho", trabalho({ titulo: t201 }));
+    ok(t201.length === 201 && !r.ok && r.campo === "titulo", "título com 201 caracteres é recusado");
+    const t200 = "Título " + "x".repeat(193);
+    r = b.enviar("trabalho", trabalho({ titulo: t200 }));
+    ok(t200.length === 200 && r.ok, "título com 200 caracteres é aceito");
   }
 
   // Prazo do envio de trabalhos, no fuso de Brasília
