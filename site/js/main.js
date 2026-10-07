@@ -671,9 +671,11 @@ const CONFIG = {
         },
         cpf: regraCpf,
         celular: function (v) {
-          const n = soDigitos(v).length;
-          if (!n) return "Informe um celular para contato.";
-          return n === 10 || n === 11 ? "" : "Informe o celular com DDD, por exemplo (21) 99999-9999.";
+          const d = soDigitos(v);
+          if (!d) return "Informe um celular para contato.";
+          if (d.length !== 11) return "Informe o DDD e os 9 números do celular, por exemplo (21) 99999-9999.";
+          if (d[2] !== "9") return "O número do celular começa com 9 depois do DDD, por exemplo (21) 99999-9999.";
+          return /^[1-9]{2}/.test(d) ? "" : "Confira o DDD.";
         },
         email: regraEmail,
         categoria: function (v) {
@@ -826,13 +828,75 @@ const CONFIG = {
       contador.querySelector(".contador__total").textContent = formatoNumero.format(n);
       contador.querySelector(".contador__resto").textContent = excedeu
         ? "· passou " + formatoNumero.format(n - LIMITE_RESUMO)
-        : "· restam " + formatoNumero.format(LIMITE_RESUMO - n);
+        : n === LIMITE_RESUMO ? "· limite atingido" : "· restam " + formatoNumero.format(LIMITE_RESUMO - n);
       contador.querySelector(".contador__barra span").style.width = Math.min(100, (n / LIMITE_RESUMO) * 100) + "%";
       contador.classList.toggle("is-excedido", excedeu);
     }
+
+    // Limite do resumo: como no título, o texto para de entrar ao chegar em
+    // 2.500 caracteres sem espaços, somando as quatro partes. O que passar do
+    // limite (ao digitar ou colar) é cortado, com um aviso embaixo da parte.
+    const resumoAceito = {}; // último texto aceito em cada parte
+    function guardarResumo() {
+      PARTES_RESUMO.forEach(function (nome) { resumoAceito[nome] = elT[nome].value; });
+    }
+    function semEspacos(t) {
+      return t.replace(/\s/g, "").length;
+    }
+    // Primeiros "max" caracteres que não são espaço, com os espaços entre eles
+    function cortarNoLimite(t, max) {
+      let vistos = 0;
+      for (let i = 0; i < t.length && max > 0; i++) {
+        if (/\s/.test(t[i])) continue;
+        if (++vistos === max) {
+          const c = t.charCodeAt(i);
+          return t.slice(0, c >= 0xd800 && c <= 0xdbff ? i : i + 1); // não parte um emoji ao meio
+        }
+      }
+      return max > 0 ? t : "";
+    }
+    function avisarLimite(nome, texto) {
+      PARTES_RESUMO.forEach(function (outro) {
+        document.getElementById("trb-" + outro + "-limite").textContent = outro === nome ? texto : "";
+      });
+    }
+    function limitarResumo(campo) {
+      const antes = resumoAceito[campo.name];
+      const agora = campo.value;
+      const total = contarResumo();
+      if (total > LIMITE_RESUMO && agora !== antes) {
+        // O trecho novo fica entre o começo e o fim que não mudaram; o cursor marca o fim dele
+        let fim = 0;
+        while (fim < antes.length && fim < agora.length && antes[antes.length - 1 - fim] === agora[agora.length - 1 - fim]) fim++;
+        fim = Math.min(fim, agora.length - campo.selectionEnd);
+        let ini = 0;
+        while (ini < antes.length - fim && ini < agora.length - fim && antes[ini] === agora[ini]) ini++;
+        const novo = agora.slice(ini, agora.length - fim);
+        const aceito = cortarNoLimite(novo, LIMITE_RESUMO - (total - semEspacos(novo)));
+        if (aceito !== novo) {
+          campo.value = agora.slice(0, ini) + aceito + agora.slice(agora.length - fim);
+          campo.setSelectionRange(ini + aceito.length, ini + aceito.length);
+          const limite = "Limite de " + formatoNumero.format(LIMITE_RESUMO) + " caracteres atingido. ";
+          avisarLimite(campo.name, semEspacos(novo) - semEspacos(aceito) > 1
+            ? limite + "O texto colado foi cortado: confira o final dele."
+            : limite + "Para escrever mais, apague algum trecho do resumo.");
+        }
+      } else if (total < LIMITE_RESUMO) {
+        avisarLimite("", "");
+      }
+      resumoAceito[campo.name] = campo.value;
+      atualizarContador();
+    }
     PARTES_RESUMO.forEach(function (nome) {
-      elT[nome].addEventListener("input", atualizarContador);
+      elT[nome].addEventListener("input", function (e) {
+        if (e.isComposing) return; // acento ainda sendo montado: confere ao terminar
+        limitarResumo(e.target);
+      });
+      elT[nome].addEventListener("compositionend", function (e) {
+        limitarResumo(e.target);
+      });
     });
+    guardarResumo();
     atualizarContador();
 
     // Contador do título (conta os espaços, como o banco)
@@ -963,6 +1027,8 @@ const CONFIG = {
         listaCoautores.textContent = "";
         liApresentador = null;
         renumerarCoautores();
+        guardarResumo();
+        avisarLimite("", "");
         atualizarContador();
         atualizarTitulo();
       },

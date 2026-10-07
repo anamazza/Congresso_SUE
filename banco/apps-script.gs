@@ -172,9 +172,10 @@ function registrarInscricao(planilha, d) {
   if (!cpfValido(cpf)) return falha("cpf", "Confira o CPF.", "cpf");
   const email = texto(d.email, 120).toLowerCase();
   if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+  // Celular: DDD + 9 + 8 números
   const celular = soDigitos(d.celular);
-  if (celular.length !== 10 && celular.length !== 11) {
-    return falha("celular", "Informe o celular com DDD.", "celular");
+  if (!/^[1-9]{2}9\d{8}$/.test(celular)) {
+    return falha("celular", "Informe o celular com DDD e o 9 inicial, por exemplo (21) 99999-9999.", "celular");
   }
   const categoria = texto(d.categoria, 60);
   if (CATEGORIAS.indexOf(categoria) < 0) {
@@ -239,11 +240,18 @@ function registrarTrabalho(planilha, d) {
 
   const inscritos = linhas(aba(planilha, ABAS.inscricoes), ABAS.inscricoes.colunas.length);
   const inscricao = inscritos.filter(function (l) { return soDigitos(l[COL.INS_CPF]) === cpf; })[0];
-  if (!inscricao || String(inscricao[COL.INS_EMAIL]).trim().toLowerCase() !== email) {
+  if (!inscricao) {
     return falha(
       "nao_inscrito",
-      "Não encontramos uma inscrição com este CPF e este e-mail. Confira os dados ou faça a sua inscrição antes de enviar o trabalho.",
+      "Não encontramos inscrição com este CPF. Confira os números ou faça a sua inscrição antes de enviar o trabalho.",
       "cpf"
+    );
+  }
+  if (String(inscricao[COL.INS_EMAIL]).trim().toLowerCase() !== email) {
+    return falha(
+      "email_diferente",
+      "Este e-mail não é o da inscrição deste CPF. Use o mesmo e-mail da inscrição, o endereço que recebeu a confirmação com o número de inscrição.",
+      "email"
     );
   }
 

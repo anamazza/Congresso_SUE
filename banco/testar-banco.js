@@ -163,6 +163,11 @@ function rodar() {
       [{ nome: "Maria" }, "nome"], [{ cpf: "123.456.789-00" }, "cpf"], [{ email: "maria@" }, "email"],
       [{ celular: "9876-543" }, "celular"], [{ categoria: "Astronauta" }, "categoria"], [{ instituicao: "  " }, "instituicao"],
     ];
+    const celularesRuins = [["(21) 8765-4321", "sem o 9 inicial"], ["(21) 88765-4321", "começando com 8"], ["(01) 98765-4321", "com DDD 01"], ["(20) 98765-4321", "com DDD 20"]];
+    celularesRuins.forEach(([celular, caso]) => {
+      const x = b.enviar("inscricao", inscricao({ cpf: CPFS[3], celular }));
+      ok(!x.ok && x.campo === "celular", "celular " + caso + " é recusado");
+    });
     invalidos.forEach(([extra, campo]) => {
       const x = b.enviar("inscricao", inscricao(Object.assign({ cpf: CPFS[3] }, extra)));
       ok(!x.ok && x.campo === campo, "inscrição com " + campo + " inválido é recusada");
@@ -184,9 +189,11 @@ function rodar() {
     ok(t[18] === "enviado" && b.emails[b.emails.length - 1].subject.includes("TRB-0001"), "confirmação do trabalho enviada");
 
     r = b.enviar("trabalho", trabalho({ titulo: "Outro", email: "errado@exemplo.com" }));
-    ok(!r.ok && r.erro === "nao_inscrito" && r.campo === "cpf", "e-mail diferente do da inscrição é recusado");
+    ok(!r.ok && r.erro === "email_diferente" && r.campo === "email", "e-mail diferente do da inscrição é recusado, apontando o e-mail");
     r = b.enviar("trabalho", trabalho({ titulo: "Outro", cpf: CPFS[2] }));
-    ok(!r.ok && r.erro === "nao_inscrito", "CPF sem inscrição é recusado");
+    ok(!r.ok && r.erro === "nao_inscrito" && r.campo === "cpf", "CPF sem inscrição é recusado, apontando o CPF");
+    r = b.enviar("trabalho", trabalho({ titulo: "Outro", cpf: CPFS[2], email: "errado@exemplo.com" }));
+    ok(!r.ok && r.campo === "cpf", "CPF sem inscrição e e-mail errado: aponta primeiro o CPF");
 
     const coautorNaoInscrito = { nome: "Carla Dias", cpf: CPFS[2], email: "carla@exemplo.com" };
     r = b.enviar("trabalho", trabalho({ titulo: "Com apresentador", coautores: [coautorNaoInscrito], apresentador: "coautor", apresentadorCpf: CPFS[2] }));

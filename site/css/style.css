@@ -1053,6 +1053,9 @@ ul, ol { margin: 0; padding: 0; }
 .campo__erro { color: var(--vermelho); font-weight: 600; }
 .campo__contagem { max-width: none; text-align: right; font-variant-numeric: tabular-nums; }
 .campo__contagem.is-excedido { color: var(--vermelho); font-weight: 700; }
+/* Aviso de limite do resumo: só ocupa espaço quando tem texto */
+.campo__limite { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--vermelho); font-weight: 600; }
+.campo__limite:empty { display: none; }
 
 .campo input[type="text"],
 .campo input[type="email"],
@@ -1158,7 +1161,8 @@ ul, ol { margin: 0; padding: 0; }
 
 .inscricao__sucesso { text-align: center; padding: 0.5rem 0; }
 .inscricao__sucesso:focus { outline: none; }
-.inscricao__sucesso p { margin-inline: auto; }
+/* overflow-wrap: título ou e-mail sem espaços quebra a linha em vez de vazar do bloco */
+.inscricao__sucesso p { margin-inline: auto; overflow-wrap: anywhere; }
 .inscricao__icone { display: block; margin: 0 auto 1rem; color: var(--azul); }
 .inscricao__sucesso .btn { margin-top: 0.5rem; }
 
