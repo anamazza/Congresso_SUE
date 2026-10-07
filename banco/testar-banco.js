@@ -293,6 +293,23 @@ function rodar() {
     ok(b.enviar("inscricao", inscricao({ cpf: CPFS[3], email: "c@exemplo.com" })).protocolo === "INS-0004", "apagar uma linha não repete protocolo");
   }
 
+  // Cópia da planilha de testes: mesmas regras, e-mails marcados
+  {
+    const b = criarBanco();
+    b.api.configurar();
+    ok(!b.emails.length && b.api.CONFIG.TESTE === false, "o código sai do repositório com TESTE desligado");
+    b.enviar("inscricao", inscricao());
+    ok(!b.emails[0].subject.includes("TESTE"), "fora do teste, o assunto do e-mail não leva [TESTE]");
+    b.api.CONFIG.TESTE = true;
+    ok(JSON.parse(b.api.doGet().getContent()).mensagem.startsWith("Banco de TESTE"), "no teste, doGet avisa que é o banco de teste");
+    const r = b.enviar("inscricao", inscricao({ cpf: CPFS[1], email: "joao@exemplo.com" }));
+    const m = b.emails[b.emails.length - 1];
+    ok(r.ok && r.protocolo === "INS-0002", "no teste, a inscrição segue as mesmas regras e numeração");
+    ok(m.subject.startsWith("[TESTE] Inscrição recebida") && m.body.startsWith("Este e-mail veio do ambiente de teste"), "no teste, o e-mail sai com [TESTE] no assunto e aviso no texto");
+    b.enviar("trabalho", trabalho({ cpf: CPFS[1], email: "joao@exemplo.com" }));
+    ok(b.emails[b.emails.length - 1].subject.startsWith("[TESTE] Trabalho recebido · TRB-0001"), "no teste, o e-mail do trabalho também sai marcado");
+  }
+
   const falhas = resultados.filter((r) => !r[0]);
   resultados.forEach(([passou, msg]) => console.log((passou ? "ok    " : "FALHA ") + msg));
   console.log("\n" + (resultados.length - falhas.length) + " de " + resultados.length + " verificações passaram.");

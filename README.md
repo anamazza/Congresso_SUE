@@ -143,11 +143,53 @@ se a implantação funcionou.
   assim e a coluna "E-mail de confirmação" mostra que o e-mail não saiu.
 - **Privacidade:** a planilha guarda CPF, e-mail e celular. Compartilhe só com a Comissão
   Organizadora.
-- **Modo de teste:** para ver os formulários funcionando sem gravar nada, abra o site com
-  `?teste` antes do `#`, por exemplo
-  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`.
+- **Modo de teste:** abra o site com `?teste` antes do `#`, por exemplo
+  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`. Os formulários
+  aparecem liberados, com uma faixa avisando que é teste. Sem a planilha de testes, o envio
+  só é simulado; com ela, os dados vão para lá. Veja **Ambiente de teste**, abaixo.
 - **Testes do banco:** `node banco/testar-banco.js` roda o código do Apps Script num simulador
   e confere as regras do edital. Rode sempre que mudar o código do banco.
+
+### Ambiente de teste
+
+O ambiente de teste deixa a equipe usar os formulários de verdade, com gravação na planilha e
+e-mail de confirmação, sem mudar nada do que o público vê. Ele usa uma segunda planilha, só
+para testes, e o mesmo `site/index.html` do site oficial.
+
+- Quem entra pelo endereço normal continua vendo o site como está, e os envios dele vão
+  apenas para `banco.url`.
+- Quem abre com `?teste` no endereço vê os formulários liberados, com aviso de teste, e os
+  envios vão apenas para `banco.urlTeste`. Isso vale mesmo antes da abertura ou depois do
+  prazo no site; a planilha de testes, porém, segue as datas do bloco `CONFIG` dela.
+
+Para montar:
+
+1. Crie uma planilha separada, por exemplo "Simpósio UE 2026 · Banco de TESTE". Não use a
+   planilha oficial.
+2. Repita os passos 2 a 5 de **Como instalar o banco** nessa planilha. Antes de executar
+   `configurar`, mude `TESTE: false` para `TESTE: true` no código colado. Com isso, os e-mails
+   saem com `[TESTE]` no assunto e um aviso de que nada foi registrado de verdade, e abrir o
+   endereço `/exec` mostra "Banco de TESTE ... no ar".
+3. Cole o endereço `/exec` dessa implantação em `banco.urlTeste`, em `site/js/main.js`, e
+   publique o site.
+4. Para testar, abra
+   `https://diid.subhue.org/static-html/congresso-sue/?teste#/inscricoes/formulario` ou
+   `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`.
+
+Dicas para os testes:
+
+- Use os CPFs de exemplo dos testes do banco, como 529.982.247-25, 111.444.777-35 e
+  935.411.347-80, e e-mails da própria equipe para conferir as confirmações.
+- Para testar o fim de um prazo ou o limite de vagas, mude as datas ou `VAGAS` no `CONFIG`
+  da planilha de testes e publique uma nova versão dela. A planilha oficial não muda.
+- Apague as linhas da planilha de testes quando quiser recomeçar. Os protocolos continuam a
+  partir do maior número que ainda estiver na aba.
+- Quando o código do banco mudar, atualize as duas planilhas e mantenha `TESTE: true` só na
+  de testes.
+
+O endereço com `?teste` não é secreto: ele aparece neste README. Quem o descobrir só
+consegue gravar na planilha de testes, que não tem valor oficial. Se aparecer lixo nela,
+basta apagar as linhas. Para desligar o ambiente, deixe `banco.urlTeste` vazio.
 
 ### Usar outro banco de dados
 

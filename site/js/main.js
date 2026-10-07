@@ -41,6 +41,10 @@ const CONFIG = {
     url: "",
     inscricoesEncerradas: false, // true fecha o formulário de inscrição (fecha sozinho após inscricoes.fim)
     submissaoEncerrada: false,   // true fecha o envio de trabalhos (fecha sozinho após submissao.prazo)
+    // Banco da planilha de testes. Só é usado quando o site é aberto com
+    // ?teste no endereço; quem entra pelo endereço normal nunca chega nele.
+    // Vazio = o modo de teste só simula o envio. README, seção "Ambiente de teste".
+    urlTeste: "",
   },
   contato: {
     email: "",            // ex.: "simposio.subhue@rio.rj.gov.br"
@@ -101,14 +105,17 @@ const CONFIG = {
   // ---------- Banco dos formulários: endereço e estado ----------
   const modoTeste = /[?&]teste\b/.test(window.location.search);
   const bancoCfg = CONFIG.banco || {};
-  const urlBanco = (function (url) {
+  function enderecoDoBanco(url) {
     url = String(url || "").trim();
     if (url && !/^https:\/\//i.test(url)) {
       console.warn("Banco: o endereço precisa começar com https://");
       return "";
     }
     return url;
-  })(bancoCfg.url);
+  }
+  const urlBanco = enderecoDoBanco(bancoCfg.url);
+  // No modo de teste com urlTeste preenchido, os envios vão para a planilha de testes
+  const urlBancoTeste = modoTeste ? enderecoDoBanco(bancoCfg.urlTeste) : "";
 
   // "06/11/2026" vira o início ou o fim daquele dia no horário de Brasília,
   // o mesmo que o banco usa, qualquer que seja o fuso de quem acessa
@@ -461,14 +468,14 @@ const CONFIG = {
   };
 
   function enviarAoBanco(acao, dados) {
-    if (modoTeste) {
+    if (modoTeste && !urlBancoTeste) {
       return new Promise(function (ok) {
         setTimeout(function () {
           ok({ ok: true, protocolo: (acao === "inscricao" ? "INS" : "TRB") + "-TESTE" });
         }, 700);
       });
     }
-    return fetch(urlBanco, {
+    return fetch(modoTeste ? urlBancoTeste : urlBanco, {
       method: "POST",
       // Texto simples evita a checagem prévia de CORS, que o Apps Script não responde
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -539,7 +546,9 @@ const CONFIG = {
       aviso.textContent = o.estado === "encerrado" ? o.textos.avisoEncerrado : o.textos.avisoPendente;
       aviso.hidden = false;
     } else if (modoTeste) {
-      aviso.textContent = "Modo de teste: os dados preenchidos aqui não são enviados para ninguém.";
+      aviso.textContent = urlBancoTeste
+        ? "Ambiente de teste: os envios vão para a planilha de testes, e não para a lista oficial. O e-mail de confirmação chega com [TESTE] no assunto."
+        : "Modo de teste: os dados preenchidos aqui não são enviados para ninguém.";
       aviso.classList.add("inscricao__aviso--teste");
       aviso.hidden = false;
     }

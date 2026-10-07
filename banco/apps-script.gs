@@ -6,6 +6,8 @@
    grava cada envio numa aba da planilha e manda um e-mail de confirmação.
 
    Instalação: siga a seção "Banco de dados" do README do repositório.
+   O mesmo código serve para a planilha de testes, com TESTE: true
+   (README, seção "Ambiente de teste").
    Depois de qualquer mudança neste código, publique uma nova versão em
    Implantar > Gerenciar implantações > Editar > Versão: Nova versão.
    ===================================================================== */
@@ -30,6 +32,10 @@ const CONFIG = {
   MAX_AUTORES: 8,
   MAX_CARACTERES: 2500, // resumo, sem contar os espaços
   MAX_TITULO: 200,      // título, contando os espaços
+
+  // true só na cópia ligada à planilha de testes: os e-mails saem com
+  // [TESTE] no assunto e um aviso de que nada foi registrado de verdade
+  TESTE: false,
 
   // E-mails de confirmação
   ENVIAR_EMAIL: true,
@@ -117,7 +123,7 @@ function aba(planilha, definicao) {
 
 // Abrir o endereço /exec no navegador mostra se o banco está no ar.
 function doGet() {
-  return responder({ ok: true, mensagem: "Banco do " + CONFIG.EVENTO + " no ar." });
+  return responder({ ok: true, mensagem: (CONFIG.TESTE ? "Banco de TESTE do " : "Banco do ") + CONFIG.EVENTO + " no ar." });
 }
 
 // O site envia { acao: "inscricao" | "trabalho", dados: {...} } em JSON.
@@ -439,6 +445,10 @@ function escaparHtml(t) {
 
 function enviarEmail(para, assunto, paragrafos) {
   if (!CONFIG.ENVIAR_EMAIL) return "desligado";
+  if (CONFIG.TESTE) {
+    assunto = "[TESTE] " + assunto;
+    paragrafos = ["Este e-mail veio do ambiente de teste do site. Nenhuma inscrição ou trabalho foi registrado de verdade."].concat(paragrafos);
+  }
   try {
     if (MailApp.getRemainingDailyQuota() < 1) return "não enviado: limite diário de e-mails";
     const rodape = CONFIG.EVENTO + " · " + CONFIG.SITE;
