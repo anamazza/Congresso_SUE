@@ -521,7 +521,7 @@
             <legend class="sr-only">Envio de trabalho</legend>
 
             <h2 class="form-secao">1. Sua inscrição</h2>
-            <p class="campo__dica campo--largo">Use o CPF e o e-mail da sua inscrição. Ainda não se inscreveu? <a href="#/inscricoes/formulario">Faça a inscrição</a> antes de enviar o trabalho.</p>
+            <p class="campo__dica campo--largo">Use o CPF e o e-mail da sua inscrição. Assim que os dois estiverem preenchidos, o site confere a inscrição. Ainda não se inscreveu? <a href="#/inscricoes/formulario">Faça a inscrição</a> antes de enviar o trabalho.</p>
 
             <div class="campo">
               <label for="trb-cpf">CPF</label>
@@ -534,6 +534,8 @@
               <input id="trb-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="trb-email-erro">
               <p class="campo__erro" id="trb-email-erro" hidden></p>
             </div>
+
+            <p class="inscrito campo--largo" id="trb-inscrito" aria-live="polite"></p>
 
             <h2 class="form-secao">2. Trabalho</h2>
 
@@ -571,7 +573,7 @@
             </div>
 
             <h2 class="form-secao">3. Autores</h2>
-            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 7 coautores, na ordem em que devem aparecer no trabalho. De cada coautor são pedidos nome completo, CPF e e-mail.</p>
+            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 7 coautores, na ordem em que devem aparecer no trabalho. De cada coautor são pedidos CPF, e-mail e nome completo. Se o coautor estiver inscrito no simpósio, o nome e a instituição se preenchem sozinhos.</p>
 
             <div class="campo campo--largo">
               <ol class="coautores" id="trb-coautores"></ol>

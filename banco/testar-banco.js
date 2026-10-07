@@ -300,6 +300,27 @@ function rodar() {
     ok(b.enviar("inscricao", inscricao({ cpf: CPFS[3], email: "c@exemplo.com" })).protocolo === "INS-0004", "apagar uma linha não repete protocolo");
   }
 
+  // Conferência de CPF e e-mail enquanto a pessoa preenche
+  {
+    const b = criarBanco();
+    b.api.configurar();
+    b.enviar("inscricao", inscricao());
+    const linhasAntes = JSON.stringify(b.planilha.folhas);
+    const emailsAntes = b.emails.length;
+    let r = b.enviar("conferir", { cpf: "52998224725", email: " Maria@Exemplo.com " });
+    ok(r.ok && r.nome === "Maria da Silva" && r.instituicao === "Hospital Municipal Souza Aguiar", "conferir com CPF e e-mail certos devolve nome e instituição");
+    ok(!("cpf" in r) && !("email" in r) && !("celular" in r), "conferir não devolve CPF, e-mail nem celular");
+    r = b.enviar("conferir", { cpf: CPFS[0], email: "outra@exemplo.com" });
+    ok(!r.ok && r.erro === "email_diferente" && r.campo === "email" && !r.nome, "conferir com e-mail diferente aponta o e-mail e não mostra o nome");
+    r = b.enviar("conferir", { cpf: CPFS[1], email: "maria@exemplo.com" });
+    ok(!r.ok && r.erro === "nao_inscrito" && r.campo === "cpf" && !r.nome, "conferir com CPF sem inscrição aponta o CPF e não mostra o nome");
+    r = b.enviar("conferir", { cpf: "123.456.789-00", email: "maria@exemplo.com" });
+    ok(!r.ok && r.campo === "cpf", "conferir com CPF inválido aponta o CPF");
+    r = b.enviar("conferir", {});
+    ok(!r.ok && r.campo === "cpf", "conferir sem dados é recusado");
+    ok(JSON.stringify(b.planilha.folhas) === linhasAntes && b.emails.length === emailsAntes, "conferir não grava nada nem manda e-mail");
+  }
+
   // Cópia da planilha de testes: mesmas regras, e-mails marcados
   {
     const b = criarBanco();

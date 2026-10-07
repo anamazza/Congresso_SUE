@@ -647,6 +647,8 @@ const CONFIG = {
       const primeiro = form.querySelector("input:not([type=hidden]):not([tabindex='-1'])");
       if (primeiro) primeiro.focus();
     });
+
+    return { mostrarErro: mostrarErro };
   }
 
   // ----- Formulário de inscrição -----
@@ -748,17 +750,18 @@ const CONFIG = {
       li.innerHTML =
         '<div class="coautor__cabecalho"><p class="coautor__titulo"></p>' +
         '<button class="coautor__remover" type="button">Remover</button></div>' +
-        '<div class="campo coautor__largo"><label data-parte="nome">Nome completo</label>' +
-        '<input class="coautor__nome" type="text" maxlength="120" autocomplete="off"></div>' +
         '<div class="campo"><label data-parte="cpf">CPF</label>' +
         '<input class="coautor__cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></div>' +
         '<div class="campo"><label data-parte="email">E-mail</label>' +
         '<input class="coautor__email" type="email" maxlength="120" autocomplete="off"></div>' +
+        '<p class="coautor__nota coautor__largo" aria-live="polite"></p>' +
+        '<div class="campo coautor__largo"><label data-parte="nome">Nome completo</label>' +
+        '<input class="coautor__nome" type="text" maxlength="120" autocomplete="off"></div>' +
         '<div class="campo coautor__largo"><label data-parte="instituicao">Instituição <span class="campo__opcional">opcional</span></label>' +
         '<input class="coautor__instituicao" type="text" maxlength="120" autocomplete="off"></div>';
       listaCoautores.appendChild(li);
       renumerarCoautores();
-      if (focarNovo) li.querySelector(".coautor__nome").focus();
+      if (focarNovo) li.querySelector(".coautor__cpf").focus();
     }
 
     botaoCoautor.addEventListener("click", function () {
@@ -772,7 +775,7 @@ const CONFIG = {
       li.remove();
       renumerarCoautores();
       formTrabalho.dispatchEvent(new Event("change"));
-      (vizinho ? vizinho.querySelector(".coautor__nome") : botaoCoautor).focus();
+      (vizinho ? vizinho.querySelector(".coautor__cpf") : botaoCoautor).focus();
     });
     listaCoautores.addEventListener("input", function (e) {
       if (e.target.classList.contains("coautor__cpf")) e.target.value = mascaraCpf(e.target.value);
@@ -982,7 +985,7 @@ const CONFIG = {
       },
     };
 
-    ligarFormulario({
+    const ligacaoTrabalho = ligarFormulario({
       form: formTrabalho,
       prefixo: "trb",
       acao: "trabalho",
@@ -1029,6 +1032,7 @@ const CONFIG = {
         renumerarCoautores();
         guardarResumo();
         avisarLimite("", "");
+        limparInscrito();
         atualizarContador();
         atualizarTitulo();
       },
@@ -1040,6 +1044,96 @@ const CONFIG = {
       },
     });
     renumerarCoautores();
+
+    // Conferência na hora, pelo CPF e pelo e-mail da inscrição. O banco só
+    // devolve o nome e a instituição a quem já sabe os dois; o CPF sozinho
+    // não revela nada. No envio, o banco confere tudo de novo.
+    const podeConferir = estadoSubmissao === "aberto" && (!modoTeste || !!urlBancoTeste);
+    function chaveInscricao(cpf, email) {
+      email = email.trim().toLowerCase();
+      return cpfValido(cpf) && emailValido(email) ? soDigitos(cpf) + " " + email : "";
+    }
+    function conferir(chave) {
+      const partes = chave.split(" ");
+      return enviarAoBanco("conferir", { cpf: mascaraCpf(partes[0]), email: partes[1] }).catch(function () { return null; });
+    }
+
+    // Autor 1: mostra o nome da inscrição ou aponta o campo errado
+    const linhaInscrito = document.getElementById("trb-inscrito");
+    let consultaAutor = ""; // chave da consulta em andamento
+    function limparInscrito() {
+      linhaInscrito.textContent = "";
+      linhaInscrito.classList.remove("is-ok");
+    }
+    function conferirAutor() {
+      const chave = chaveInscricao(elT.cpf.value, elT.email.value);
+      if (!chave) return limparInscrito();
+      if (!podeConferir || chave === consultaAutor) return;
+      consultaAutor = chave;
+      if (!linhaInscrito.classList.contains("is-ok")) linhaInscrito.textContent = "Conferindo a inscrição…";
+      conferir(chave).then(function (r) {
+        consultaAutor = "";
+        if (chave !== chaveInscricao(elT.cpf.value, elT.email.value)) return; // dados mudaram no meio
+        limparInscrito();
+        if (r && r.ok) {
+          linhaInscrito.textContent = "Inscrição encontrada: " + r.nome + ".";
+          linhaInscrito.classList.add("is-ok");
+        } else if (r && (r.campo === "cpf" || r.campo === "email")) {
+          ligacaoTrabalho.mostrarErro(r.campo, r.mensagem);
+        }
+      });
+    }
+    elT.cpf.addEventListener("input", limparInscrito);
+    elT.email.addEventListener("input", limparInscrito);
+    elT.cpf.addEventListener("focusout", conferirAutor);
+    elT.email.addEventListener("focusout", conferirAutor);
+
+    // Coautores inscritos: nome e instituição se preenchem a partir da inscrição.
+    // Só troca o que estiver vazio ou o que a própria conferência preencheu antes.
+    function preencherDaInscricao(li, parte, valor) {
+      const campo = li.querySelector(".coautor__" + parte);
+      const anterior = li.dataset["auto" + parte] || "";
+      if (campo.value.trim() && campo.value !== anterior) return false;
+      campo.value = valor;
+      li.dataset["auto" + parte] = valor;
+      campo.dispatchEvent(new Event("input", { bubbles: true }));
+      return !!valor;
+    }
+    listaCoautores.addEventListener("focusout", function (e) {
+      if (!podeConferir || !e.target.matches(".coautor__cpf, .coautor__email")) return;
+      const li = e.target.closest(".coautor");
+      const nota = li.querySelector(".coautor__nota");
+      const chave = chaveInscricao(li.querySelector(".coautor__cpf").value, li.querySelector(".coautor__email").value);
+      if (!chave || chave.split(" ")[0] === soDigitos(elT.cpf.value) || chave === li.dataset.chave) return;
+      li.dataset.chave = chave;
+      nota.classList.remove("is-ok");
+      nota.textContent = "Conferindo a inscrição…";
+      conferir(chave).then(function (r) {
+        if (!li.isConnected || li.dataset.chave !== chave) return;
+        if (!r) {
+          nota.textContent = "";
+          delete li.dataset.chave; // falha de conexão: tenta de novo na próxima vez
+          return;
+        }
+        const achou = !!r.ok;
+        const nome = preencherDaInscricao(li, "nome", achou ? r.nome : "");
+        const instituicao = preencherDaInscricao(li, "instituicao", achou ? r.instituicao : "");
+        nota.classList.toggle("is-ok", achou);
+        if (!achou) {
+          nota.textContent = "Sem inscrição com este CPF e e-mail. Preencha os dados à mão. Para apresentar o trabalho, o coautor precisa estar inscrito.";
+        } else {
+          nota.textContent = "Inscrito no simpósio." + (nome && instituicao ? " Nome e instituição preenchidos a partir da inscrição."
+            : nome ? " Nome preenchido a partir da inscrição."
+            : instituicao ? " Instituição preenchida a partir da inscrição." : "");
+        }
+      });
+    });
+    listaCoautores.addEventListener("input", function (e) {
+      if (!e.target.matches(".coautor__cpf, .coautor__email")) return;
+      const li = e.target.closest(".coautor");
+      delete li.dataset.chave;
+      li.querySelector(".coautor__nota").textContent = "";
+    });
   }
 
   // ---------- Menu no celular ----------

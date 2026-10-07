@@ -101,6 +101,10 @@ seguinte:
 - gera o número de inscrição, como INS-0001, e o protocolo do trabalho, como TRB-0001;
 - recusa CPF que já está inscrito;
 - só aceita trabalho de quem está inscrito, conferindo CPF e e-mail, e exige apresentador inscrito;
+- confere CPF e e-mail enquanto a pessoa preenche o envio de trabalho: mostra o nome do autor 1
+  e preenche nome e instituição dos coautores inscritos. Só responde com esses dados quando o
+  CPF e o e-mail batem com a mesma inscrição; o CPF sozinho não revela nada;
+- exige celular com DDD e o 9 inicial;
 - aplica as regras do edital: até 3 trabalhos como primeiro autor, até 8 autores, 2.500
   caracteres sem espaços no resumo, até 200 caracteres no título e prazo até 06/11, no horário de Brasília;
 - manda e-mail de confirmação e anota na planilha se ele saiu.
@@ -198,14 +202,17 @@ siga o mesmo formato e colocá-lo em `banco.url`. O código em `banco/apps-scrip
 referência para as regras.
 
 - **Pedido:** `POST` com o corpo em JSON e `Content-Type: text/plain`, no formato
-  `{"acao": "inscricao", "dados": {...}}` ou `{"acao": "trabalho", "dados": {...}}`.
+  `{"acao": "inscricao", "dados": {...}}`, `{"acao": "trabalho", "dados": {...}}` ou
+  `{"acao": "conferir", "dados": {"cpf", "email"}}`.
 - **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao` e
   `trabalho`, que pode vir vazio.
 - **Dados do trabalho:** `cpf`, `email`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
   `{"nome", "cpf", "email", "instituicao"}`, com instituição opcional), `apresentador`
   (`"primeiro"` ou `"coautor"`), `apresentadorCpf` (CPF do coautor que apresenta),
   `introducao`, `metodos`, `resultados` e `conclusoes`.
-- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`.
+- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`. Para `conferir`,
+  `{"ok": true, "nome": "...", "instituicao": "..."}`, só quando CPF e e-mail são da mesma
+  inscrição. `conferir` não grava nada.
 - **Resposta de recusa:** `{"ok": false, "mensagem": "texto para a pessoa", "campo": "cpf"}`.
   O campo é opcional: quando vem, o site mostra a mensagem embaixo dele.
 - **Outro domínio:** se o banco ficar fora de `diid.subhue.org`, ele precisa responder com

@@ -63,7 +63,7 @@ const ABAS = {
 };
 
 // Posição (começando em 0) das colunas usadas nas buscas
-const COL = { INS_NOME: 2, INS_CPF: 3, INS_EMAIL: 4, TRB_TITULO: 2, TRB_CPF: 6 };
+const COL = { INS_NOME: 2, INS_CPF: 3, INS_EMAIL: 4, INS_INSTITUICAO: 7, TRB_TITULO: 2, TRB_CPF: 6 };
 
 const CATEGORIAS = [
   "Médico(a)", "Enfermeiro(a)", "Técnico(a) ou auxiliar de enfermagem", "Fisioterapeuta",
@@ -126,7 +126,7 @@ function doGet() {
   return responder({ ok: true, mensagem: (CONFIG.TESTE ? "Banco de TESTE do " : "Banco do ") + CONFIG.EVENTO + " no ar." });
 }
 
-// O site envia { acao: "inscricao" | "trabalho", dados: {...} } em JSON.
+// O site envia { acao: "inscricao" | "trabalho" | "conferir", dados: {...} } em JSON.
 function doPost(e) {
   let pedido;
   try {
@@ -136,6 +136,16 @@ function doPost(e) {
   }
   if (!pedido || typeof pedido !== "object") {
     return responder(falha("pedido_invalido", "Não foi possível ler os dados enviados."));
+  }
+
+  // Conferência de CPF e e-mail enquanto a pessoa preenche: só lê, sem trava
+  if (pedido.acao === "conferir") {
+    try {
+      return responder(conferirInscricao(abrirPlanilha(), pedido.dados && typeof pedido.dados === "object" ? pedido.dados : {}));
+    } catch (erro) {
+      console.error(erro);
+      return responder(falha("erro_interno", "Não foi possível conferir a inscrição agora."));
+    }
   }
 
   const trava = LockService.getScriptLock();
@@ -221,6 +231,49 @@ function registrarInscricao(planilha, d) {
 }
 
 /* ---------------------------------------------------------------------
+   Conferência de inscrição pelo CPF e pelo e-mail
+   --------------------------------------------------------------------- */
+
+// Acha a inscrição do CPF e confere se o e-mail é o mesmo. Devolve os dados
+// ou, em "recusa", a resposta que aponta o campo errado.
+function buscarInscricao(planilha, d) {
+  const cpf = soDigitos(d.cpf);
+  if (!cpfValido(cpf)) return { recusa: falha("cpf", "Confira o CPF.", "cpf") };
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return { recusa: falha("email", "Confira o e-mail.", "email") };
+
+  const inscritos = linhas(aba(planilha, ABAS.inscricoes), ABAS.inscricoes.colunas.length);
+  const inscricao = inscritos.filter(function (l) { return soDigitos(l[COL.INS_CPF]) === cpf; })[0];
+  if (!inscricao) {
+    return { recusa: falha(
+      "nao_inscrito",
+      "Não encontramos inscrição com este CPF. Confira os números ou faça a sua inscrição antes de enviar o trabalho.",
+      "cpf"
+    ) };
+  }
+  if (String(inscricao[COL.INS_EMAIL]).trim().toLowerCase() !== email) {
+    return { recusa: falha(
+      "email_diferente",
+      "Este e-mail não é o da inscrição deste CPF. Use o mesmo e-mail da inscrição, o endereço que recebeu a confirmação com o número de inscrição.",
+      "email"
+    ) };
+  }
+  return { cpf: cpf, email: email, inscricao: inscricao, inscritos: inscritos };
+}
+
+// O site pergunta enquanto a pessoa preenche. Só responde com o nome e a
+// instituição a quem já sabe o CPF e o e-mail da inscrição.
+function conferirInscricao(planilha, d) {
+  const achado = buscarInscricao(planilha, d);
+  if (achado.recusa) return achado.recusa;
+  return {
+    ok: true,
+    nome: String(achado.inscricao[COL.INS_NOME]),
+    instituicao: String(achado.inscricao[COL.INS_INSTITUICAO]),
+  };
+}
+
+/* ---------------------------------------------------------------------
    Trabalho
    --------------------------------------------------------------------- */
 function registrarTrabalho(planilha, d) {
@@ -233,27 +286,12 @@ function registrarTrabalho(planilha, d) {
   }
 
   // Quem envia é o primeiro autor, identificado pelo CPF e pelo e-mail da inscrição
-  const cpf = soDigitos(d.cpf);
-  if (!cpfValido(cpf)) return falha("cpf", "Confira o CPF.", "cpf");
-  const email = texto(d.email, 120).toLowerCase();
-  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
-
-  const inscritos = linhas(aba(planilha, ABAS.inscricoes), ABAS.inscricoes.colunas.length);
-  const inscricao = inscritos.filter(function (l) { return soDigitos(l[COL.INS_CPF]) === cpf; })[0];
-  if (!inscricao) {
-    return falha(
-      "nao_inscrito",
-      "Não encontramos inscrição com este CPF. Confira os números ou faça a sua inscrição antes de enviar o trabalho.",
-      "cpf"
-    );
-  }
-  if (String(inscricao[COL.INS_EMAIL]).trim().toLowerCase() !== email) {
-    return falha(
-      "email_diferente",
-      "Este e-mail não é o da inscrição deste CPF. Use o mesmo e-mail da inscrição, o endereço que recebeu a confirmação com o número de inscrição.",
-      "email"
-    );
-  }
+  const autor = buscarInscricao(planilha, d);
+  if (autor.recusa) return autor.recusa;
+  const cpf = autor.cpf;
+  const email = autor.email;
+  const inscritos = autor.inscritos;
+  const inscricao = autor.inscricao;
 
   const titulo = texto(d.titulo, 1000);
   if (!titulo) return falha("titulo", "Informe o título do trabalho.", "titulo");
