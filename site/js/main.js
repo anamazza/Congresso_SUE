@@ -44,7 +44,7 @@ const CONFIG = {
     // Banco da planilha de testes. Só é usado quando o site é aberto com
     // ?teste no endereço; quem entra pelo endereço normal nunca chega nele.
     // Vazio = o modo de teste só simula o envio. README, seção "Ambiente de teste".
-    urlTeste: "",
+    urlTeste: "https://script.google.com/macros/s/AKfycbwiXzbKs6FKQU9UJLlh8aldHszQI-SaE1A71cKHd7oPrvV2EOI-gxq_QoHnXef56mr8/exec",
   },
   contato: {
     email: "",            // ex.: "simposio.subhue@rio.rj.gov.br"
