@@ -106,6 +106,12 @@ const CONFIG = {
   // A cópia do GitHub Pages (*.github.io) serve só para testes: lá o site
   // abre sempre no modo de teste. No endereço oficial, só com ?teste.
   const copiaDeTeste = /\.github\.io$/i.test(window.location.hostname);
+  // Versão da publicação (js/main.js?v=...), repassada ao banco de teste para
+  // o navegador não usar uma cópia antiga dele
+  const versaoDosArquivos = (function () {
+    const m = document.currentScript && document.currentScript.src.match(/[?&]v=([\w.-]+)/);
+    return m ? "?v=" + m[1] : "";
+  })();
   const modoTeste = copiaDeTeste || /[?&]teste\b/.test(window.location.search);
   const bancoCfg = CONFIG.banco || {};
   // Endereço completo (https://...) ou relativo à página ("api"), que é o
@@ -482,7 +488,7 @@ const CONFIG = {
       bancoDoNavegador = new Promise(function (ok) {
         if (window.bancoDeTeste) return ok(window.bancoDeTeste);
         const script = document.createElement("script");
-        script.src = "js/banco-teste.js";
+        script.src = "js/banco-teste.js" + versaoDosArquivos;
         script.onload = function () { ok(window.bancoDeTeste || null); };
         script.onerror = function () { ok(null); };
         document.body.appendChild(script);
