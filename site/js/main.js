@@ -657,6 +657,7 @@ const CONFIG = {
       if (!sessao || sessao.token !== token) return null;
       if (r && r.ok) {
         painelAtual = r;
+        mostrarSituacaoTrabalhos(r);
         return r;
       }
       tratarAcessoNegado(r);
@@ -1314,6 +1315,7 @@ const CONFIG = {
       aoConcluir: function (resposta) {
         painelAtual = null;
         document.getElementById("trb-outro").hidden = resposta.restantes === 0;
+        carregarPainel(true); // atualiza o menu Trabalhos com a nova contagem
         return false;
       },
       aoRecusar: tratarAcessoNegado,
@@ -1733,6 +1735,75 @@ const CONFIG = {
   }
   aoMudarSessao.push(atualizarMenuArea);
   atualizarMenuArea();
+
+  // Menu Trabalhos e topo da página Trabalhos acompanham quem entrou como
+  // inscrito: quantos trabalhos ainda cabem, limite atingido ou prazo encerrado.
+  // Sem sessão (ou sem inscrição), fica o convite para se inscrever.
+  const avisoMenuTrabalhos = document.querySelector("[data-trabalhos-aviso]");
+  const passoInscricao = document.querySelector('[data-trabalhos-passo="inscricao"]');
+  const linkEnvioMenu = document.querySelector('[data-trabalhos-passo="envio"] a');
+  const tituloPassos = document.getElementById("passos-titulo");
+  const listaPassos = document.querySelector(".passos__lista");
+  const situacaoPassos = document.getElementById("passos-situacao");
+  const ORIGINAL_TRABALHOS = {
+    aviso: avisoMenuTrabalhos ? avisoMenuTrabalhos.textContent : "",
+    link: linkEnvioMenu ? linkEnvioMenu.textContent : "",
+    titulo: tituloPassos ? tituloPassos.textContent : "",
+  };
+
+  function situacaoDeTrabalhos(r) {
+    if (!sessao || !temPapel("inscrito") || !r || !r.submissao) return null;
+    const sub = r.submissao;
+    if (!sub.aberta) {
+      return {
+        aviso: "O envio de trabalhos está encerrado",
+        texto: "O prazo terminou em " + sub.prazo + ". Os seus trabalhos e o resultado da avaliação ficam na área do inscrito.",
+        botao: "Ver meus trabalhos", rota: "#/area",
+      };
+    }
+    if (sub.restantes < 1) {
+      return {
+        aviso: "Você atingiu o limite de " + sub.maximo + " trabalhos como primeiro autor",
+        texto: "O edital permite até " + sub.maximo + " trabalhos por primeiro autor, e você já enviou " + sub.maximo +
+          ". Você ainda pode aparecer como coautor nos trabalhos enviados por outras pessoas.",
+        botao: "Ver meus trabalhos", rota: "#/area",
+      };
+    }
+    const quantos = sub.restantes + (sub.restantes === 1 ? " trabalho" : " trabalhos");
+    return {
+      aviso: "Você ainda pode enviar " + quantos + " como primeiro autor",
+      texto: "Você já está inscrito(a). O envio é feito pelo site, até " + sub.prazo + ", e quem envia é o primeiro autor.",
+      botao: "Enviar trabalho", rota: "#/submissao",
+    };
+  }
+
+  function mostrarSituacaoTrabalhos(r) {
+    const s = situacaoDeTrabalhos(r);
+    if (avisoMenuTrabalhos) avisoMenuTrabalhos.textContent = s ? s.aviso : ORIGINAL_TRABALHOS.aviso;
+    if (passoInscricao) passoInscricao.hidden = !!s;
+    if (linkEnvioMenu) {
+      linkEnvioMenu.textContent = s ? s.botao : ORIGINAL_TRABALHOS.link;
+      linkEnvioMenu.setAttribute("href", s ? s.rota : "#/area");
+    }
+    if (tituloPassos) {
+      tituloPassos.textContent = s ? s.aviso : ORIGINAL_TRABALHOS.titulo;
+      listaPassos.hidden = !!s;
+      situacaoPassos.hidden = !s;
+      if (s) {
+        document.getElementById("passos-situacao-texto").textContent = s.texto;
+        const botao = document.getElementById("passos-situacao-botao");
+        botao.textContent = s.botao;
+        botao.setAttribute("href", s.rota);
+      }
+    }
+  }
+
+  function atualizarSituacaoTrabalhos() {
+    mostrarSituacaoTrabalhos(painelAtual);
+    if (sessao && temPapel("inscrito") && (modoTeste || urlBanco)) carregarPainel(false);
+  }
+  aoMudarSessao.push(atualizarSituacaoTrabalhos);
+  atualizarSituacaoTrabalhos();
 
   // ----- Peças comuns das áreas da comissão e da organização -----
   function paragrafo(texto, classe) {
