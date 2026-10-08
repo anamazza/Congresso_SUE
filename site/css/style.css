@@ -1061,6 +1061,7 @@ ul, ol { margin: 0; padding: 0; }
 .campo input[type="email"],
 .campo input[type="tel"],
 .campo input[type="password"],
+.campo input[type="search"],
 .campo select {
   width: 100%;
   min-height: 2.95rem;
@@ -1605,3 +1606,118 @@ p.campo--largo { margin: 0; max-width: none; }
 .com-trabalho__recusar { border-color: var(--vermelho); color: var(--vermelho-escuro); }
 .com-trabalho__recusar:hover { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }
 .com-trabalho__decisao { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--texto-2); max-width: none; }
+
+/* ---------- Áreas restritas: links para os outros perfis da mesma conta ---------- */
+.area__topo-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.area__perfis { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.92rem; font-weight: 600; }
+
+/* Avaliação: quanto já foi avaliado */
+.com-progresso { margin: 0 0 1rem; }
+.com-progresso p { margin: 0 0 0.4rem; max-width: none; }
+.com-progresso strong { font-family: var(--fonte-titulo); font-size: 1.15rem; color: var(--tinta); }
+.com-progresso__trilho { height: 8px; border-radius: 999px; background: var(--linha); overflow: hidden; }
+.com-progresso__barra { width: 0; height: 100%; border-radius: inherit; background: var(--grad); transition: width 0.3s ease; }
+.com-trabalho__autor { margin: 0 0 0.15rem; font-weight: 600; color: var(--texto); max-width: none; overflow-wrap: anywhere; }
+
+/* ---------- Área da organização ---------- */
+.org-numeros {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+.org-numeros li {
+  padding: 0.85rem 1rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--texto-2);
+}
+.org-numeros strong {
+  display: block;
+  font-family: var(--fonte-titulo);
+  font-size: 1.6rem;
+  line-height: 1.2;
+  color: var(--tinta);
+}
+.org-numeros span { display: block; font-size: 0.82rem; }
+.org-numeros span:empty { display: none; }
+
+.org-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0 0 1.25rem;
+  border-bottom: 2px solid var(--linha);
+}
+.org-aba {
+  margin-bottom: -2px;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  font-family: var(--fonte-titulo);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--texto-2);
+  cursor: pointer;
+}
+.org-aba:hover { color: var(--azul-escuro); }
+.org-aba[aria-pressed="true"] { border-bottom-color: var(--azul); color: var(--tinta); }
+
+[data-org-painel] > .form-secao { grid-column: auto; margin: 2rem 0 0.4rem; }
+[data-org-painel] > .form-secao:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+[data-org-painel] > .form-secao + .nota { margin-top: 0; }
+.org-convite { margin-bottom: 0.5rem; }
+.org-lista { list-style: none; display: grid; gap: 0.6rem; margin: 0.75rem 0; padding: 0; }
+.org-lista:empty { display: none; }
+.org-membro {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+.org-membro__quem strong { color: var(--tinta); overflow-wrap: anywhere; }
+.org-membro__email { margin: 0; font-size: 0.9rem; color: var(--texto-2); max-width: none; overflow-wrap: anywhere; }
+.org-membro__acoes { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin: 0; font-size: 0.9rem; max-width: none; }
+.org-membro__remover { color: var(--vermelho-escuro); }
+.org-membro__remover:hover { color: var(--vermelho); }
+.org-membro__status { grid-column: 1 / -1; margin: 0; font-size: 0.85rem; color: var(--texto-2); max-width: none; }
+.org-membro__status:empty { display: none; }
+
+.org-ferramentas { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem 1rem; margin-bottom: 0.75rem; }
+.org-ferramentas .com-busca { flex: 1 1 18rem; margin-bottom: 0; }
+.org-inscricao {
+  padding: 0.9rem 1.1rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+.org-inscricao h3 { margin: 0.3rem 0 0.2rem; font-size: 1.05rem; overflow-wrap: anywhere; }
+.org-inscricao details { margin-top: 0.5rem; }
+.org-inscricao summary {
+  cursor: pointer;
+  font-family: var(--fonte-titulo);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+}
+.org-inscricao .area__dados { margin: 0.6rem 0 0; }
+.org-mais { text-align: center; max-width: none; }
+#org-inscricoes-total:empty { display: none; }
+
+/* Organização no celular: números em duas colunas e abas numa linha só */
+@media (max-width: 40rem) {
+  .org-numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+  .org-numeros li { padding: 0.7rem 0.8rem; }
+  .org-numeros strong { font-size: 1.35rem; }
+  .org-abas { flex-wrap: nowrap; gap: 0; }
+  .org-aba { flex: 1 1 auto; padding: 0.55rem 0.35rem; font-size: 0.88rem; }
+}

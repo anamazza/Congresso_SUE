@@ -1,0 +1,17 @@
+# Sobe o servidor do simpósio com:  docker compose up -d --build
+# Antes, copie servidor/.env.exemplo para servidor/.env e preencha.
+services:
+  simposio:
+    build: .
+    image: simposio-ue:latest
+    container_name: simposio-ue
+    restart: unless-stopped
+    env_file: servidor/.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - simposio-ue-dados:/dados
+
+volumes:
+  simposio-ue-dados:
+    name: simposio-ue-dados # nome fixo, para achar o volume nas cópias de segurança

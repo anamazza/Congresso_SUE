@@ -11,3 +11,8 @@ desktop.ini
 # Arquivos da pasta que não fazem parte do site
 vigilancia-processos-registros-*.json
 POP.CCIH.*.pdf
+
+# Servidor: dependências instaladas e dados locais (banco e e-mails de teste)
+servidor/node_modules/
+servidor/dados/
+servidor/.env

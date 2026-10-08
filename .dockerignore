@@ -1,0 +1,6 @@
+# A imagem só precisa do servidor e da pasta site/
+*
+!servidor/package.json
+!servidor/package-lock.json
+!servidor/src/
+!site/

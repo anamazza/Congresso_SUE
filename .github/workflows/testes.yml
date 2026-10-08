@@ -1,0 +1,30 @@
+# Roda os testes do servidor (regras, servidor HTTP e banco de teste do
+# navegador) a cada envio e em cada pull request.
+name: Testes
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  servidor:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: servidor
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+      - name: Instalar o Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependências
+        run: npm ci
+      - name: Rodar os testes
+        run: npm test

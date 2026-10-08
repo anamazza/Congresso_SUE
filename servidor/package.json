@@ -1,0 +1,19 @@
+{
+  "name": "simposio-ue-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servidor do 1º Simpósio de Urgência e Emergência: páginas do site, inscrições, trabalhos, comissão e organização",
+  "license": "UNLICENSED",
+  "main": "src/servidor.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/servidor.js",
+    "test": "node --disable-warning=ExperimentalWarning testes/regras.test.js && node --disable-warning=ExperimentalWarning testes/servidor.test.js",
+    "gerar-banco-teste": "node navegador/gerar.js"
+  },
+  "dependencies": {
+    "nodemailer": "10.0.10"
+  }
+}
