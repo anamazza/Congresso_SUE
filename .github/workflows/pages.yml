@@ -21,6 +21,13 @@ jobs:
     steps:
       - name: Baixar o repositório
         uses: actions/checkout@v4
+      # O GitHub Pages deixa o navegador guardar CSS e JavaScript por 10 minutos.
+      # Com a versão no endereço (?v=...), cada publicação nova é buscada na hora.
+      - name: Marcar a versão do estilo e dos scripts
+        run: |
+          v="${GITHUB_SHA::7}"
+          sed -i "s#href=\"css/style.css\"#href=\"css/style.css?v=$v\"#; s#src=\"js/main.js\"#src=\"js/main.js?v=$v\"#" site/index.html
+          grep -q "js/main.js?v=$v" site/index.html && grep -q "css/style.css?v=$v" site/index.html
       - name: Enviar a pasta site/ para a branch gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
