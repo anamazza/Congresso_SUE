@@ -1696,6 +1696,13 @@ p.campo--largo { margin: 0; max-width: none; }
 .com-busca { max-width: 26rem; margin-bottom: 1rem; }
 
 .com-lista { list-style: none; display: grid; gap: 0.9rem; margin: 0; padding: 0; }
+/* Textos sem espaço (um link longo, "aaaa…" de teste) quebram a linha em vez
+   de esticar o cartão para fora da página; min-width: 0 deixa o cartão
+   encolher dentro da grade */
+.com-trabalho,
+.org-inscricao,
+.org-membro,
+.area__trabalho { min-width: 0; overflow-wrap: anywhere; }
 .com-trabalho {
   padding: 1rem 1.1rem;
   background: var(--superficie-2);
