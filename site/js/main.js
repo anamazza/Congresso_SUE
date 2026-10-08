@@ -690,17 +690,22 @@ const CONFIG = {
     lugar.hidden = !lugar.children.length;
   }
 
-  // Quem avalia (ou organiza) não envia trabalho: conflito de interesse
+  // Quem avalia (ou organiza) não envia trabalho: conflito de interesse.
+  // "aviso" é a versão curta, para o menu Trabalhos.
   function situacaoDeAvaliador() {
     if (temPapel("organizacao") && !temPapel("comissao")) {
       return {
-        titulo: "A organização não envia trabalhos",
-        texto: "Esta conta é da organização do simpósio, que acompanha a avaliação, e por isso não envia trabalhos.",
+        titulo: "Você está usando uma conta da organização",
+        texto: "As contas da organização do simpósio não podem ser usadas para submeter trabalhos. Caso deseje submeter um trabalho, pedimos a gentileza de sair desta conta e fazer a sua inscrição com outra, usando um e-mail diferente.",
+        aviso: "Contas da organização não submetem trabalhos",
+        organizacao: true,
       };
     }
     return {
-      titulo: "Avaliadores não enviam trabalhos",
-      texto: "Você faz parte da Comissão Científica (ou recebeu o convite para ela) e, enquanto for avaliador(a), não pode enviar trabalhos. Se quiser submeter, peça à organização para tirar você da comissão.",
+      titulo: "Você está usando uma conta de avaliador(a)",
+      texto: "Esta conta pertence à Comissão Científica do simpósio. Por esse motivo, não é possível submeter trabalhos com ela, o que preserva a imparcialidade da avaliação. Agradecemos a sua compreensão.",
+      aviso: "Contas de avaliador não submetem trabalhos",
+      organizacao: false,
     };
   }
   function ehAvaliadorOuOrganizacao() {
@@ -1456,10 +1461,14 @@ const CONFIG = {
       const botaoLimite = document.getElementById("trb-limite-botao");
       botaoLimite.textContent = bloqueio === "avaliador" ? "Ir para a minha área" : "Ver meus trabalhos";
       botaoLimite.setAttribute("href", bloqueio === "avaliador" ? rotaInicial() : "#/area");
+      // "Sair da conta" só para a organização, que precisa de outra conta para se inscrever
+      const sairLimite = document.getElementById("trb-limite-sair");
+      sairLimite.hidden = true;
       if (bloqueio === "avaliador") {
         const a = situacaoDeAvaliador();
         document.getElementById("trb-limite-titulo").textContent = a.titulo;
         document.getElementById("trb-limite-texto").textContent = a.texto;
+        sairLimite.hidden = !a.organizacao;
       } else if (bloqueio === "limite") {
         document.getElementById("trb-limite-titulo").textContent = "Você já enviou o máximo de trabalhos";
         document.getElementById("trb-limite-texto").textContent = "Cada autor pode enviar até " + sub.maximo +
@@ -2034,7 +2043,7 @@ const CONFIG = {
   function situacaoDeTrabalhos(r) {
     if (sessao && (ehAvaliadorOuOrganizacao() || (r && r.submissao && r.submissao.avaliador))) {
       const a = situacaoDeAvaliador();
-      return { aviso: a.titulo, texto: a.texto, botao: "Ir para a minha área", rota: rotaInicial() };
+      return { aviso: a.aviso, texto: a.texto, botao: "Ir para a minha área", rota: rotaInicial() };
     }
     if (!sessao || !temPapel("inscrito") || !r || !r.submissao) return null;
     const sub = r.submissao;
@@ -2155,69 +2164,103 @@ const CONFIG = {
       detalhes.appendChild(paragrafo(parte[1], "com-trabalho__texto"));
     });
 
-    // Decisão: "Aprovar" vai direto; "Recusar" abre a justificativa
-    // obrigatória, que segue no e-mail ao primeiro autor
+    // Decisão do avaliador, no fim do trabalho (depois de ler o resumo).
+    // Passo 1: duas opções neutras, de mesmo peso ("Aprovar" e "Recusar"),
+    // que só ganham cor ao serem escolhidas. Passo 2: confirmação dentro do
+    // próprio cartão. Só a recusa tem caixa de texto: a justificativa
+    // obrigatória, que segue no e-mail ao autor. Cancelar volta ao passo 1.
     if (o.decidir && emAvaliacao) {
-      const caixa = document.createElement("div");
-      caixa.className = "com-trabalho__decidir";
-      const rotuloDecisao = paragrafo("Decisão da comissão", "com-trabalho__rotulo");
-      const acoes = document.createElement("p");
-      acoes.className = "com-trabalho__acoes";
-      const aprovar = document.createElement("button");
-      aprovar.type = "button";
-      aprovar.className = "btn btn--primario btn--pequeno com-trabalho__aprovar";
-      aprovar.textContent = "Aprovar";
-      const recusar = document.createElement("button");
-      recusar.type = "button";
-      recusar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar";
-      recusar.textContent = "Recusar";
-      recusar.setAttribute("aria-expanded", "false");
-      acoes.appendChild(aprovar);
-      acoes.appendChild(recusar);
+      const idBase = "decisao-" + t.protocolo;
+      const caixa = document.createElement("section");
+      caixa.className = "decisao";
+      caixa.id = idBase;
+      caixa.setAttribute("aria-labelledby", idBase + "-titulo");
+      const tituloDecisao = document.createElement("h4");
+      tituloDecisao.className = "decisao__titulo";
+      tituloDecisao.id = idBase + "-titulo";
+      tituloDecisao.textContent = "Sua decisão sobre este trabalho";
+      caixa.appendChild(tituloDecisao);
+      caixa.appendChild(paragrafo("Escolha uma opção. Você confirma no passo seguinte, antes de o e-mail sair para o primeiro autor.", "decisao__dica"));
 
-      const idJustificativa = "com-justificativa-" + t.protocolo;
-      const recusa = document.createElement("div");
-      recusa.className = "com-trabalho__recusa campo";
-      recusa.id = idJustificativa + "-caixa";
-      recusa.hidden = true;
-      recusar.setAttribute("aria-controls", recusa.id);
+      const ICONES = {
+        aprovar: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        recusar: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+      };
+      const opcoes = document.createElement("div");
+      opcoes.className = "decisao__opcoes";
+      opcoes.setAttribute("role", "group");
+      opcoes.setAttribute("aria-label", "Decisão sobre o trabalho " + t.protocolo);
+      function opcao(tipo, texto) {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.className = "decisao__opcao decisao__opcao--" + tipo;
+        botao.innerHTML = ICONES[tipo];
+        botao.appendChild(document.createTextNode(texto));
+        botao.setAttribute("aria-pressed", "false");
+        botao.setAttribute("aria-controls", idBase + "-" + tipo);
+        opcoes.appendChild(botao);
+        return botao;
+      }
+      const aprovar = opcao("aprovar", "Aprovar");
+      const recusar = opcao("recusar", "Recusar");
+      caixa.appendChild(opcoes);
+
+      // Passo 2 da aprovação: só confirmação, sem caixa de texto
+      const painelAprovar = document.createElement("div");
+      painelAprovar.className = "decisao__painel decisao__painel--aprovar";
+      painelAprovar.id = idBase + "-aprovar";
+      painelAprovar.hidden = true;
+      painelAprovar.appendChild(paragrafo("Aprovar o trabalho " + t.protocolo + "?", "decisao__pergunta"));
+      painelAprovar.appendChild(paragrafo("O primeiro autor recebe agora o e-mail de aprovação. A decisão não pode ser mudada pelo site."));
+
+      // Passo 2 da recusa: justificativa obrigatória
+      const painelRecusar = document.createElement("div");
+      painelRecusar.className = "decisao__painel decisao__painel--recusar campo";
+      painelRecusar.id = idBase + "-recusar";
+      painelRecusar.hidden = true;
       const rotulo = document.createElement("label");
-      rotulo.htmlFor = idJustificativa;
+      rotulo.htmlFor = idBase + "-justificativa";
       rotulo.textContent = "Justificativa da recusa (obrigatória)";
-      const dica = paragrafo("Este texto vai no e-mail ao primeiro autor, como o motivo da recusa.", "campo__dica");
-      dica.id = idJustificativa + "-dica";
+      const dica = paragrafo("Explique o motivo da recusa. Este texto vai no e-mail ao primeiro autor, e a decisão não pode ser mudada pelo site.", "campo__dica");
+      dica.id = idBase + "-justificativa-dica";
       const justificativa = document.createElement("textarea");
-      justificativa.id = idJustificativa;
+      justificativa.id = idBase + "-justificativa";
       justificativa.rows = 4;
       justificativa.maxLength = 1500;
       justificativa.required = true;
-      justificativa.setAttribute("aria-describedby", dica.id + " " + idJustificativa + "-erro");
+      justificativa.setAttribute("aria-describedby", dica.id + " " + idBase + "-justificativa-erro");
       const erro = paragrafo("", "campo__erro");
-      erro.id = idJustificativa + "-erro";
+      erro.id = idBase + "-justificativa-erro";
       erro.hidden = true;
-      const acoesRecusa = document.createElement("p");
-      acoesRecusa.className = "com-trabalho__acoes";
-      const confirmar = document.createElement("button");
-      confirmar.type = "button";
-      confirmar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar com-trabalho__confirmar";
-      confirmar.textContent = "Confirmar recusa";
-      const cancelar = document.createElement("button");
-      cancelar.type = "button";
-      cancelar.className = "link-botao";
-      cancelar.textContent = "Cancelar";
-      acoesRecusa.appendChild(confirmar);
-      acoesRecusa.appendChild(cancelar);
-      recusa.appendChild(rotulo);
-      recusa.appendChild(dica);
-      recusa.appendChild(justificativa);
-      recusa.appendChild(erro);
-      recusa.appendChild(acoesRecusa);
+      painelRecusar.appendChild(rotulo);
+      painelRecusar.appendChild(dica);
+      painelRecusar.appendChild(justificativa);
+      painelRecusar.appendChild(erro);
 
-      const status = paragrafo("", "inscricao__status");
+      // Ações do passo 2: "Cancelar" (seguro) à esquerda, a ação no fim da linha
+      function acoesDoPainel(painel, rotuloConfirmar, classeConfirmar) {
+        const acoes = document.createElement("div");
+        acoes.className = "decisao__acoes";
+        const cancelar = document.createElement("button");
+        cancelar.type = "button";
+        cancelar.className = "btn btn--secundario btn--pequeno decisao__cancelar";
+        cancelar.textContent = "Cancelar";
+        const confirmar = document.createElement("button");
+        confirmar.type = "button";
+        confirmar.className = "btn btn--pequeno " + classeConfirmar;
+        confirmar.textContent = rotuloConfirmar;
+        acoes.appendChild(cancelar);
+        acoes.appendChild(confirmar);
+        painel.appendChild(acoes);
+        return { cancelar: cancelar, confirmar: confirmar };
+      }
+      const acoesAprovar = acoesDoPainel(painelAprovar, "Confirmar aprovação", "btn--aprovar");
+      const acoesRecusar = acoesDoPainel(painelRecusar, "Confirmar recusa", "btn--recusar");
+      caixa.appendChild(painelAprovar);
+      caixa.appendChild(painelRecusar);
+
+      const status = paragrafo("", "inscricao__status decisao__status");
       status.setAttribute("role", "status");
-      caixa.appendChild(rotuloDecisao);
-      caixa.appendChild(acoes);
-      caixa.appendChild(recusa);
       caixa.appendChild(status);
       detalhes.appendChild(caixa);
 
@@ -2227,8 +2270,39 @@ const CONFIG = {
         if (texto) justificativa.setAttribute("aria-invalid", "true");
         else justificativa.removeAttribute("aria-invalid");
       }
+      // Qual opção está escolhida ("", "aprovar" ou "recusar")
+      function escolher(tipo) {
+        aprovar.setAttribute("aria-pressed", String(tipo === "aprovar"));
+        recusar.setAttribute("aria-pressed", String(tipo === "recusar"));
+        painelAprovar.hidden = tipo !== "aprovar";
+        painelRecusar.hidden = tipo !== "recusar";
+        status.textContent = "";
+        if (tipo !== "recusar") mostrarErro("");
+        if (tipo === "aprovar") acoesAprovar.cancelar.focus();
+        if (tipo === "recusar") justificativa.focus();
+      }
+      aprovar.addEventListener("click", function () { escolher(aprovar.getAttribute("aria-pressed") === "true" ? "" : "aprovar"); });
+      recusar.addEventListener("click", function () { escolher(recusar.getAttribute("aria-pressed") === "true" ? "" : "recusar"); });
+      [acoesAprovar.cancelar, acoesRecusar.cancelar].forEach(function (b) {
+        b.addEventListener("click", function () {
+          const voltar = b === acoesAprovar.cancelar ? aprovar : recusar;
+          escolher("");
+          voltar.focus();
+        });
+      });
+      caixa.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && (!painelAprovar.hidden || !painelRecusar.hidden)) {
+          const voltar = painelAprovar.hidden ? recusar : aprovar;
+          escolher("");
+          voltar.focus();
+        }
+      });
+      justificativa.addEventListener("input", function () { if (!erro.hidden) mostrarErro(""); });
+
       const tela = {
-        travar: function (sim) { aprovar.disabled = recusar.disabled = confirmar.disabled = cancelar.disabled = sim; },
+        travar: function (sim) {
+          [aprovar, recusar, acoesAprovar.cancelar, acoesAprovar.confirmar, acoesRecusar.cancelar, acoesRecusar.confirmar].forEach(function (b) { b.disabled = sim; });
+        },
         status: function (texto, ehErro, campo) {
           if (campo === "comentario") {
             mostrarErro(texto);
@@ -2239,24 +2313,8 @@ const CONFIG = {
           status.classList.toggle("is-erro", !!ehErro);
         },
       };
-      aprovar.addEventListener("click", function () {
-        recusa.hidden = true;
-        recusar.setAttribute("aria-expanded", "false");
-        o.decidir(t, "aprovado", "", tela);
-      });
-      recusar.addEventListener("click", function () {
-        recusa.hidden = false;
-        recusar.setAttribute("aria-expanded", "true");
-        justificativa.focus();
-      });
-      cancelar.addEventListener("click", function () {
-        recusa.hidden = true;
-        recusar.setAttribute("aria-expanded", "false");
-        mostrarErro("");
-        recusar.focus();
-      });
-      justificativa.addEventListener("input", function () { if (!erro.hidden) mostrarErro(""); });
-      confirmar.addEventListener("click", function () {
+      acoesAprovar.confirmar.addEventListener("click", function () { o.decidir(t, "aprovado", "", tela); });
+      acoesRecusar.confirmar.addEventListener("click", function () {
         const texto = justificativa.value.trim();
         if (texto.replace(/\s/g, "").length < 10) {
           mostrarErro(texto ? "A justificativa precisa ter pelo menos 10 caracteres." : "Escreva a justificativa da recusa. Ela vai no e-mail ao primeiro autor.");
@@ -2266,6 +2324,17 @@ const CONFIG = {
         mostrarErro("");
         o.decidir(t, "recusado", texto, tela);
       });
+
+      // Resumo longo: atalho, no topo do trabalho aberto, para a decisão
+      const irDecisao = document.createElement("button");
+      irDecisao.type = "button";
+      irDecisao.className = "link-botao decisao__atalho";
+      irDecisao.textContent = "Ir para a decisão";
+      irDecisao.addEventListener("click", function () {
+        caixa.scrollIntoView({ behavior: "smooth", block: "start" });
+        aprovar.focus({ preventScroll: true });
+      });
+      detalhes.insertBefore(irDecisao, detalhes.children[1]);
     }
     li.appendChild(detalhes);
 
@@ -2349,16 +2418,22 @@ const CONFIG = {
       avisoCom.hidden = false;
     }
 
+    // A confirmação acontece no próprio cartão (passo 2), sem janela do navegador
+    const resultadoCom = document.getElementById("com-resultado");
     function decidir(t, decisao, comentario, tela) {
-      const pergunta = decisao === "aprovado"
-        ? "Aprovar o trabalho " + t.protocolo + "?\n\nO primeiro autor recebe agora o e-mail de aprovação, e a decisão não pode ser mudada pelo site."
-        : "Recusar o trabalho " + t.protocolo + "?\n\nO primeiro autor recebe agora o e-mail com a sua justificativa, e a decisão não pode ser mudada pelo site.";
-      if (!window.confirm(pergunta)) return;
       tela.travar(true);
-      tela.status("Registrando…");
+      tela.status("Registrando a decisão…");
       enviarAoBanco("comissaoDecidir", { token: sessao ? sessao.token : "", protocolo: t.protocolo, decisao: decisao, comentario: comentario })
         .then(function (r) {
-          if (r && r.ok) return carregarAvaliacao();
+          if (r && r.ok) {
+            // O trabalho sai de "A avaliar": o aviso diz o que aconteceu com ele
+            resultadoCom.textContent = t.protocolo + (decisao === "aprovado" ? " aprovado. " : " recusado. ") +
+              (/^enviado/.test(r.email || "") ? "O e-mail " + (decisao === "aprovado" ? "de aprovação" : "com a justificativa") + " foi enviado ao primeiro autor." : "O e-mail ao autor não saiu: " + (r.email || "sem registro") + ".") +
+              " O trabalho está agora em \"" + (decisao === "aprovado" ? "Aprovados" : "Recusados") + "\".";
+            resultadoCom.hidden = false;
+            resultadoCom.scrollIntoView({ block: "center" });
+            return carregarAvaliacao();
+          }
           if (tratarAcessoNegado(r)) return;
           if (r && r.erro === "ja_avaliado") carregarAvaliacao();
           tela.status((r && r.mensagem) || "Não foi possível registrar a decisão. Tente de novo.", true, r && r.campo);
@@ -2412,6 +2487,7 @@ const CONFIG = {
     // (unshift: limpa antes de a página se desenhar de novo)
     aoMudarSessao.unshift(function () {
       carregou = false;
+      resultadoCom.hidden = true;
       document.getElementById("com-busca").value = "";
       listaCom.definir([]);
     });
