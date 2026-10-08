@@ -41,10 +41,12 @@ const CONFIG = {
     url: "",
     inscricoesEncerradas: false, // true fecha o formulário de inscrição (fecha sozinho após inscricoes.fim)
     submissaoEncerrada: false,   // true fecha o envio de trabalhos (fecha sozinho após submissao.prazo)
-    // Banco da planilha de testes. Só é usado quando o site é aberto com
-    // ?teste no endereço; quem entra pelo endereço normal nunca chega nele.
-    // Vazio = o modo de teste só simula o envio. README, seção "Ambiente de teste".
-    urlTeste: "https://script.google.com/macros/s/AKfycbwiXzbKs6FKQU9UJLlh8aldHszQI-SaE1A71cKHd7oPrvV2EOI-gxq_QoHnXef56mr8/exec",
+    // Modo de teste (site aberto com ?teste). Vazio = o banco roda dentro do
+    // navegador (js/banco-teste.js), com os dados guardados só ali. Com o
+    // endereço de uma planilha de testes do Google, os envios vão para ela.
+    // Quem entra pelo endereço normal nunca usa nenhum dos dois.
+    // README, seção "Ambiente de teste".
+    urlTeste: "",
   },
   contato: {
     email: "",            // ex.: "simposio.subhue@rio.rj.gov.br"
@@ -472,10 +474,30 @@ const CONFIG = {
     return emailValido(v) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
   };
 
+  // Banco de teste dentro do navegador: carregado só no modo de teste
+  let bancoDoNavegador = null;
+  function carregarBancoDoNavegador() {
+    if (!bancoDoNavegador) {
+      bancoDoNavegador = new Promise(function (ok) {
+        if (window.bancoDeTeste) return ok(window.bancoDeTeste);
+        const script = document.createElement("script");
+        script.src = "js/banco-teste.js";
+        script.onload = function () { ok(window.bancoDeTeste || null); };
+        script.onerror = function () { ok(null); };
+        document.body.appendChild(script);
+      });
+    }
+    return bancoDoNavegador;
+  }
+  if (modoTeste && !urlBancoTeste) carregarBancoDoNavegador();
+
   function enviarAoBanco(acao, dados) {
     if (modoTeste && !urlBancoTeste) {
-      return new Promise(function (ok) {
-        setTimeout(function () { ok(simularBanco(acao, dados)); }, 700);
+      // Sem o banco do navegador (como no arquivo único), as respostas são só simuladas
+      return carregarBancoDoNavegador().then(function (banco) {
+        return new Promise(function (ok) {
+          setTimeout(function () { ok(banco ? banco.enviar(acao, dados) : simularBanco(acao, dados)); }, 400);
+        });
       });
     }
     return fetch(modoTeste ? urlBancoTeste : urlBanco, {
@@ -658,7 +680,7 @@ const CONFIG = {
     } else if (modoTeste && aviso) {
       aviso.textContent = urlBancoTeste
         ? "Ambiente de teste: os envios vão para a planilha de testes, e não para a lista oficial. O e-mail de confirmação chega com [TESTE] no assunto."
-        : "Modo de teste: os dados preenchidos aqui não são enviados para ninguém.";
+        : "Modo de teste: os dados ficam só neste navegador e não vão para ninguém. Os e-mails aparecem no Painel de teste, no canto da tela.";
       aviso.classList.add("inscricao__aviso--teste");
       aviso.hidden = false;
     }
@@ -1213,7 +1235,7 @@ const CONFIG = {
 
     // Coautores inscritos: o banco só devolve nome e instituição a quem entrou
     // e já sabe o CPF e o e-mail do coautor; o CPF sozinho não revela nada.
-    const podeConferir = estadoSubmissao === "aberto" && (!modoTeste || !!urlBancoTeste);
+    const podeConferir = estadoSubmissao === "aberto";
     function chaveInscricao(cpf, email) {
       email = email.trim().toLowerCase();
       return cpfValido(cpf) && emailValido(email) ? soDigitos(cpf) + " " + email : "";
@@ -1316,7 +1338,7 @@ const CONFIG = {
     } else if (modoTeste) {
       avisoArea.textContent = urlBancoTeste
         ? "Ambiente de teste: a área do inscrito usa a planilha de testes."
-        : "Modo de teste: nada é enviado. Qualquer e-mail e senha entram numa inscrição de mentira.";
+        : "Modo de teste: as inscrições e senhas ficam só neste navegador. O código de \"Esqueci a senha\" aparece no Painel de teste, no canto da tela.";
       avisoArea.classList.add("inscricao__aviso--teste");
       avisoArea.hidden = false;
     }

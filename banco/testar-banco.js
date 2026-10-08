@@ -508,6 +508,12 @@ function rodar() {
     ok(b.emails[b.emails.length - 1].subject.startsWith("[TESTE] Trabalho recebido · TRB-0001"), "no teste, o e-mail do trabalho também sai marcado");
   }
 
+  // O banco do navegador (modo de teste do site) precisa estar em dia com este código
+  {
+    const { gerar, DESTINO } = require("./gerar-banco-teste.js");
+    ok(fs.existsSync(DESTINO) && fs.readFileSync(DESTINO, "utf8") === gerar(), "site/js/banco-teste.js está em dia com apps-script.gs (se falhar, rode: node banco/gerar-banco-teste.js)");
+  }
+
   const falhas = resultados.filter((r) => !r[0]);
   resultados.forEach(([passou, msg]) => console.log((passou ? "ok    " : "FALHA ") + msg));
   console.log("\n" + (resultados.length - falhas.length) + " de " + resultados.length + " verificações passaram.");

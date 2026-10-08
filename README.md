@@ -25,6 +25,7 @@ site/
   css/style.css     visual (cores do logo, tipografia, layout, menu suspenso)
   js/main.js        bloco CONFIG com links, datas, contatos, comissões e palestrantes,
                     e a troca de páginas pelo menu
+  js/banco-teste.js banco de teste que roda no navegador com ?teste (arquivo gerado)
   assets/           capa.jpg (arte colorida do topo da Home), capa-fundo.jpg (fundo das
                     páginas), capa-clara.jpg (versão clara, só serve de origem para o fundo),
                     linha-batimentos.png (traçado de ECG da marca, usado sob a faixa do topo),
@@ -34,6 +35,8 @@ gerar_fundo.py      recria capa-fundo.jpg a partir de capa-clara.jpg, sem o logo
 banco/
   apps-script.gs    banco dos formulários (Apps Script ligado a uma planilha Google)
   testar-banco.js   testes do banco num simulador: node banco/testar-banco.js
+  banco-teste-molde.js  molde do banco de teste no navegador
+  gerar-banco-teste.js  junta o molde e apps-script.gs em site/js/banco-teste.js
 
 Os arquivos originais enviados pela equipe de design ficam na raiz do projeto
 (`arte-capa-colorida-v2.png`, `linha-batimentos.png`, `logo-compacto-*.png` e os anteriores).
@@ -169,52 +172,62 @@ se a implantação funcionou.
   (cria a aba Acessos e o segredo, sem apagar nada) e publique uma nova versão. Quem já estava
   inscrito sem senha cria a sua pelo "Esqueci a senha".
 - **Modo de teste:** abra o site com `?teste` antes do `#`, por exemplo
-  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`. Os formulários
-  aparecem liberados, com uma faixa avisando que é teste. Sem a planilha de testes, o envio
-  só é simulado; com ela, os dados vão para lá. Veja **Ambiente de teste**, abaixo.
+  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`. Os formulários e a
+  área do inscrito aparecem liberados, com uma faixa avisando que é teste, e usam um banco que
+  roda no próprio navegador. Veja **Ambiente de teste**, abaixo.
 - **Testes do banco:** `node banco/testar-banco.js` roda o código do Apps Script num simulador
   e confere as regras do edital. Rode sempre que mudar o código do banco.
 
 ### Ambiente de teste
 
-O ambiente de teste deixa a equipe usar os formulários de verdade, com gravação na planilha e
-e-mail de confirmação, sem mudar nada do que o público vê. Ele usa uma segunda planilha, só
-para testes, e o mesmo `site/index.html` do site oficial.
+O ambiente de teste deixa a equipe usar o site de ponta a ponta (inscrição, senha, área do
+inscrito, envio de trabalho, recuperação de senha) sem mudar nada do que o público vê e sem
+precisar de planilha nem de Apps Script.
 
-- Quem entra pelo endereço normal continua vendo o site como está, e os envios dele vão
-  apenas para `banco.url`.
-- Quem abre com `?teste` no endereço vê os formulários liberados, com aviso de teste, e os
-  envios vão apenas para `banco.urlTeste`. Isso vale mesmo antes da abertura ou depois do
-  prazo no site; a planilha de testes, porém, segue as datas do bloco `CONFIG` dela.
+- Quem entra pelo endereço normal continua vendo o site como está, e os envios vão apenas
+  para `banco.url`.
+- Quem abre com `?teste` no endereço vê os formulários liberados, com aviso de teste, mesmo
+  antes da abertura ou depois do prazo no site. O banco segue as datas do `CONFIG` dele.
 
-Para montar:
+**Banco de teste no navegador (padrão).** Com `banco.urlTeste` vazio, o `?teste` carrega
+`site/js/banco-teste.js`, que roda o mesmo código de `banco/apps-script.gs` dentro do
+navegador. A planilha, as senhas e os e-mails ficam guardados só naquele navegador e nada sai
+do computador. No canto da tela aparece o **Painel de teste**, com:
+
+- **E-mails enviados:** as confirmações e os códigos de "Esqueci a senha", com [TESTE] no assunto;
+- **Planilha:** as abas Inscrições, Trabalhos e Acessos, como a organização veria;
+- **Apagar todos os dados de teste:** recomeça do zero naquele navegador.
+
+Cada navegador tem o seu banco: uma pessoa não vê as inscrições de teste da outra. Para testar
+a busca de coautor inscrito, inscreva o coautor no mesmo navegador antes.
+
+Links para testar, no site oficial ou na cópia do GitHub Pages:
+`.../?teste#/inscricoes/formulario`, `.../?teste#/area` e `.../?teste#/submissao`.
+
+`site/js/banco-teste.js` é gerado. Depois de mudar `banco/apps-script.gs` ou
+`banco/banco-teste-molde.js`, rode `node banco/gerar-banco-teste.js`. O
+`node banco/testar-banco.js` avisa quando o arquivo gerado ficou para trás.
+
+**Planilha de testes do Google (opcional).** Para testar com o Google de verdade, com e-mails
+chegando na caixa de entrada:
 
 1. Crie uma planilha separada, por exemplo "Simpósio UE 2026 · Banco de TESTE". Não use a
    planilha oficial.
 2. Repita os passos 2 a 5 de **Como instalar o banco** nessa planilha. Antes de executar
    `configurar`, mude `TESTE: false` para `TESTE: true` no código colado. Com isso, os e-mails
-   saem com `[TESTE]` no assunto e um aviso de que nada foi registrado de verdade, e abrir o
-   endereço `/exec` mostra "Banco de TESTE ... no ar".
+   saem com `[TESTE]` no assunto e um aviso de que nada foi registrado de verdade.
 3. Cole o endereço `/exec` dessa implantação em `banco.urlTeste`, em `site/js/main.js`, e
-   publique o site.
-4. Para testar, abra
-   `https://diid.subhue.org/static-html/congresso-sue/?teste#/inscricoes/formulario` ou
-   `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`.
+   publique o site. Para voltar ao banco do navegador, deixe `banco.urlTeste` vazio.
 
 Dicas para os testes:
 
 - Use os CPFs de exemplo dos testes do banco, como 529.982.247-25, 111.444.777-35 e
-  935.411.347-80, e e-mails da própria equipe para conferir as confirmações.
-- Para testar o fim de um prazo ou o limite de vagas, mude as datas ou `VAGAS` no `CONFIG`
-  da planilha de testes e publique uma nova versão dela. A planilha oficial não muda.
-- Apague as linhas da planilha de testes quando quiser recomeçar. Os protocolos continuam a
-  partir do maior número que ainda estiver na aba.
-- Quando o código do banco mudar, atualize as duas planilhas e mantenha `TESTE: true` só na
-  de testes.
+  935.411.347-80. Não use dados reais de ninguém.
+- Na planilha do Google, para testar o fim de um prazo ou o limite de vagas, mude as datas ou
+  `VAGAS` no `CONFIG` da planilha de testes e publique uma nova versão dela.
 
-O endereço com `?teste` não é secreto: ele aparece neste README. Quem o descobrir só
-consegue gravar na planilha de testes, que não tem valor oficial. Se aparecer lixo nela,
-basta apagar as linhas. Para desligar o ambiente, deixe `banco.urlTeste` vazio.
+O endereço com `?teste` não é secreto: ele aparece neste README. Com o banco do navegador,
+quem o descobrir só mexe nos próprios dados, no próprio navegador.
 
 ### Usar outro banco de dados
 
@@ -275,6 +288,11 @@ cada envio para a `main`, e o GitHub Pages publica uma cópia em
 <https://anamazza.github.io/Congresso_SUE/>. Ela serve para conferir mudanças. Como a tag
 `canonical` aponta para o endereço oficial, os buscadores tratam o endereço oficial como o
 principal. Para desligar a cópia, apague o workflow ou desative o Pages em **Settings > Pages**.
+
+A cópia só fica no ar com o Pages ligado. No plano gratuito do GitHub, isso exige o repositório
+público. Para ligar: **Settings > General > Danger Zone > Change visibility > Public**, depois
+**Settings > Pages > Build and deployment > Source: Deploy from a branch**, branch `gh-pages`,
+pasta `/ (root)`, **Save**. Em alguns minutos o endereço acima passa a responder.
 
 A pasta `site/` traz também `.nojekyll`, `404.html` (página de erro que leva de volta ao início)
 e `robots.txt`, usados pelo GitHub Pages.
