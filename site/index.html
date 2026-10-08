@@ -87,7 +87,7 @@
         <li><a class="topo__social" data-config-href="contato.instagram" data-pendente="ocultar" href="#" aria-label="Instagram do evento">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
         </a></li>
-        <li><a class="topo__area" href="#/area" data-area-link>Área do inscrito</a></li>
+        <li><a class="topo__area" href="#/area" data-area-link>Entrar</a></li>
         <li><a class="btn btn--primario btn--pequeno" data-config-href="inscricoes.url" data-pendente="ocultar" href="#/inscricoes">Inscreva-se</a></li>
       </ul>
     </nav>
@@ -698,12 +698,12 @@
   </section>
 
   <!-- ===================== ÁREA DO INSCRITO ===================== -->
-  <section class="pagina" data-pagina="area" data-titulo="Área do inscrito" hidden>
+  <section class="pagina" data-pagina="area" data-titulo="Entrar" hidden>
     <div class="container">
       <header class="pagina__cabecalho">
-        <p class="eyebrow">Área do inscrito</p>
-        <h1 id="area-titulo">Entre na sua área</h1>
-        <p class="lead" id="area-lead">Aqui você vê a sua inscrição e envia trabalhos. Use o e-mail da inscrição e a senha que você criou.</p>
+        <p class="eyebrow" id="area-olho">Acesso restrito</p>
+        <h1 id="area-titulo">Entrar</h1>
+        <p class="lead" id="area-lead">Inscritos, avaliadores da Comissão Científica e organização entram aqui, com o e-mail e a senha.</p>
       </header>
 
       <div class="inscricao area">
@@ -713,9 +713,9 @@
         <div id="area-entrar">
           <form class="inscricao__form" id="form-entrar" novalidate>
             <fieldset class="inscricao__campos">
-              <legend class="sr-only">Entrar na área do inscrito</legend>
+              <legend class="sr-only">Entrar</legend>
               <div class="campo campo--largo">
-                <label for="ent-email">E-mail da inscrição</label>
+                <label for="ent-email">E-mail</label>
                 <input id="ent-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="ent-email-erro">
                 <p class="campo__erro" id="ent-email-erro" hidden></p>
               </div>
@@ -732,7 +732,7 @@
             </div>
           </form>
           <p class="area__links"><button class="link-botao" type="button" data-area-ver="recuperar">Esqueci a senha</button> · Ainda não se inscreveu? <a href="#/inscricoes/formulario">Faça a inscrição</a></p>
-          <p class="nota">Fez a inscrição antes de existir a senha? Use "Esqueci a senha" para criar a sua com um código enviado ao e-mail da inscrição.</p>
+          <p class="nota">Inscritos usam o e-mail e a senha criados na inscrição. Avaliadores da comissão criam a senha pelo link do convite que chegou por e-mail.</p>
         </div>
 
         <!-- Criar ou recuperar a senha: código por e-mail -->
@@ -740,9 +740,9 @@
           <form class="inscricao__form" id="form-codigo" novalidate>
             <fieldset class="inscricao__campos">
               <legend class="sr-only">Pedir código por e-mail</legend>
-              <p class="campo__dica campo--largo">Informe o e-mail da inscrição. Vamos enviar um código de 6 números para você criar uma senha nova.</p>
+              <p class="campo__dica campo--largo">Informe o seu e-mail de acesso (para inscritos, o da inscrição). Vamos enviar um código de 6 números para você criar uma senha nova.</p>
               <div class="campo campo--largo">
-                <label for="cod-email">E-mail da inscrição</label>
+                <label for="cod-email">E-mail</label>
                 <input id="cod-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="cod-email-erro">
                 <p class="campo__erro" id="cod-email-erro" hidden></p>
               </div>
@@ -761,7 +761,7 @@
             <fieldset class="inscricao__campos">
               <legend class="sr-only">Criar senha com o código</legend>
               <div class="campo">
-                <label for="nov-email">E-mail da inscrição</label>
+                <label for="nov-email">E-mail</label>
                 <input id="nov-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="nov-email-erro">
                 <p class="campo__erro" id="nov-email-erro" hidden></p>
               </div>
@@ -797,7 +797,10 @@
           <div id="area-conteudo" hidden>
             <div class="area__topo">
               <p class="area__ola">Olá, <strong data-painel="primeiroNome"></strong>.</p>
-              <button class="btn btn--secundario btn--pequeno" type="button" data-sair>Sair</button>
+              <div class="area__topo-acoes">
+                <nav class="area__perfis" id="area-perfis" aria-label="Suas outras áreas" hidden></nav>
+                <button class="btn btn--secundario btn--pequeno" type="button" data-sair>Sair</button>
+              </div>
             </div>
 
             <h2 class="form-secao">Sua inscrição</h2>
@@ -824,119 +827,209 @@
     </div>
   </section>
 
-  <!-- ===================== ÁREA DA COMISSÃO (avaliação dos trabalhos) ===================== -->
-  <section class="pagina" data-pagina="comissao" data-titulo="Área da comissão" hidden>
+  <!-- ===================== AVALIAÇÃO DE TRABALHOS (só a Comissão Científica) ===================== -->
+  <section class="pagina" data-pagina="avaliacao" data-titulo="Avaliação de trabalhos" hidden>
     <div class="container">
       <header class="pagina__cabecalho">
-        <p class="eyebrow">Área da comissão</p>
-        <h1 id="com-titulo">Avaliação dos trabalhos</h1>
-        <p class="lead" id="com-lead">Acesso restrito aos avaliadores da Comissão Científica.</p>
+        <p class="eyebrow">Comissão Científica</p>
+        <h1>Avaliação dos trabalhos</h1>
+        <p class="lead">Leia cada trabalho e registre a decisão da comissão. O primeiro autor recebe o resultado por e-mail na hora.</p>
       </header>
 
       <div class="inscricao area area--larga">
         <p class="inscricao__aviso" id="com-aviso" hidden></p>
 
-        <div id="com-entrar">
-          <form class="inscricao__form" id="form-com-entrar" novalidate>
-            <fieldset class="inscricao__campos">
-              <legend class="sr-only">Entrar na área da comissão</legend>
-              <div class="campo campo--largo">
-                <label for="cen-email">E-mail do avaliador</label>
-                <input id="cen-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="cen-email-erro">
-                <p class="campo__erro" id="cen-email-erro" hidden></p>
-              </div>
-              <div class="campo campo--largo">
-                <label for="cen-senha">Senha</label>
-                <input id="cen-senha" name="senha" type="password" autocomplete="current-password" maxlength="100" required aria-describedby="cen-senha-erro">
-                <p class="campo__erro" id="cen-senha-erro" hidden></p>
-              </div>
-              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="cen-senha"> Mostrar a senha</label>
-            </fieldset>
-            <div class="inscricao__envio">
-              <button class="btn btn--primario" type="submit">Entrar</button>
-              <p class="inscricao__status" role="status" aria-live="polite"></p>
-            </div>
-          </form>
-          <p class="area__links"><button class="link-botao" type="button" data-com-ver="recuperar">Primeiro acesso ou esqueci a senha</button></p>
-          <p class="nota">Só entram os e-mails cadastrados pela organização na lista da comissão. No primeiro acesso, peça um código e crie a sua senha.</p>
+        <div class="acesso" data-restrito-bloqueio hidden>
+          <h2>Esta área é só para a Comissão Científica</h2>
+          <p>A sua conta não está na lista de avaliadores. Se você recebeu um convite da organização, abra o link do e-mail para criar a senha de avaliador.</p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" data-ir-minha-area href="#/area">Ir para a minha área</a></p>
         </div>
 
-        <div id="com-recuperar" hidden>
-          <form class="inscricao__form" id="form-com-codigo" novalidate>
-            <fieldset class="inscricao__campos">
-              <legend class="sr-only">Pedir código por e-mail</legend>
-              <p class="campo__dica campo--largo">Informe o seu e-mail de avaliador. Vamos enviar um código de 6 números para você criar a senha.</p>
-              <div class="campo campo--largo">
-                <label for="cco-email">E-mail do avaliador</label>
-                <input id="cco-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="cco-email-erro">
-                <p class="campo__erro" id="cco-email-erro" hidden></p>
-              </div>
-            </fieldset>
-            <div class="inscricao__envio">
-              <button class="btn btn--primario" type="submit">Enviar código</button>
-              <p class="inscricao__status" role="status" aria-live="polite"></p>
+        <div data-restrito-conteudo hidden>
+          <div class="area__topo">
+            <p class="area__ola" data-ola></p>
+            <div class="area__topo-acoes">
+              <nav class="area__perfis" data-perfis aria-label="Suas outras áreas" hidden></nav>
+              <button class="btn btn--secundario btn--pequeno" type="button" data-sair>Sair</button>
             </div>
-          </form>
-          <p class="area__links"><button class="link-botao" type="button" data-com-ver="nova">Já tenho um código</button> · <button class="link-botao" type="button" data-com-ver="entrar">Voltar para entrar</button></p>
-        </div>
-
-        <div id="com-nova" hidden>
-          <p class="inscricao__aviso inscricao__aviso--info" id="cno-enviado" hidden></p>
-          <form class="inscricao__form" id="form-com-nova" novalidate>
-            <fieldset class="inscricao__campos">
-              <legend class="sr-only">Criar senha com o código</legend>
-              <div class="campo">
-                <label for="cno-email">E-mail do avaliador</label>
-                <input id="cno-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="cno-email-erro">
-                <p class="campo__erro" id="cno-email-erro" hidden></p>
-              </div>
-              <div class="campo">
-                <label for="cno-codigo">Código recebido</label>
-                <input id="cno-codigo" name="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required aria-describedby="cno-codigo-erro">
-                <p class="campo__erro" id="cno-codigo-erro" hidden></p>
-              </div>
-              <div class="campo">
-                <label for="cno-senha">Senha nova</label>
-                <input id="cno-senha" name="senha" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="cno-senha-dica cno-senha-erro">
-                <p class="campo__dica" id="cno-senha-dica">Pelo menos 8 caracteres.</p>
-                <p class="campo__erro" id="cno-senha-erro" hidden></p>
-              </div>
-              <div class="campo">
-                <label for="cno-senha2">Repita a senha nova</label>
-                <input id="cno-senha2" name="senha2" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="cno-senha2-erro">
-                <p class="campo__erro" id="cno-senha2-erro" hidden></p>
-              </div>
-              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="cno-senha cno-senha2"> Mostrar a senha</label>
-            </fieldset>
-            <div class="inscricao__envio">
-              <button class="btn btn--primario" type="submit">Salvar a senha e entrar</button>
-              <p class="inscricao__status" role="status" aria-live="polite"></p>
-            </div>
-          </form>
-          <p class="area__links"><button class="link-botao" type="button" data-com-ver="recuperar">Pedir outro código</button> · <button class="link-botao" type="button" data-com-ver="entrar">Voltar para entrar</button></p>
-        </div>
-
-        <div id="com-painel" hidden>
+          </div>
           <p class="area__carregando" id="com-carregando" role="status">Carregando os trabalhos…</p>
           <div id="com-conteudo" hidden>
-            <div class="area__topo">
-              <p class="area__ola">Olá, <strong id="com-nome"></strong>.</p>
-              <button class="btn btn--secundario btn--pequeno" type="button" data-com-sair>Sair</button>
+            <div class="com-progresso">
+              <p><strong id="com-feitos">0</strong> de <strong id="com-total">0</strong> trabalhos já avaliados</p>
+              <div class="com-progresso__trilho" aria-hidden="true"><div class="com-progresso__barra" id="com-barra"></div></div>
             </div>
-            <p class="nota">Abra cada trabalho para ler autores e resumo. Ao aceitar ou recusar, o primeiro autor recebe um e-mail na hora, com o seu comentário, se houver. A decisão não pode ser mudada pelo site.</p>
+            <p class="nota">Abra o trabalho para ler autores e resumo. Ao aceitar ou recusar, o primeiro autor recebe um e-mail na hora, com o seu comentário, se houver. A decisão não pode ser mudada pelo site.</p>
             <div class="com-filtros" role="group" aria-label="Filtrar trabalhos">
-              <button type="button" class="com-filtro" data-filtro="Em avaliação" aria-pressed="true">Em avaliação <span data-conta="Em avaliação">0</span></button>
+              <button type="button" class="com-filtro" data-filtro="Em avaliação" aria-pressed="true">A avaliar <span data-conta="Em avaliação">0</span></button>
               <button type="button" class="com-filtro" data-filtro="Aceito" aria-pressed="false">Aceitos <span data-conta="Aceito">0</span></button>
               <button type="button" class="com-filtro" data-filtro="Recusado" aria-pressed="false">Recusados <span data-conta="Recusado">0</span></button>
               <button type="button" class="com-filtro" data-filtro="" aria-pressed="false">Todos <span data-conta="">0</span></button>
             </div>
             <div class="campo com-busca">
               <label for="com-busca">Buscar</label>
-              <input id="com-busca" type="text" placeholder="Título, protocolo ou autor" autocomplete="off">
+              <input id="com-busca" type="search" placeholder="Título, protocolo, autor ou eixo" autocomplete="off">
             </div>
             <ul class="com-lista" id="com-lista"></ul>
             <p class="nota" id="com-vazio" hidden>Nenhum trabalho nesta lista.</p>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ÁREA DA ORGANIZAÇÃO ===================== -->
+  <section class="pagina" data-pagina="organizacao" data-titulo="Área da organização" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Área da organização</p>
+        <h1>Organização do simpósio</h1>
+        <p class="lead">Comissão Científica, inscrições e trabalhos num só lugar.</p>
+      </header>
+
+      <div class="inscricao area area--larga">
+        <p class="inscricao__aviso inscricao__aviso--teste" id="org-aviso" hidden></p>
+
+        <div class="acesso" data-restrito-bloqueio hidden>
+          <h2>Esta área é só para a organização</h2>
+          <p>O seu e-mail não está na lista da organização do simpósio.</p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" data-ir-minha-area href="#/area">Ir para a minha área</a></p>
+        </div>
+
+        <div data-restrito-conteudo hidden>
+          <div class="area__topo">
+            <p class="area__ola" data-ola></p>
+            <div class="area__topo-acoes">
+              <nav class="area__perfis" data-perfis aria-label="Suas outras áreas" hidden></nav>
+              <button class="btn btn--secundario btn--pequeno" type="button" data-sair>Sair</button>
+            </div>
+          </div>
+          <p class="area__carregando" id="org-carregando" role="status">Carregando…</p>
+          <div id="org-conteudo" hidden>
+            <ul class="org-numeros">
+              <li><strong data-org-num="inscricoes">0</strong> inscrições <span data-org-num="vagas"></span></li>
+              <li><strong data-org-num="trabalhos">0</strong> trabalhos enviados</li>
+              <li><strong data-org-num="avaliacao">0</strong> a avaliar</li>
+              <li><strong data-org-num="aceitos">0</strong> aceitos</li>
+              <li><strong data-org-num="recusados">0</strong> recusados</li>
+              <li><strong data-org-num="comissao">0</strong> avaliadores ativos <span data-org-num="convites"></span></li>
+            </ul>
+
+            <div class="org-abas" role="group" aria-label="Escolha o que ver">
+              <button type="button" class="org-aba" data-org-aba="comissao" aria-pressed="true">Comissão</button>
+              <button type="button" class="org-aba" data-org-aba="inscricoes" aria-pressed="false">Inscrições</button>
+              <button type="button" class="org-aba" data-org-aba="trabalhos" aria-pressed="false">Trabalhos</button>
+            </div>
+
+            <div data-org-painel="comissao">
+              <h2 class="form-secao">Convidar avaliador</h2>
+              <p class="nota">O avaliador recebe um e-mail com o link para criar a senha e, ao entrar no site, vai direto para a avaliação dos trabalhos. Não precisa estar inscrito no simpósio.</p>
+              <form class="inscricao__form org-convite" id="form-org-convite" novalidate>
+                <fieldset class="inscricao__campos">
+                  <legend class="sr-only">Convidar avaliador</legend>
+                  <div class="campo">
+                    <label for="ocv-nome">Nome completo</label>
+                    <input id="ocv-nome" name="nome" type="text" autocomplete="off" maxlength="120" required aria-describedby="ocv-nome-erro">
+                    <p class="campo__erro" id="ocv-nome-erro" hidden></p>
+                  </div>
+                  <div class="campo">
+                    <label for="ocv-email">E-mail</label>
+                    <input id="ocv-email" name="email" type="email" autocomplete="off" maxlength="120" required aria-describedby="ocv-email-erro">
+                    <p class="campo__erro" id="ocv-email-erro" hidden></p>
+                  </div>
+                </fieldset>
+                <div class="inscricao__envio">
+                  <button class="btn btn--primario" type="submit">Enviar convite</button>
+                  <p class="inscricao__status" role="status" aria-live="polite"></p>
+                </div>
+              </form>
+
+              <h2 class="form-secao">Avaliadores</h2>
+              <ul class="org-lista" id="org-comissao"></ul>
+              <p class="nota" id="org-comissao-vazio">Ninguém na comissão ainda. Convide os avaliadores pelo formulário acima.</p>
+            </div>
+
+            <div data-org-painel="inscricoes" hidden>
+              <div class="org-ferramentas">
+                <div class="campo com-busca">
+                  <label for="org-busca-inscricoes">Buscar inscrição</label>
+                  <input id="org-busca-inscricoes" type="search" placeholder="Nome, número, e-mail, CPF ou instituição" autocomplete="off">
+                </div>
+                <button class="btn btn--secundario btn--pequeno" type="button" id="org-baixar-inscricoes">Baixar lista (abre no Excel)</button>
+              </div>
+              <p class="nota" id="org-inscricoes-total"></p>
+              <ul class="com-lista" id="org-inscricoes"></ul>
+              <p class="nota" id="org-inscricoes-vazio" hidden>Ainda não há inscrições.</p>
+              <p class="org-mais"><button class="btn btn--secundario btn--pequeno" type="button" id="org-mais-inscricoes" hidden>Mostrar mais</button></p>
+            </div>
+
+            <div data-org-painel="trabalhos" hidden>
+              <div class="com-filtros" role="group" aria-label="Filtrar trabalhos">
+                <button type="button" class="com-filtro" data-filtro="" aria-pressed="true">Todos <span data-conta="">0</span></button>
+                <button type="button" class="com-filtro" data-filtro="Em avaliação" aria-pressed="false">A avaliar <span data-conta="Em avaliação">0</span></button>
+                <button type="button" class="com-filtro" data-filtro="Aceito" aria-pressed="false">Aceitos <span data-conta="Aceito">0</span></button>
+                <button type="button" class="com-filtro" data-filtro="Recusado" aria-pressed="false">Recusados <span data-conta="Recusado">0</span></button>
+              </div>
+              <div class="org-ferramentas">
+                <div class="campo com-busca">
+                  <label for="org-busca-trabalhos">Buscar trabalho</label>
+                  <input id="org-busca-trabalhos" type="search" placeholder="Título, protocolo, autor ou eixo" autocomplete="off">
+                </div>
+                <button class="btn btn--secundario btn--pequeno" type="button" id="org-baixar-trabalhos">Baixar lista (abre no Excel)</button>
+              </div>
+              <ul class="com-lista" id="org-trabalhos"></ul>
+              <p class="nota" id="org-trabalhos-vazio" hidden>Nenhum trabalho nesta lista.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONVITE DA COMISSÃO (link enviado por e-mail) ===================== -->
+  <section class="pagina" data-pagina="convite" data-titulo="Convite da Comissão Científica" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Comissão Científica</p>
+        <h1>Convite para avaliar os trabalhos</h1>
+        <p class="lead">Crie a sua senha para entrar na área de avaliação. Depois, é só entrar pelo site com o seu e-mail e essa senha.</p>
+      </header>
+
+      <div class="inscricao area">
+        <p class="area__carregando" id="cnv-carregando" role="status">Conferindo o convite…</p>
+
+        <div id="cnv-invalido" hidden>
+          <p class="inscricao__aviso" id="cnv-invalido-texto"></p>
+          <p class="area__links">Já criou a sua senha? <a href="#/area">Entre aqui</a>.</p>
+        </div>
+
+        <div id="cnv-formulario" hidden>
+          <form class="inscricao__form" id="form-convite" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Criar a senha de avaliador</legend>
+              <p class="campo__dica campo--largo">Olá, <strong id="cnv-nome"></strong>. Seja bem-vindo(a) à Comissão Científica.</p>
+              <div class="campo campo--largo">
+                <label for="cnv-email">E-mail de acesso</label>
+                <input id="cnv-email" name="email" type="email" autocomplete="username" readonly>
+              </div>
+              <div class="campo">
+                <label for="cnv-senha">Senha</label>
+                <input id="cnv-senha" name="senha" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="cnv-senha-dica cnv-senha-erro">
+                <p class="campo__dica" id="cnv-senha-dica">Pelo menos 8 caracteres.</p>
+                <p class="campo__erro" id="cnv-senha-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="cnv-senha2">Repita a senha</label>
+                <input id="cnv-senha2" name="senha2" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="cnv-senha2-erro">
+                <p class="campo__erro" id="cnv-senha2-erro" hidden></p>
+              </div>
+              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="cnv-senha cnv-senha2"> Mostrar a senha</label>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Criar a senha e entrar</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -1078,7 +1171,7 @@
         <details class="faq__item">
           <summary>Esqueci a senha da área do inscrito. E agora?</summary>
           <div>
-            <p>Na <a href="#/area">área do inscrito</a>, use "Esqueci a senha". Um código de 6 números chega no e-mail da inscrição, e com ele você cria uma senha nova. O mesmo caminho serve para quem se inscreveu antes de existir a senha.</p>
+            <p>Na <a href="#/area">área do inscrito</a>, use "Esqueci a senha". Um código de 6 números chega no e-mail da inscrição, e com ele você cria uma senha nova.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -1257,7 +1350,7 @@
       <h2 class="subtitulo">Quem é responsável pelos dados</h2>
       <p>A Secretaria Municipal de Saúde do Rio de Janeiro, por meio da Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE), organizadora do simpósio.</p>
       <h2 class="subtitulo">Quais dados são coletados</h2>
-      <p>Os dados informados no formulário de inscrição: nome, CPF, e-mail, celular, categoria profissional, instituição e a intenção de submeter trabalho. Na submissão de trabalhos, também os dados dos autores. A senha da área do inscrito não é guardada como foi digitada: o sistema guarda só uma versão embaralhada, que ninguém, nem a organização, consegue transformar de volta na senha. O sistema que recebe as inscrições registra a data e a hora de cada envio.</p>
+      <p>Os dados informados no formulário de inscrição: nome, CPF, e-mail, celular, categoria profissional, instituição e a intenção de submeter trabalho. Na submissão de trabalhos, também os dados dos autores. As senhas de acesso ao site não são guardadas como foram digitadas: o sistema guarda só uma versão embaralhada, que ninguém, nem a organização, consegue transformar de volta na senha. O sistema que recebe as inscrições registra a data e a hora de cada envio.</p>
       <h2 class="subtitulo">Para que os dados são usados</h2>
       <ul class="regras">
         <li>Organizar as inscrições, controlar as vagas e fazer o credenciamento no evento.</li>
@@ -1266,7 +1359,7 @@
         <li>Enviar comunicados sobre o simpósio, como confirmação de inscrição, programação e orientações.</li>
       </ul>
       <h2 class="subtitulo">Com quem os dados são compartilhados</h2>
-      <p>Com o serviço usado para receber e guardar as inscrições e os trabalhos e com os parceiros estritamente necessários à realização do evento, como a instituição que sedia o simpósio, para controle de acesso. Os dados não são vendidos nem usados para outras finalidades.</p>
+      <p>As inscrições e os trabalhos ficam guardados no servidor da própria Secretaria Municipal de Saúde. Dentro do site, só a organização do simpósio vê as inscrições, e os trabalhos são lidos também pela Comissão Científica, que os avalia. Fora isso, os dados são compartilhados apenas com os parceiros estritamente necessários à realização do evento, como a instituição que sedia o simpósio, para controle de acesso. Os dados não são vendidos nem usados para outras finalidades.</p>
       <h2 class="subtitulo">Por quanto tempo os dados ficam guardados</h2>
       <p>Pelo período necessário à realização do simpósio e à emissão e comprovação dos certificados, observados os prazos legais de guarda de documentos da administração pública.</p>
       <h2 class="subtitulo">Registros de imagem</h2>
@@ -1296,7 +1389,7 @@
         <li><a href="#/evento">O evento</a></li>
         <li><a href="#/programacao">Programação</a></li>
         <li><a href="#/inscricoes">Inscrições</a></li>
-        <li><a href="#/area">Área do inscrito</a></li>
+        <li><a href="#/area">Entrar</a></li>
         <li><a href="#/trabalhos">Trabalhos científicos</a></li>
         <li><a href="#/local">Local</a></li>
         <li><a href="#/cronograma">Datas importantes</a></li>
@@ -1304,7 +1397,6 @@
         <li data-vinculo="avisos"><a href="#/avisos">Avisos</a></li>
         <li><a href="#/contato">Contato</a></li>
         <li><a href="#/privacidade">Privacidade</a></li>
-        <li><a href="#/comissao">Área da comissão</a></li>
       </ul>
     </div>
   </div>

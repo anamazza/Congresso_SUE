@@ -33,20 +33,18 @@ const CONFIG = {
   edital: {
     url: "assets/Edital.docx", // troque pelo PDF final quando estiver pronto
   },
-  // Banco que recebe os formulários de inscrição e de envio de trabalhos.
-  // É o endereço do app da Web do Apps Script ligado à planilha (termina em
-  // /exec). Passo a passo no README, seção "Banco de dados".
-  // Enquanto estiver vazio, os formulários aparecem com o envio desligado.
+  // Banco que recebe inscrições, trabalhos e acessos: o servidor do simpósio
+  // (pasta servidor/, instalado no DIID). Quando o site é aberto pelo próprio
+  // servidor, isto fica vazio: o servidor avisa sozinho onde está o banco.
+  // Só preencha se o site for publicado num endereço e o servidor em outro,
+  // por exemplo "https://servidor.exemplo.rio/congresso-sue/api".
+  // Sem servidor, os formulários aparecem com o envio desligado.
+  // No modo de teste (endereço com ?teste, ou a cópia do GitHub Pages), o
+  // banco roda dentro do navegador (js/banco-teste.js) e nada sai dali.
   banco: {
     url: "",
     inscricoesEncerradas: false, // true fecha o formulário de inscrição (fecha sozinho após inscricoes.fim)
     submissaoEncerrada: false,   // true fecha o envio de trabalhos (fecha sozinho após submissao.prazo)
-    // Modo de teste (site aberto com ?teste). Vazio = o banco roda dentro do
-    // navegador (js/banco-teste.js), com os dados guardados só ali. Com o
-    // endereço de uma planilha de testes do Google, os envios vão para ela.
-    // Quem entra pelo endereço normal nunca usa nenhum dos dois.
-    // README, seção "Ambiente de teste".
-    urlTeste: "",
   },
   contato: {
     email: "",            // ex.: "simposio.subhue@rio.rj.gov.br"
@@ -110,17 +108,17 @@ const CONFIG = {
   const copiaDeTeste = /\.github\.io$/i.test(window.location.hostname);
   const modoTeste = copiaDeTeste || /[?&]teste\b/.test(window.location.search);
   const bancoCfg = CONFIG.banco || {};
+  // Endereço completo (https://...) ou relativo à página ("api"), que é o
+  // que o servidor do simpósio informa em window.SIMPOSIO_BANCO
   function enderecoDoBanco(url) {
     url = String(url || "").trim();
-    if (url && !/^https:\/\//i.test(url)) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^https:\/\//i.test(url)) {
       console.warn("Banco: o endereço precisa começar com https://");
       return "";
     }
     return url;
   }
-  const urlBanco = enderecoDoBanco(bancoCfg.url);
-  // No modo de teste com urlTeste preenchido, os envios vão para a planilha de testes
-  const urlBancoTeste = modoTeste ? enderecoDoBanco(bancoCfg.urlTeste) : "";
+  const urlBanco = enderecoDoBanco(bancoCfg.url || window.SIMPOSIO_BANCO);
 
   // "06/11/2026" vira o início ou o fim daquele dia no horário de Brasília,
   // o mesmo que o banco usa, qualquer que seja o fuso de quem acessa
@@ -492,10 +490,10 @@ const CONFIG = {
     }
     return bancoDoNavegador;
   }
-  if (modoTeste && !urlBancoTeste) carregarBancoDoNavegador();
+  if (modoTeste) carregarBancoDoNavegador();
 
   function enviarAoBanco(acao, dados) {
-    if (modoTeste && !urlBancoTeste) {
+    if (modoTeste) {
       // Sem o banco do navegador (como no arquivo único), as respostas são só simuladas
       return carregarBancoDoNavegador().then(function (banco) {
         return new Promise(function (ok) {
@@ -503,23 +501,25 @@ const CONFIG = {
         });
       });
     }
-    return fetch(modoTeste ? urlBancoTeste : urlBanco, {
+    return fetch(urlBanco, {
       method: "POST",
-      // Texto simples evita a checagem prévia de CORS, que o Apps Script não responde
+      // Texto simples: o pedido sai sem a checagem prévia de CORS
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ acao: acao, dados: dados }),
     }).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
+      // O servidor responde em JSON até nos erros; outra coisa (como a página
+      // de erro de um proxy) conta como falha de conexão
+      return r.json().catch(function () { throw new Error("HTTP " + r.status); });
     });
   }
 
-  // Modo de teste sem planilha: respostas de mentira, nada sai do navegador
+  // Modo de teste sem o banco do navegador: respostas de mentira, nada sai daqui
   function simularBanco(acao, dados) {
     const primeiro = limpar(dados.nome || "Pessoa de Teste").split(" ")[0];
-    if (acao === "inscricao") return { ok: true, protocolo: "INS-TESTE", nome: primeiro, token: "simulado" };
+    const acesso = { token: "simulado", nome: primeiro, papeis: ["inscrito"] };
+    if (acao === "inscricao") return Object.assign({ ok: true, protocolo: "INS-TESTE" }, acesso);
     if (acao === "trabalho") return { ok: true, protocolo: "TRB-TESTE" };
-    if (acao === "entrar" || acao === "novaSenha") return { ok: true, token: "simulado", nome: "Pessoa" };
+    if (acao === "entrar" || acao === "novaSenha" || acao === "sessao") return Object.assign({ ok: true }, acesso, { nome: "Pessoa" });
     if (acao === "pedirCodigo") return { ok: true, mensagem: "Modo de teste: nenhum código é enviado. Digite quaisquer 6 números." };
     if (acao === "painel") {
       return {
@@ -530,12 +530,11 @@ const CONFIG = {
         },
         trabalhos: [],
         submissao: { aberta: true, prazo: ler("submissao.prazo"), maximo: 3, restantes: 3 },
+        papeis: ["inscrito"],
       };
     }
-    if (/^comissao/.test(acao)) {
-      return { ok: false, mensagem: "A área da comissão precisa do banco de teste (js/banco-teste.js), que não carregou." };
-    }
-    return { ok: acao === "sair" };
+    if (acao === "sair") return { ok: true };
+    return { ok: false, mensagem: "Esta parte precisa do banco de teste (js/banco-teste.js), que não carregou." };
   }
 
   // Selo "Em avaliação", "Aceito" ou "Recusado"
@@ -546,14 +545,16 @@ const CONFIG = {
     return el;
   }
 
-  // ---------- Sessão da área do inscrito ----------
+  // ---------- Sessão (um só "Entrar" para inscritos, comissão e organização) ----------
   // Fica só nesta aba do navegador (sessionStorage): ao fechar a aba, a
   // pessoa sai. Mais seguro nos computadores compartilhados das unidades.
   const CHAVE_SESSAO = "simposio-ue-sessao";
   let sessao = (function () {
     try {
       const s = JSON.parse(window.sessionStorage.getItem(CHAVE_SESSAO) || "null");
-      return s && typeof s.token === "string" && s.token ? s : null;
+      if (!s || typeof s.token !== "string" || !s.token) return null;
+      s.papeis = Array.isArray(s.papeis) ? s.papeis : [];
+      return s;
     } catch (erro) {
       return null;
     }
@@ -564,15 +565,35 @@ const CONFIG = {
   const aoMudarSessao = [];
   const aoMostrarPagina = {}; // ganchos chamados quando o menu abre uma página
 
-  function abrirSessao(token, nome) {
-    sessao = { token: token, nome: nome || "" };
-    painelAtual = null;
-    avisoSessao = "";
+  // Cada perfil tem a sua página; quem tem mais de um começa pela organização
+  const PERFIS = [
+    { papel: "organizacao", rota: "#/organizacao", nome: "Área da organização" },
+    { papel: "comissao", rota: "#/avaliacao", nome: "Avaliação de trabalhos" },
+    { papel: "inscrito", rota: "#/area", nome: "Área do inscrito" },
+  ];
+  function temPapel(papel) {
+    return !!sessao && sessao.papeis.indexOf(papel) >= 0;
+  }
+  function rotaInicial() {
+    const perfil = PERFIS.filter(function (p) { return temPapel(p.papel); })[0];
+    return perfil ? perfil.rota : "#/area";
+  }
+
+  function guardarSessao() {
     try {
-      window.sessionStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+      if (sessao) window.sessionStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+      else window.sessionStorage.removeItem(CHAVE_SESSAO);
     } catch (erro) {
       // Sem armazenamento: a sessão vale até a página ser recarregada
     }
+  }
+
+  // r é a resposta do banco ao entrar: token, nome e perfis
+  function abrirSessao(r) {
+    sessao = { token: r.token, nome: r.nome || "", papeis: Array.isArray(r.papeis) ? r.papeis : [] };
+    painelAtual = null;
+    avisoSessao = "";
+    guardarSessao();
     aoMudarSessao.forEach(function (f) { f(); });
   }
 
@@ -582,17 +603,52 @@ const CONFIG = {
     sessao = null;
     painelAtual = null;
     avisoSessao = motivo || "";
-    try {
-      window.sessionStorage.removeItem(CHAVE_SESSAO);
-    } catch (erro) {
-      // nada a apagar
-    }
+    guardarSessao();
     aoMudarSessao.forEach(function (f) { f(); });
+  }
+
+  // Confere com o banco os perfis da sessão guardada (a organização pode ter
+  // tirado alguém da comissão, por exemplo). Devolve true se algo mudou.
+  function conferirSessao() {
+    if (!sessao) return Promise.resolve(false);
+    const token = sessao.token;
+    return enviarAoBanco("sessao", { token: token }).then(function (r) {
+      if (!sessao || sessao.token !== token) return false;
+      if (r && r.erro === "sessao") {
+        fecharSessao(r.mensagem);
+        return true;
+      }
+      if (!r || !r.ok) return false;
+      if (!r.papeis.length) {
+        fecharSessao("O seu acesso foi encerrado pela organização. Se acha que é um engano, fale com a organização pela página Contato.");
+        return true;
+      }
+      const mudou = r.papeis.join() !== sessao.papeis.join();
+      sessao.papeis = r.papeis;
+      sessao.nome = r.nome || sessao.nome;
+      guardarSessao();
+      if (mudou) aoMudarSessao.forEach(function (f) { f(); });
+      return mudou;
+    }, function () { return false; });
+  }
+
+  // Respostas "sessao" (sessão vencida) e "sem_acesso" (perfil tirado) levam a
+  // pessoa de volta: a primeira para Entrar, a segunda para a página dela
+  function tratarAcessoNegado(r) {
+    if (r && r.erro === "sessao") {
+      fecharSessao(r.mensagem);
+      return true;
+    }
+    if (r && r.erro === "sem_acesso") {
+      conferirSessao();
+      return true;
+    }
+    return false;
   }
 
   // Inscrição e trabalhos de quem entrou. Com "forcar", pergunta de novo ao banco.
   function carregarPainel(forcar) {
-    if (!sessao) return Promise.resolve(null);
+    if (!sessao || !temPapel("inscrito")) return Promise.resolve(null);
     if (painelAtual && !forcar) return Promise.resolve(painelAtual);
     if (painelPedido) return painelPedido;
     const token = sessao.token;
@@ -603,13 +659,71 @@ const CONFIG = {
         painelAtual = r;
         return r;
       }
-      if (r && r.erro === "sessao") fecharSessao(r.mensagem);
+      tratarAcessoNegado(r);
       return null;
     }, function () {
       painelPedido = null;
       return null;
     });
     return painelPedido;
+  }
+
+  // "Olá, Fulana" + links para os outros perfis da mesma conta
+  function montarPerfis(lugar, atual) {
+    if (!lugar) return;
+    lugar.textContent = "";
+    if (!sessao) return;
+    PERFIS.forEach(function (p) {
+      if (p.papel === atual || !temPapel(p.papel)) return;
+      const a = document.createElement("a");
+      a.href = p.rota;
+      a.textContent = p.nome;
+      lugar.appendChild(a);
+    });
+    lugar.hidden = !lugar.children.length;
+  }
+
+  // "Olá, Ana." ou, para contas sem nome (como as da organização), o e-mail
+  function saudar(el) {
+    const semNome = !sessao.nome || sessao.nome.indexOf("@") >= 0;
+    const destaque = document.createElement("strong");
+    destaque.textContent = sessao.nome;
+    el.textContent = semNome ? "Você entrou como " : "Olá, ";
+    el.appendChild(destaque);
+    el.appendChild(document.createTextNode("."));
+  }
+
+  // Páginas restritas: sem sessão, vai para Entrar; com outro perfil, avisa.
+  // Ao abrir pelo menu, devolve a rota para onde desviar (ou nada).
+  function paginaRestrita(o) {
+    const pagina = document.querySelector('[data-pagina="' + o.pagina + '"]');
+    if (!pagina) return null;
+    const bloqueio = pagina.querySelector("[data-restrito-bloqueio]");
+    const conteudo = pagina.querySelector("[data-restrito-conteudo]");
+    function mostrar(rota) {
+      if (!sessao) {
+        avisoSessao = avisoSessao || "Entre com o seu e-mail e a sua senha para abrir esta área.";
+        return "#/area";
+      }
+      const pode = temPapel(o.papel);
+      bloqueio.hidden = pode;
+      conteudo.hidden = !pode;
+      if (pode) {
+        montarPerfis(pagina.querySelector("[data-perfis]"), o.papel);
+        pagina.querySelectorAll("[data-ola]").forEach(saudar);
+        o.abrir(rota);
+      } else {
+        bloqueio.querySelector("[data-ir-minha-area]").setAttribute("href", rotaInicial());
+      }
+      return "";
+    }
+    aoMostrarPagina[o.pagina] = mostrar;
+    aoMudarSessao.push(function () {
+      if (pagina.hidden) return;
+      const desvio = mostrar();
+      if (desvio) navegar(desvio);
+    });
+    return pagina;
   }
 
   document.querySelectorAll("[data-sair]").forEach(function (botao) {
@@ -692,9 +806,7 @@ const CONFIG = {
         aviso.hidden = false;
       }
     } else if (modoTeste && aviso) {
-      aviso.textContent = urlBancoTeste
-        ? "Ambiente de teste: os envios vão para a planilha de testes, e não para a lista oficial. O e-mail de confirmação chega com [TESTE] no assunto."
-        : "Modo de teste: os dados ficam só neste navegador e não vão para ninguém. Os e-mails aparecem no Painel de teste, no canto da tela.";
+      aviso.textContent = "Modo de teste: os dados ficam só neste navegador e não vão para ninguém. Os e-mails aparecem no Painel de teste, no canto da tela.";
       aviso.classList.add("inscricao__aviso--teste");
       aviso.hidden = false;
     }
@@ -861,7 +973,7 @@ const CONFIG = {
       },
       // A inscrição já abre a sessão da área do inscrito
       aoConcluir: function (resposta) {
-        if (resposta.token) abrirSessao(resposta.token, resposta.nome);
+        if (resposta.token) abrirSessao(resposta);
         return false;
       },
       sucesso: function (chave, dados, resposta) {
@@ -1204,11 +1316,7 @@ const CONFIG = {
         painelAtual = null;
         return false;
       },
-      aoRecusar: function (resposta) {
-        if (resposta.erro !== "sessao") return false;
-        fecharSessao(resposta.mensagem);
-        return true;
-      },
+      aoRecusar: tratarAcessoNegado,
       sucesso: function (chave, dados, resposta) {
         if (chave === "protocolo") return resposta.protocolo || "enviado por e-mail";
         if (chave === "titulo") return dados.titulo || "";
@@ -1225,10 +1333,14 @@ const CONFIG = {
     const textoAcessoPadrao = textoAcesso.textContent;
     const sucessoTrabalho = document.getElementById("trb-sucesso");
     function atualizarEnvio() {
-      const travado = estadoSubmissao === "aberto" && !sessao;
+      const travado = estadoSubmissao === "aberto" && !temPapel("inscrito");
       caixaAcesso.hidden = !travado;
       if (travado) {
-        textoAcesso.textContent = avisoSessao ? avisoSessao + " " + textoAcessoPadrao : textoAcessoPadrao;
+        if (sessao) {
+          textoAcesso.textContent = "Você entrou com uma conta da comissão ou da organização, que não tem inscrição no simpósio. Para enviar trabalho como autor, faça a inscrição com outro e-mail.";
+        } else {
+          textoAcesso.textContent = avisoSessao ? avisoSessao + " " + textoAcessoPadrao : textoAcessoPadrao;
+        }
         formTrabalho.hidden = true;
         sucessoTrabalho.hidden = true;
         return;
@@ -1258,11 +1370,7 @@ const CONFIG = {
       const partes = chave.split(" ");
       return enviarAoBanco("conferir", { token: sessao ? sessao.token : "", cpf: mascaraCpf(partes[0]), email: partes[1] })
         .then(function (r) {
-          if (r && r.erro === "sessao") {
-            fecharSessao(r.mensagem);
-            return null;
-          }
-          return r;
+          return tratarAcessoNegado(r) ? null : r;
         })
         .catch(function () { return null; });
     }
@@ -1334,25 +1442,25 @@ const CONFIG = {
     let vistaSemSessao = "entrar";
     let emailLembrado = ""; // último e-mail digitado para entrar, para a recuperação
 
+    const olhoArea = document.getElementById("area-olho");
     const CABECALHOS = {
-      entrar: ["Entre na sua área", "Aqui você vê a sua inscrição e envia trabalhos. Use o e-mail da inscrição e a senha que você criou."],
-      recuperar: ["Criar ou recuperar a senha", "Você recebe um código no e-mail da inscrição e cria uma senha nova."],
-      nova: ["Criar ou recuperar a senha", "Digite o código que chegou no e-mail da inscrição e escolha a senha nova."],
-      painel: ["Sua inscrição e seus trabalhos", "Confira os dados da inscrição e envie trabalhos pelo botão no fim da página."],
+      entrar: ["Acesso restrito", "Entrar", "Inscritos, avaliadores da Comissão Científica e organização entram aqui, com o e-mail e a senha."],
+      recuperar: ["Acesso restrito", "Criar ou recuperar a senha", "Você recebe um código no seu e-mail e cria uma senha nova."],
+      nova: ["Acesso restrito", "Criar ou recuperar a senha", "Digite o código que chegou no seu e-mail e escolha a senha nova."],
+      painel: ["Área do inscrito", "Sua inscrição e seus trabalhos", "Confira os dados da inscrição e envie trabalhos pelo botão no fim da página."],
     };
     function mostrarVista(nome) {
       Object.keys(vistas).forEach(function (k) { vistas[k].hidden = k !== nome; });
-      tituloArea.textContent = CABECALHOS[nome][0];
-      leadArea.textContent = CABECALHOS[nome][1];
+      olhoArea.textContent = CABECALHOS[nome][0];
+      tituloArea.textContent = CABECALHOS[nome][1];
+      leadArea.textContent = CABECALHOS[nome][2];
     }
 
     if (estadoArea !== "aberto") {
-      avisoArea.textContent = "A área do inscrito abre junto com as inscrições, nesta página.";
+      avisoArea.textContent = "O acesso abre junto com as inscrições, nesta página.";
       avisoArea.hidden = false;
     } else if (modoTeste) {
-      avisoArea.textContent = urlBancoTeste
-        ? "Ambiente de teste: a área do inscrito usa a planilha de testes."
-        : "Modo de teste: as inscrições e senhas ficam só neste navegador. O código de \"Esqueci a senha\" aparece no Painel de teste, no canto da tela.";
+      avisoArea.textContent = "Modo de teste: inscrições e senhas ficam só neste navegador. O código de \"Esqueci a senha\" e os convites da comissão aparecem no Painel de teste, no canto da tela. Lá, em \"Acessos de teste\", está o e-mail da organização.";
       avisoArea.classList.add("inscricao__aviso--teste");
       avisoArea.hidden = false;
     }
@@ -1379,7 +1487,7 @@ const CONFIG = {
         return { email: emailLembrado, senha: formEntrar.elements.senha.value };
       },
       aoConcluir: function (r) {
-        abrirSessao(r.token, r.nome);
+        abrirSessao(r);
         return true;
       },
     });
@@ -1436,7 +1544,7 @@ const CONFIG = {
       aoConcluir: function (r) {
         document.getElementById("nov-enviado").hidden = true;
         vistaSemSessao = "entrar";
-        abrirSessao(r.token, r.nome);
+        abrirSessao(r);
         return true;
       },
     });
@@ -1509,13 +1617,20 @@ const CONFIG = {
       botao.hidden = !sub.aberta || sub.restantes < 1;
     }
 
+    // Devolve a rota da página certa quando quem entrou não é inscrito
     function atualizarArea() {
       if (!sessao) {
         mostrarVista(vistaSemSessao);
         if (avisoSessao) ligacaoEntrar.definirStatus(avisoSessao, true);
-        return;
+        return "";
+      }
+      if (!temPapel("inscrito")) {
+        if (sessao.papeis.length) return rotaInicial();
+        fecharSessao("O seu acesso foi encerrado. Entre de novo.");
+        return atualizarArea();
       }
       mostrarVista("painel");
+      montarPerfis(document.getElementById("area-perfis"), "inscrito");
       if (painelAtual) {
         preencherPainel(painelAtual);
         carregando.hidden = true;
@@ -1535,379 +1650,642 @@ const CONFIG = {
           carregando.textContent = "Não foi possível carregar a sua inscrição agora. Verifique a conexão e recarregue a página.";
         }
       });
+      return "";
     }
 
-    // Link do menu e página aberta acompanham a sessão
-    const linksArea = document.querySelectorAll("[data-area-link]");
-    function atualizarMenuArea() {
-      linksArea.forEach(function (a) { a.textContent = sessao ? "Minha área" : "Área do inscrito"; });
-    }
     aoMostrarPagina.area = atualizarArea;
-    aoMudarSessao.push(atualizarMenuArea);
     aoMudarSessao.push(function () {
-      if (!paginaArea.hidden) {
-        atualizarArea();
-        window.scrollTo(0, 0);
-      }
+      if (paginaArea.hidden) return;
+      const desvio = atualizarArea();
+      if (desvio) navegar(desvio);
+      else window.scrollTo(0, 0);
     });
-    atualizarMenuArea();
   }
 
-  // ----- Área da comissão: entrar, criar senha e avaliar -----
-  const paginaComissao = document.querySelector('[data-pagina="comissao"]');
-  if (paginaComissao) {
-    const estadoCom = modoTeste || urlBanco ? "aberto" : "pendente";
-    const CHAVE_COMISSAO = "simposio-ue-comissao";
-    let sessaoCom = (function () {
-      try {
-        const s = JSON.parse(window.sessionStorage.getItem(CHAVE_COMISSAO) || "null");
-        return s && typeof s.token === "string" && s.token ? s : null;
-      } catch (erro) {
-        return null;
-      }
-    })();
-    let avisoCom = "";
-    let trabalhosCom = null;
-    let filtroCom = "Em avaliação";
-    let vistaCom = "entrar";
-    let emailCom = "";
-
-    const vistasCom = {
-      entrar: document.getElementById("com-entrar"),
-      recuperar: document.getElementById("com-recuperar"),
-      nova: document.getElementById("com-nova"),
-      painel: document.getElementById("com-painel"),
-    };
-    const tituloCom = document.getElementById("com-titulo");
-    const leadCom = document.getElementById("com-lead");
-    const CABECALHOS_COM = {
-      entrar: ["Avaliação dos trabalhos", "Acesso restrito aos avaliadores da Comissão Científica."],
-      recuperar: ["Senha da área da comissão", "Você recebe um código no e-mail de avaliador e cria uma senha nova."],
-      nova: ["Senha da área da comissão", "Digite o código que chegou no e-mail e escolha a senha nova."],
-      painel: ["Avaliação dos trabalhos", "Leia cada trabalho e registre a decisão da comissão."],
-    };
-    function mostrarVistaCom(nome) {
-      Object.keys(vistasCom).forEach(function (k) { vistasCom[k].hidden = k !== nome; });
-      tituloCom.textContent = CABECALHOS_COM[nome][0];
-      leadCom.textContent = CABECALHOS_COM[nome][1];
-    }
-
-    const avisoComEl = document.getElementById("com-aviso");
-    if (estadoCom !== "aberto") {
-      avisoComEl.textContent = "A área da comissão abre quando o banco do site estiver ligado.";
-      avisoComEl.hidden = false;
-    } else if (modoTeste && !urlBancoTeste) {
-      avisoComEl.textContent = "Modo de teste: use o avaliador comissao@teste.com. Crie a senha em \"Primeiro acesso\"; o código aparece no Painel de teste, no canto da tela.";
-      avisoComEl.classList.add("inscricao__aviso--teste");
-      avisoComEl.hidden = false;
-    }
-
-    function abrirSessaoCom(token, nome) {
-      sessaoCom = { token: token, nome: nome || "" };
-      avisoCom = "";
-      trabalhosCom = null;
-      try {
-        window.sessionStorage.setItem(CHAVE_COMISSAO, JSON.stringify(sessaoCom));
-      } catch (erro) {
-        // sem armazenamento: vale até recarregar
-      }
-      atualizarComissao();
-    }
-    function fecharSessaoCom(motivo) {
-      if (sessaoCom && !motivo) enviarAoBanco("comissaoSair", { token: sessaoCom.token }).catch(function () {});
-      sessaoCom = null;
-      trabalhosCom = null;
-      avisoCom = motivo || "";
-      try {
-        window.sessionStorage.removeItem(CHAVE_COMISSAO);
-      } catch (erro) {
-        // nada a apagar
-      }
-      atualizarComissao();
-    }
-
-    const textosCom = { botaoPendente: "Em breve", botaoEncerrado: "Em breve", avisoPendente: "", avisoEncerrado: "" };
-    const formComEntrar = document.getElementById("form-com-entrar");
-    const formComCodigo = document.getElementById("form-com-codigo");
-    const formComNova = document.getElementById("form-com-nova");
-    const ligacaoComEntrar = ligarFormulario({
-      form: formComEntrar,
-      prefixo: "cen",
-      acao: "comissaoEntrar",
-      estado: estadoCom,
-      textos: textosCom,
-      regras: { email: regraEmail, senha: function (v) { return v ? "" : "Informe a senha."; } },
-      coletar: function () {
-        emailCom = formComEntrar.elements.email.value.trim().toLowerCase();
-        return { email: emailCom, senha: formComEntrar.elements.senha.value };
-      },
-      aoConcluir: function (r) {
-        abrirSessaoCom(r.token, r.nome);
-        return true;
-      },
+  // Link do menu: "Entrar" sem sessão; "Minha área" leva à página do perfil
+  const linksArea = document.querySelectorAll("[data-area-link]");
+  function atualizarMenuArea() {
+    linksArea.forEach(function (a) {
+      a.textContent = sessao ? "Minha área" : "Entrar";
+      a.setAttribute("href", sessao ? rotaInicial() : "#/area");
     });
-    ligarFormulario({
-      form: formComCodigo,
-      prefixo: "cco",
-      acao: "comissaoPedirCodigo",
-      estado: estadoCom,
-      textos: textosCom,
-      regras: { email: regraEmail },
-      coletar: function () { return { email: formComCodigo.elements.email.value.trim().toLowerCase() }; },
-      aoConcluir: function (r, dados) {
-        formComNova.elements.email.value = dados.email;
-        const enviado = document.getElementById("cno-enviado");
-        enviado.textContent = r.mensagem || "";
-        enviado.hidden = !r.mensagem;
-        verVistaCom("nova");
-        formComNova.elements.codigo.focus();
-        return true;
-      },
+  }
+  aoMudarSessao.push(atualizarMenuArea);
+  atualizarMenuArea();
+
+  // ----- Peças comuns das áreas da comissão e da organização -----
+  function paragrafo(texto, classe) {
+    const p = document.createElement("p");
+    if (classe) p.className = classe;
+    p.textContent = texto;
+    return p;
+  }
+
+  function listaDeDados(pares, classe) {
+    const dl = document.createElement("dl");
+    dl.className = "area__dados" + (classe ? " " + classe : "");
+    pares.forEach(function (par) {
+      const div = document.createElement("div");
+      const dt = document.createElement("dt");
+      dt.textContent = par[0];
+      const dd = document.createElement("dd");
+      dd.textContent = par[1] || "não informado";
+      div.appendChild(dt);
+      div.appendChild(dd);
+      dl.appendChild(div);
     });
-    ligarFormulario({
-      form: formComNova,
-      prefixo: "cno",
-      acao: "comissaoNovaSenha",
-      estado: estadoCom,
-      textos: textosCom,
-      mascaras: { codigo: function (v) { return soDigitos(v).slice(0, 6); } },
-      regras: {
-        email: regraEmail,
-        codigo: function (v) {
-          if (!v) return "Digite o código que chegou no e-mail.";
-          return soDigitos(v).length === 6 ? "" : "O código tem 6 números.";
+    return dl;
+  }
+
+  function resultadoDoEmail(situacao) {
+    if (/^enviado/.test(situacao || "")) return "e-mail enviado";
+    return "e-mail: " + (situacao || "sem registro");
+  }
+
+  // Cartão de um trabalho. Com o.decidir, mostra os botões Aceitar e Recusar.
+  function cartaoTrabalho(t, o) {
+    o = o || {};
+    const emAvaliacao = t.situacao === "Em avaliação";
+    const li = document.createElement("li");
+    li.className = "com-trabalho";
+    li.dataset.protocolo = t.protocolo;
+    const topo = document.createElement("p");
+    topo.className = "area__trabalho-topo";
+    const protocolo = document.createElement("strong");
+    protocolo.textContent = t.protocolo;
+    topo.appendChild(protocolo);
+    topo.appendChild(document.createTextNode(t.data ? "enviado em " + t.data : ""));
+    topo.appendChild(selo(t.situacao));
+    li.appendChild(topo);
+    const titulo = document.createElement("h3");
+    titulo.textContent = t.titulo;
+    li.appendChild(titulo);
+    li.appendChild(paragrafo(t.primeiroAutor + " · " + t.eixo, "com-trabalho__autor"));
+    li.appendChild(paragrafo(t.tipo + " · " + t.totalAutores + (t.totalAutores === 1 ? " autor" : " autores") +
+      " · " + formatoNumero.format(t.caracteres) + " caracteres", "com-trabalho__meta"));
+
+    const detalhes = document.createElement("details");
+    const resumo = document.createElement("summary");
+    resumo.textContent = o.decidir && emAvaliacao ? "Ler o resumo e avaliar" : "Ler autores e resumo";
+    detalhes.appendChild(resumo);
+
+    const pares = [["Primeiro autor", t.primeiroAutor + (o.mostrarEmail && t.autorEmail ? " · " + t.autorEmail : "")], ["Coautores", t.coautores || "nenhum"], ["Apresentação", t.apresentador]];
+    if (o.mostrarEmail) pares.push(["Confirmação do envio", resultadoDoEmail(t.emailConfirmacao)]);
+    detalhes.appendChild(listaDeDados(pares, "com-trabalho__autores"));
+    [["Introdução", t.introducao], ["Métodos", t.metodos], ["Resultados", t.resultados], ["Conclusões", t.conclusoes]].forEach(function (parte) {
+      const h = document.createElement("h4");
+      h.textContent = parte[0];
+      detalhes.appendChild(h);
+      detalhes.appendChild(paragrafo(parte[1], "com-trabalho__texto"));
+    });
+
+    if (o.decidir && emAvaliacao) {
+      const caixa = document.createElement("div");
+      caixa.className = "com-trabalho__decidir campo";
+      const idComentario = "com-comentario-" + t.protocolo;
+      const rotulo = document.createElement("label");
+      rotulo.htmlFor = idComentario;
+      rotulo.textContent = "Comentário para o autor (opcional)";
+      const comentario = document.createElement("textarea");
+      comentario.id = idComentario;
+      comentario.rows = 3;
+      comentario.maxLength = 1500;
+      const acoes = document.createElement("p");
+      acoes.className = "com-trabalho__acoes";
+      const aceitar = document.createElement("button");
+      aceitar.type = "button";
+      aceitar.className = "btn btn--primario btn--pequeno";
+      aceitar.textContent = "Aceitar";
+      const recusar = document.createElement("button");
+      recusar.type = "button";
+      recusar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar";
+      recusar.textContent = "Recusar";
+      const status = paragrafo("", "inscricao__status");
+      status.setAttribute("role", "status");
+      acoes.appendChild(aceitar);
+      acoes.appendChild(recusar);
+      acoes.appendChild(status);
+      caixa.appendChild(rotulo);
+      caixa.appendChild(comentario);
+      caixa.appendChild(acoes);
+      detalhes.appendChild(caixa);
+      const tela = {
+        travar: function (sim) { aceitar.disabled = recusar.disabled = sim; },
+        status: function (texto, erro) {
+          status.textContent = texto;
+          status.classList.toggle("is-erro", !!erro);
         },
-        senha: regraSenha,
-        senha2: function (v) {
-          if (!v) return "Repita a senha.";
-          return v === formComNova.elements.senha.value ? "" : "As duas senhas estão diferentes.";
-        },
-      },
-      coletar: function () {
-        return {
-          email: formComNova.elements.email.value.trim().toLowerCase(),
-          codigo: soDigitos(formComNova.elements.codigo.value),
-          senha: formComNova.elements.senha.value,
-        };
-      },
-      aoConcluir: function (r) {
-        document.getElementById("cno-enviado").hidden = true;
-        vistaCom = "entrar";
-        abrirSessaoCom(r.token, r.nome);
-        return true;
-      },
-    });
-
-    function verVistaCom(nome) {
-      vistaCom = nome;
-      mostrarVistaCom(nome);
-      const email = (formComEntrar.elements.email.value || emailCom).trim();
-      if (nome === "recuperar" && email && !formComCodigo.elements.email.value) formComCodigo.elements.email.value = email;
-      if (nome === "nova" && !formComNova.elements.email.value) formComNova.elements.email.value = formComCodigo.elements.email.value || email;
+      };
+      aceitar.addEventListener("click", function () { o.decidir(t, "aceito", comentario.value.trim(), tela); });
+      recusar.addEventListener("click", function () { o.decidir(t, "recusado", comentario.value.trim(), tela); });
     }
-    paginaComissao.querySelectorAll("[data-com-ver]").forEach(function (botao) {
-      botao.addEventListener("click", function () {
-        verVistaCom(botao.dataset.comVer);
-        const primeiro = vistasCom[botao.dataset.comVer].querySelector("input");
-        if (primeiro) primeiro.focus();
-      });
-    });
-    paginaComissao.querySelector("[data-com-sair]").addEventListener("click", function () { fecharSessaoCom(); });
+    li.appendChild(detalhes);
 
-    // ----- Lista de trabalhos -----
-    const listaCom = document.getElementById("com-lista");
-    const buscaCom = document.getElementById("com-busca");
-    const carregandoCom = document.getElementById("com-carregando");
-    const conteudoCom = document.getElementById("com-conteudo");
-
-    function paragrafo(texto, classe) {
-      const p = document.createElement("p");
-      if (classe) p.className = classe;
-      p.textContent = texto;
-      return p;
+    if (!emAvaliacao) {
+      li.appendChild(paragrafo(t.situacao + " por " + (t.avaliadoPor || "comissão") + (t.dataAvaliacao ? " em " + t.dataAvaliacao : "") +
+        " · " + resultadoDoEmail(t.emailResultado) + " ao autor.", "com-trabalho__decisao"));
+      if (t.comentario) li.appendChild(paragrafo("Comentário enviado: " + t.comentario, "area__comentario"));
     }
+    return li;
+  }
 
-    function cartaoTrabalho(t) {
-      const li = document.createElement("li");
-      li.className = "com-trabalho";
-      const topo = document.createElement("p");
-      topo.className = "area__trabalho-topo";
-      const protocolo = document.createElement("strong");
-      protocolo.textContent = t.protocolo;
-      topo.appendChild(protocolo);
-      topo.appendChild(document.createTextNode(t.data ? "enviado em " + t.data : ""));
-      topo.appendChild(selo(t.situacao));
-      li.appendChild(topo);
-      const titulo = document.createElement("h3");
-      titulo.textContent = t.titulo;
-      li.appendChild(titulo);
-      li.appendChild(paragrafo(t.tipo + " · " + t.eixo + " · " + t.totalAutores + (t.totalAutores === 1 ? " autor" : " autores") +
-        " · " + formatoNumero.format(t.caracteres) + " caracteres", "com-trabalho__meta"));
-
-      const detalhes = document.createElement("details");
-      if (t.situacao === "Em avaliação") detalhes.className = "com-trabalho__detalhes";
-      const resumo = document.createElement("summary");
-      resumo.textContent = t.situacao === "Em avaliação" ? "Ler autores e resumo e avaliar" : "Ler autores e resumo";
-      detalhes.appendChild(resumo);
-
-      const autores = document.createElement("dl");
-      autores.className = "area__dados com-trabalho__autores";
-      [["Primeiro autor", t.primeiroAutor], ["Coautores", t.coautores || "nenhum"], ["Apresentação", t.apresentador]].forEach(function (par) {
-        const div = document.createElement("div");
-        const dt = document.createElement("dt");
-        dt.textContent = par[0];
-        const dd = document.createElement("dd");
-        dd.textContent = par[1];
-        div.appendChild(dt);
-        div.appendChild(dd);
-        autores.appendChild(div);
+  // Filtros por situação e busca de uma lista de trabalhos
+  function listaDeTrabalhos(o) {
+    let filtro = o.filtroInicial;
+    let trabalhos = [];
+    function desenhar() {
+      const contas = { "": trabalhos.length, "Em avaliação": 0, "Aceito": 0, "Recusado": 0 };
+      trabalhos.forEach(function (t) { contas[t.situacao] = (contas[t.situacao] || 0) + 1; });
+      o.raiz.querySelectorAll("[data-conta]").forEach(function (el) { el.textContent = contas[el.dataset.conta] || 0; });
+      o.raiz.querySelectorAll("[data-filtro]").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro));
       });
-      detalhes.appendChild(autores);
-      [["Introdução", t.introducao], ["Métodos", t.metodos], ["Resultados", t.resultados], ["Conclusões", t.conclusoes]].forEach(function (parte) {
-        const h = document.createElement("h4");
-        h.textContent = parte[0];
-        detalhes.appendChild(h);
-        detalhes.appendChild(paragrafo(parte[1], "com-trabalho__texto"));
-      });
-
-      if (t.situacao === "Em avaliação") {
-        const caixa = document.createElement("div");
-        caixa.className = "com-trabalho__decidir campo";
-        const idComentario = "com-comentario-" + t.protocolo;
-        const rotulo = document.createElement("label");
-        rotulo.htmlFor = idComentario;
-        rotulo.textContent = "Comentário para o autor (opcional)";
-        const comentario = document.createElement("textarea");
-        comentario.id = idComentario;
-        comentario.rows = 3;
-        comentario.maxLength = 1500;
-        const acoes = document.createElement("p");
-        acoes.className = "com-trabalho__acoes";
-        const aceitar = document.createElement("button");
-        aceitar.type = "button";
-        aceitar.className = "btn btn--primario btn--pequeno";
-        aceitar.textContent = "Aceitar";
-        const recusar = document.createElement("button");
-        recusar.type = "button";
-        recusar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar";
-        recusar.textContent = "Recusar";
-        const status = paragrafo("", "inscricao__status");
-        status.setAttribute("role", "status");
-        acoes.appendChild(aceitar);
-        acoes.appendChild(recusar);
-        acoes.appendChild(status);
-        caixa.appendChild(rotulo);
-        caixa.appendChild(comentario);
-        caixa.appendChild(acoes);
-        detalhes.appendChild(caixa);
-        function decidir(decisao) {
-          const nome = decisao === "aceito" ? "aceitar" : "recusar";
-          if (!window.confirm("Confirma " + nome + " o trabalho " + t.protocolo + "? O primeiro autor recebe o e-mail agora, e a decisão não pode ser mudada pelo site.")) return;
-          aceitar.disabled = recusar.disabled = true;
-          status.classList.remove("is-erro");
-          status.textContent = "Registrando…";
-          enviarAoBanco("comissaoDecidir", { token: sessaoCom ? sessaoCom.token : "", protocolo: t.protocolo, decisao: decisao, comentario: comentario.value.trim() })
-            .then(function (r) {
-              if (r && r.ok) {
-                carregarTrabalhosCom();
-                return;
-              }
-              if (r && r.erro === "sessao") return fecharSessaoCom(r.mensagem);
-              if (r && r.erro === "ja_avaliado") carregarTrabalhosCom();
-              status.textContent = (r && r.mensagem) || "Não foi possível registrar a decisão. Tente de novo.";
-              status.classList.add("is-erro");
-              aceitar.disabled = recusar.disabled = false;
-            })
-            .catch(function () {
-              status.textContent = "Não foi possível registrar agora. Verifique a conexão e tente de novo.";
-              status.classList.add("is-erro");
-              aceitar.disabled = recusar.disabled = false;
-            });
-        }
-        aceitar.addEventListener("click", function () { decidir("aceito"); });
-        recusar.addEventListener("click", function () { decidir("recusado"); });
-      }
-      li.appendChild(detalhes);
-
-      if (t.situacao !== "Em avaliação") {
-        const email = /^enviado/.test(t.emailResultado) ? "e-mail enviado ao autor" : "e-mail ao autor: " + (t.emailResultado || "sem registro");
-        li.appendChild(paragrafo(t.situacao + " por " + t.avaliadoPor.replace(/\s*<[^>]*>$/, "") + (t.dataAvaliacao ? " em " + t.dataAvaliacao : "") + " · " + email + ".", "com-trabalho__decisao"));
-        if (t.comentario) li.appendChild(paragrafo("Comentário enviado: " + t.comentario, "area__comentario"));
-      }
-      return li;
-    }
-
-    function desenharLista() {
-      if (!trabalhosCom) return;
-      const contas = { "": trabalhosCom.length, "Em avaliação": 0, "Aceito": 0, "Recusado": 0 };
-      trabalhosCom.forEach(function (t) { contas[t.situacao] = (contas[t.situacao] || 0) + 1; });
-      paginaComissao.querySelectorAll("[data-conta]").forEach(function (el) { el.textContent = contas[el.dataset.conta] || 0; });
-      paginaComissao.querySelectorAll("[data-filtro]").forEach(function (b) {
-        b.setAttribute("aria-pressed", String(b.dataset.filtro === filtroCom));
-      });
-      const termo = buscaCom.value.trim().toLowerCase();
+      const termo = o.busca.value.trim().toLowerCase();
       const abertos = {};
-      listaCom.querySelectorAll("details[open]").forEach(function (d) { abertos[d.closest("li").dataset.protocolo] = true; });
-      listaCom.textContent = "";
-      const visiveis = trabalhosCom.filter(function (t) {
-        if (filtroCom && t.situacao !== filtroCom) return false;
+      o.lista.querySelectorAll("details[open]").forEach(function (d) { abertos[d.closest("li").dataset.protocolo] = true; });
+      o.lista.textContent = "";
+      const visiveis = trabalhos.filter(function (t) {
+        if (filtro && t.situacao !== filtro) return false;
         if (!termo) return true;
-        return (t.protocolo + " " + t.titulo + " " + t.primeiroAutor + " " + t.coautores).toLowerCase().indexOf(termo) >= 0;
+        return (t.protocolo + " " + t.titulo + " " + t.primeiroAutor + " " + t.coautores + " " + t.eixo).toLowerCase().indexOf(termo) >= 0;
       });
       visiveis.forEach(function (t) {
-        const li = cartaoTrabalho(t);
-        li.dataset.protocolo = t.protocolo;
+        const li = cartaoTrabalho(t, o.cartao);
         if (abertos[t.protocolo]) li.querySelector("details").open = true;
-        listaCom.appendChild(li);
+        o.lista.appendChild(li);
       });
-      document.getElementById("com-vazio").hidden = visiveis.length > 0;
+      o.vazio.hidden = visiveis.length > 0;
+      if (o.aoDesenhar) o.aoDesenhar(contas);
+    }
+    o.raiz.querySelectorAll("[data-filtro]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        filtro = b.dataset.filtro;
+        desenhar();
+      });
+    });
+    o.busca.addEventListener("input", desenhar);
+    return {
+      definir: function (lista) {
+        trabalhos = lista || [];
+        desenhar();
+      },
+    };
+  }
+
+  const estadoRestrito = modoTeste || urlBanco ? "aberto" : "pendente";
+
+  // ----- Avaliação de trabalhos (só a Comissão Científica) -----
+  const paginaAvaliacao = paginaRestrita({
+    pagina: "avaliacao",
+    papel: "comissao",
+    abrir: function () { carregarAvaliacao(); },
+  });
+  let carregarAvaliacao = function () {};
+  if (paginaAvaliacao) {
+    const carregandoCom = document.getElementById("com-carregando");
+    const conteudoCom = document.getElementById("com-conteudo");
+    let carregou = false;
+
+    const avisoCom = document.getElementById("com-aviso");
+    if (estadoRestrito !== "aberto") {
+      avisoCom.textContent = "A avaliação abre quando o servidor do site estiver ligado.";
+      avisoCom.hidden = false;
+    } else if (modoTeste) {
+      avisoCom.textContent = "Modo de teste: as decisões ficam só neste navegador. O e-mail ao autor aparece no Painel de teste, no canto da tela.";
+      avisoCom.classList.add("inscricao__aviso--teste");
+      avisoCom.hidden = false;
     }
 
-    function carregarTrabalhosCom() {
-      if (!sessaoCom) return;
-      const token = sessaoCom.token;
-      if (!trabalhosCom) {
+    function decidir(t, decisao, comentario, tela) {
+      const nome = decisao === "aceito" ? "aceitar" : "recusar";
+      if (!window.confirm("Confirma " + nome + " o trabalho " + t.protocolo + "? O primeiro autor recebe o e-mail agora, e a decisão não pode ser mudada pelo site.")) return;
+      tela.travar(true);
+      tela.status("Registrando…");
+      enviarAoBanco("comissaoDecidir", { token: sessao ? sessao.token : "", protocolo: t.protocolo, decisao: decisao, comentario: comentario })
+        .then(function (r) {
+          if (r && r.ok) return carregarAvaliacao();
+          if (tratarAcessoNegado(r)) return;
+          if (r && r.erro === "ja_avaliado") carregarAvaliacao();
+          tela.status((r && r.mensagem) || "Não foi possível registrar a decisão. Tente de novo.", true);
+          tela.travar(false);
+        })
+        .catch(function () {
+          tela.status("Não foi possível registrar agora. Verifique a conexão e tente de novo.", true);
+          tela.travar(false);
+        });
+    }
+
+    const barra = document.getElementById("com-barra");
+    const listaCom = listaDeTrabalhos({
+      raiz: paginaAvaliacao,
+      lista: document.getElementById("com-lista"),
+      busca: document.getElementById("com-busca"),
+      vazio: document.getElementById("com-vazio"),
+      filtroInicial: "Em avaliação",
+      cartao: { decidir: decidir },
+      aoDesenhar: function (contas) {
+        const feitos = contas[""] - contas["Em avaliação"];
+        document.getElementById("com-feitos").textContent = feitos;
+        document.getElementById("com-total").textContent = contas[""];
+        barra.style.width = (contas[""] ? Math.round((feitos / contas[""]) * 100) : 0) + "%";
+      },
+    });
+
+    carregarAvaliacao = function () {
+      if (!sessao) return;
+      const token = sessao.token;
+      if (!carregou) {
         carregandoCom.textContent = "Carregando os trabalhos…";
         carregandoCom.hidden = false;
         conteudoCom.hidden = true;
       }
       enviarAoBanco("comissaoTrabalhos", { token: token }).then(function (r) {
-        if (!sessaoCom || sessaoCom.token !== token) return;
+        if (!sessao || sessao.token !== token) return;
         if (r && r.ok) {
-          trabalhosCom = r.trabalhos;
-          document.getElementById("com-nome").textContent = r.avaliador || sessaoCom.nome;
+          carregou = true;
           carregandoCom.hidden = true;
           conteudoCom.hidden = false;
-          desenharLista();
-        } else if (r && r.erro === "sessao") {
-          fecharSessaoCom(r.mensagem);
-        } else {
+          listaCom.definir(r.trabalhos);
+        } else if (!tratarAcessoNegado(r)) {
           carregandoCom.textContent = "Não foi possível carregar os trabalhos agora. Recarregue a página.";
         }
       }, function () {
         carregandoCom.textContent = "Não foi possível carregar os trabalhos agora. Verifique a conexão e recarregue a página.";
       });
-    }
-
-    paginaComissao.querySelectorAll("[data-filtro]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        filtroCom = b.dataset.filtro;
-        desenharLista();
-      });
+    };
+    // Ao sair ou trocar de conta, nada da sessão anterior fica na tela
+    // (unshift: limpa antes de a página se desenhar de novo)
+    aoMudarSessao.unshift(function () {
+      carregou = false;
+      document.getElementById("com-busca").value = "";
+      listaCom.definir([]);
     });
-    buscaCom.addEventListener("input", desenharLista);
-
-    function atualizarComissao() {
-      if (!sessaoCom) {
-        mostrarVistaCom(vistaCom);
-        if (avisoCom) ligacaoComEntrar.definirStatus(avisoCom, true);
-        return;
-      }
-      mostrarVistaCom("painel");
-      carregarTrabalhosCom();
-    }
-    aoMostrarPagina.comissao = atualizarComissao;
   }
+
+  // ----- Área da organização: comissão, inscrições e trabalhos -----
+  let carregarOrganizacao = function () {};
+  const paginaOrg = paginaRestrita({
+    pagina: "organizacao",
+    papel: "organizacao",
+    abrir: function () { carregarOrganizacao(); },
+  });
+  if (paginaOrg) {
+    const carregandoOrg = document.getElementById("org-carregando");
+    const conteudoOrg = document.getElementById("org-conteudo");
+    let dadosOrg = null;
+    let abaOrg = "comissao";
+
+    const avisoOrg = document.getElementById("org-aviso");
+    if (modoTeste) {
+      avisoOrg.textContent = "Modo de teste: tudo aqui fica só neste navegador. Os convites aparecem no Painel de teste, em E-mails enviados, com o link para o avaliador criar a senha.";
+      avisoOrg.hidden = false;
+    }
+
+    // Abas
+    const botoesAba = paginaOrg.querySelectorAll("[data-org-aba]");
+    function mostrarAba(nome) {
+      abaOrg = nome;
+      botoesAba.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.orgAba === nome)); });
+      paginaOrg.querySelectorAll("[data-org-painel]").forEach(function (p) { p.hidden = p.dataset.orgPainel !== nome; });
+    }
+    botoesAba.forEach(function (b) {
+      b.addEventListener("click", function () { mostrarAba(b.dataset.orgAba); });
+    });
+
+    // Números do topo
+    function preencherNumeros(d) {
+      const conta = function (situacao) { return d.trabalhos.filter(function (t) { return t.situacao === situacao; }).length; };
+      const ativos = d.comissao.filter(function (m) { return m.situacao === "Ativo"; }).length;
+      const numeros = {
+        inscricoes: d.inscricoes.length,
+        vagas: d.vagas > 0 ? "de " + formatoNumero.format(d.vagas) + " vagas" : "",
+        trabalhos: d.trabalhos.length,
+        avaliacao: conta("Em avaliação"),
+        aceitos: conta("Aceito"),
+        recusados: conta("Recusado"),
+        comissao: ativos,
+        convites: d.comissao.length - ativos ? (d.comissao.length - ativos) + (d.comissao.length - ativos === 1 ? " convite aguardando" : " convites aguardando") : "",
+      };
+      paginaOrg.querySelectorAll("[data-org-num]").forEach(function (el) {
+        const v = numeros[el.dataset.orgNum];
+        el.textContent = typeof v === "number" ? formatoNumero.format(v) : v;
+      });
+    }
+
+    // ----- Comissão -----
+    const listaComissao = document.getElementById("org-comissao");
+    function cartaoMembro(m) {
+      const li = document.createElement("li");
+      li.className = "org-membro";
+      const quem = document.createElement("div");
+      quem.className = "org-membro__quem";
+      const nome = document.createElement("strong");
+      nome.textContent = m.nome || m.email;
+      quem.appendChild(nome);
+      quem.appendChild(paragrafo(m.email, "org-membro__email"));
+      li.appendChild(quem);
+      const ativo = m.situacao === "Ativo";
+      const etiqueta = document.createElement("span");
+      etiqueta.className = "selo " + (ativo ? "selo--aceito" : "selo--avaliacao");
+      etiqueta.textContent = ativo ? "Ativo" : "Convite pendente";
+      etiqueta.title = m.situacao;
+      li.appendChild(etiqueta);
+      const acoes = document.createElement("p");
+      acoes.className = "org-membro__acoes";
+      const status = paragrafo(ativo ? "" : m.situacao + ".", "org-membro__status");
+      status.setAttribute("role", "status");
+      if (!ativo) {
+        const reenviar = document.createElement("button");
+        reenviar.type = "button";
+        reenviar.className = "link-botao";
+        reenviar.textContent = "Reenviar convite";
+        reenviar.addEventListener("click", function () {
+          reenviar.disabled = true;
+          status.textContent = "Enviando…";
+          enviarAoBanco("orgReenviarConvite", { token: sessao ? sessao.token : "", email: m.email }).then(function (r) {
+            reenviar.disabled = false;
+            if (tratarAcessoNegado(r)) return;
+            status.textContent = r && r.ok ? "Convite reenviado (" + resultadoDoEmail(r.email) + "). O link anterior continua valendo até vencer." : (r && r.mensagem) || "Não foi possível reenviar.";
+          }, function () {
+            reenviar.disabled = false;
+            status.textContent = "Não foi possível reenviar agora. Verifique a conexão.";
+          });
+        });
+        acoes.appendChild(reenviar);
+      }
+      const remover = document.createElement("button");
+      remover.type = "button";
+      remover.className = "link-botao org-membro__remover";
+      remover.textContent = "Tirar da comissão";
+      remover.addEventListener("click", function () {
+        if (!window.confirm("Tirar " + (m.nome || m.email) + " da Comissão Científica? A pessoa perde o acesso à avaliação na hora. As decisões que ela já registrou continuam valendo.")) return;
+        remover.disabled = true;
+        enviarAoBanco("orgRemoverComissao", { token: sessao ? sessao.token : "", email: m.email }).then(function (r) {
+          if (tratarAcessoNegado(r)) return;
+          if (r && r.ok) return carregarOrganizacao();
+          remover.disabled = false;
+          status.textContent = (r && r.mensagem) || "Não foi possível tirar da comissão.";
+        }, function () {
+          remover.disabled = false;
+          status.textContent = "Não foi possível agora. Verifique a conexão.";
+        });
+      });
+      acoes.appendChild(remover);
+      li.appendChild(acoes);
+      li.appendChild(status);
+      return li;
+    }
+    function desenharComissao() {
+      listaComissao.textContent = "";
+      dadosOrg.comissao.forEach(function (m) { listaComissao.appendChild(cartaoMembro(m)); });
+      document.getElementById("org-comissao-vazio").hidden = dadosOrg.comissao.length > 0;
+    }
+
+    const formConvite = document.getElementById("form-org-convite");
+    const ligacaoConvite = ligarFormulario({
+      form: formConvite,
+      prefixo: "ocv",
+      acao: "orgConvidar",
+      estado: estadoRestrito,
+      textos: { botaoPendente: "Em breve", botaoEncerrado: "Em breve", avisoPendente: "", avisoEncerrado: "" },
+      regras: {
+        nome: function (v) {
+          if (!limpar(v)) return "Informe o nome do avaliador.";
+          return nomeCompleto(v) ? "" : "Informe nome e sobrenome.";
+        },
+        email: function (v) {
+          if (!v.trim()) return "Informe o e-mail do avaliador.";
+          return emailValido(v) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
+        },
+      },
+      coletar: function () {
+        return { token: sessao ? sessao.token : "", nome: limpar(formConvite.elements.nome.value), email: formConvite.elements.email.value.trim().toLowerCase() };
+      },
+      aoConcluir: function (r, dados) {
+        setTimeout(function () {
+          ligacaoConvite.definirStatus("Convite enviado para " + dados.email + " (" + resultadoDoEmail(r.email) + ").");
+        }, 0);
+        carregarOrganizacao();
+        return true;
+      },
+      aoRecusar: tratarAcessoNegado,
+    });
+
+    // ----- Inscrições -----
+    const POR_VEZ = 50;
+    let mostrarInscricoes = POR_VEZ;
+    const buscaInsc = document.getElementById("org-busca-inscricoes");
+    const listaInsc = document.getElementById("org-inscricoes");
+    const maisInsc = document.getElementById("org-mais-inscricoes");
+    function cartaoInscricao(i) {
+      const li = document.createElement("li");
+      li.className = "org-inscricao";
+      const topo = document.createElement("p");
+      topo.className = "area__trabalho-topo";
+      const protocolo = document.createElement("strong");
+      protocolo.textContent = i.protocolo;
+      topo.appendChild(protocolo);
+      topo.appendChild(document.createTextNode(i.data ? "inscrição em " + i.data : ""));
+      li.appendChild(topo);
+      const nome = document.createElement("h3");
+      nome.textContent = i.nome;
+      li.appendChild(nome);
+      li.appendChild(paragrafo(i.categoria + " · " + i.instituicao, "com-trabalho__autor"));
+      const detalhes = document.createElement("details");
+      const resumo = document.createElement("summary");
+      resumo.textContent = "Contato e detalhes";
+      detalhes.appendChild(resumo);
+      detalhes.appendChild(listaDeDados([
+        ["E-mail", i.email], ["Celular", i.celular], ["CPF", i.cpf],
+        ["Pretende enviar trabalho", i.intencao], ["E-mail de confirmação", resultadoDoEmail(i.emailConfirmacao)],
+      ]));
+      li.appendChild(detalhes);
+      return li;
+    }
+    function desenharInscricoes() {
+      const termo = buscaInsc.value.trim().toLowerCase();
+      const achadas = dadosOrg.inscricoes.filter(function (i) {
+        return !termo || (i.protocolo + " " + i.nome + " " + i.email + " " + i.cpf + " " + i.categoria + " " + i.instituicao).toLowerCase().indexOf(termo) >= 0;
+      }).reverse(); // as mais novas primeiro
+      listaInsc.textContent = "";
+      achadas.slice(0, mostrarInscricoes).forEach(function (i) { listaInsc.appendChild(cartaoInscricao(i)); });
+      maisInsc.hidden = achadas.length <= mostrarInscricoes;
+      const vazio = document.getElementById("org-inscricoes-vazio");
+      vazio.hidden = achadas.length > 0;
+      vazio.textContent = dadosOrg.inscricoes.length ? "Nenhuma inscrição encontrada com essa busca." : "Ainda não há inscrições.";
+      document.getElementById("org-inscricoes-total").textContent = termo
+        ? achadas.length + (achadas.length === 1 ? " inscrição encontrada" : " inscrições encontradas")
+        : "";
+    }
+    buscaInsc.addEventListener("input", function () {
+      mostrarInscricoes = POR_VEZ;
+      desenharInscricoes();
+    });
+    maisInsc.addEventListener("click", function () {
+      mostrarInscricoes += POR_VEZ;
+      desenharInscricoes();
+    });
+
+    // ----- Trabalhos -----
+    const listaTrabOrg = listaDeTrabalhos({
+      raiz: document.querySelector('[data-org-painel="trabalhos"]'),
+      lista: document.getElementById("org-trabalhos"),
+      busca: document.getElementById("org-busca-trabalhos"),
+      vazio: document.getElementById("org-trabalhos-vazio"),
+      filtroInicial: "",
+      cartao: { mostrarEmail: true },
+    });
+
+    // ----- Baixar listas (abre no Excel) -----
+    function celula(v) {
+      let t = v == null ? "" : String(v);
+      // Evita que o Excel trate texto digitado no site como fórmula
+      if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+      return '"' + t.replace(/"/g, '""') + '"';
+    }
+    function baixar(nome, colunas, linhas) {
+      const csv = "﻿" + [colunas.map(function (c) { return celula(c[0]); }).join(";")].concat(linhas.map(function (l) {
+        return colunas.map(function (c) { return celula(typeof c[1] === "function" ? c[1](l) : l[c[1]]); }).join(";");
+      })).join("\r\n");
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const a = document.createElement("a");
+      const hoje = new Date();
+      a.href = url;
+      a.download = nome + "-" + hoje.getFullYear() + "-" + String(hoje.getMonth() + 1).padStart(2, "0") + "-" + String(hoje.getDate()).padStart(2, "0") + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+    document.getElementById("org-baixar-inscricoes").addEventListener("click", function () {
+      if (!dadosOrg) return;
+      baixar("inscricoes-simposio", [
+        ["Número", "protocolo"], ["Data", "data"], ["Nome", "nome"], ["CPF", "cpf"], ["E-mail", "email"], ["Celular", "celular"],
+        ["Categoria", "categoria"], ["Instituição", "instituicao"], ["Pretende enviar trabalho", "intencao"], ["E-mail de confirmação", "emailConfirmacao"],
+      ], dadosOrg.inscricoes);
+    });
+    document.getElementById("org-baixar-trabalhos").addEventListener("click", function () {
+      if (!dadosOrg) return;
+      baixar("trabalhos-simposio", [
+        ["Protocolo", "protocolo"], ["Data", "data"], ["Título", "titulo"], ["Tipo", "tipo"], ["Eixo", "eixo"],
+        ["Primeiro autor", "primeiroAutor"], ["E-mail do autor", "autorEmail"], ["Coautores", function (t) { return (t.coautores || "").replace(/\n/g, " | "); }],
+        ["Total de autores", "totalAutores"], ["Apresentação", "apresentador"], ["Situação", "situacao"], ["Avaliado por", "avaliadoPor"],
+        ["Data da avaliação", "dataAvaliacao"], ["Comentário", "comentario"], ["E-mail do resultado", "emailResultado"],
+        ["Caracteres", "caracteres"], ["Introdução", "introducao"], ["Métodos", "metodos"], ["Resultados", "resultados"], ["Conclusões", "conclusoes"],
+      ], dadosOrg.trabalhos);
+    });
+
+    carregarOrganizacao = function () {
+      if (!sessao) return;
+      const token = sessao.token;
+      if (!dadosOrg) {
+        carregandoOrg.textContent = "Carregando…";
+        carregandoOrg.hidden = false;
+        conteudoOrg.hidden = true;
+      }
+      enviarAoBanco("orgPainel", { token: token }).then(function (r) {
+        if (!sessao || sessao.token !== token) return;
+        if (r && r.ok) {
+          dadosOrg = r;
+          carregandoOrg.hidden = true;
+          conteudoOrg.hidden = false;
+          preencherNumeros(r);
+          desenharComissao();
+          desenharInscricoes();
+          listaTrabOrg.definir(r.trabalhos);
+          mostrarAba(abaOrg);
+        } else if (!tratarAcessoNegado(r)) {
+          carregandoOrg.textContent = "Não foi possível carregar agora. Recarregue a página.";
+        }
+      }, function () {
+        carregandoOrg.textContent = "Não foi possível carregar agora. Verifique a conexão e recarregue a página.";
+      });
+    };
+    aoMudarSessao.unshift(function () {
+      dadosOrg = null;
+      mostrarInscricoes = POR_VEZ;
+      buscaInsc.value = "";
+      document.getElementById("org-busca-trabalhos").value = "";
+      listaComissao.textContent = "";
+      listaInsc.textContent = "";
+      listaTrabOrg.definir([]);
+      mostrarAba("comissao");
+    });
+  }
+
+  // ----- Convite da comissão: o avaliador cria a senha pelo link do e-mail -----
+  const paginaConvite = document.querySelector('[data-pagina="convite"]');
+  if (paginaConvite) {
+    const carregandoCnv = document.getElementById("cnv-carregando");
+    const invalidoCnv = document.getElementById("cnv-invalido");
+    const vistaForm = document.getElementById("cnv-formulario");
+    const formConviteAceite = document.getElementById("form-convite");
+    let conviteAtual = "";
+
+    ligarFormulario({
+      form: formConviteAceite,
+      prefixo: "cnv",
+      acao: "aceitarConvite",
+      estado: estadoRestrito,
+      textos: { botaoPendente: "Em breve", botaoEncerrado: "Em breve", avisoPendente: "", avisoEncerrado: "" },
+      regras: {
+        senha: regraSenha,
+        senha2: function (v) {
+          if (!v) return "Repita a senha.";
+          return v === formConviteAceite.elements.senha.value ? "" : "As duas senhas estão diferentes.";
+        },
+      },
+      coletar: function () {
+        return { convite: conviteAtual, senha: formConviteAceite.elements.senha.value };
+      },
+      aoConcluir: function (r) {
+        conviteAtual = "";
+        abrirSessao(r);
+        navegar(rotaInicial());
+        return true;
+      },
+      aoRecusar: function (r) {
+        if (r.erro !== "convite_invalido") return false;
+        mostrarInvalido(r.mensagem);
+        return true;
+      },
+    });
+
+    function mostrarInvalido(mensagem) {
+      carregandoCnv.hidden = true;
+      vistaForm.hidden = true;
+      document.getElementById("cnv-invalido-texto").textContent = mensagem;
+      invalidoCnv.hidden = false;
+    }
+
+    aoMostrarPagina.convite = function (rota) {
+      const token = rota && rota.trecho ? rota.trecho : "";
+      if (token === conviteAtual && !vistaForm.hidden) return "";
+      conviteAtual = token;
+      carregandoCnv.hidden = false;
+      invalidoCnv.hidden = true;
+      vistaForm.hidden = true;
+      if (!/^[0-9a-f]{64}$/.test(token)) {
+        mostrarInvalido("Este link de convite está incompleto. Abra o link direto do e-mail, sem cortar o final.");
+        return "";
+      }
+      enviarAoBanco("convite", { convite: token }).then(function (r) {
+        if (token !== conviteAtual) return;
+        if (!r || !r.ok) return mostrarInvalido((r && r.mensagem) || "Não foi possível conferir o convite.");
+        document.getElementById("cnv-nome").textContent = r.nome.split(" ")[0];
+        formConviteAceite.elements.email.value = r.email;
+        carregandoCnv.hidden = true;
+        vistaForm.hidden = false;
+        formConviteAceite.elements.senha.focus();
+      }, function () {
+        mostrarInvalido("Não foi possível conferir o convite agora. Verifique a conexão e recarregue a página.");
+      });
+      return "";
+    };
+  }
+
+  // Ao abrir o site com uma sessão guardada, confere os perfis com o banco
+  if (sessao && estadoRestrito === "aberto") conferirSessao();
 
   // ---------- Menu no celular ----------
   const botaoMenu = document.querySelector(".topo__menu");
@@ -1976,9 +2354,12 @@ const CONFIG = {
   const TITULO_BASE = document.title;
   const paginas = Array.prototype.slice.call(document.querySelectorAll("[data-pagina]"));
 
+  // Endereços antigos que mudaram de nome
+  const ROTAS_ANTIGAS = { comissao: "avaliacao" };
   function lerRota(hash) {
     const partes = String(hash || "").replace(/^#\/?/, "").split("/");
-    return { pagina: partes[0] || "inicio", trecho: partes[1] || "" };
+    const pagina = partes[0] || "inicio";
+    return { pagina: ROTAS_ANTIGAS[pagina] || pagina, trecho: partes[1] || "" };
   }
 
   function encontrarPagina(nome) {
@@ -1991,12 +2372,20 @@ const CONFIG = {
     const alvo = encontrarPagina(rota.pagina) || encontrarPagina("inicio");
     if (!alvo) return;
 
+    // Áreas restritas podem mandar para outra página (Entrar, por exemplo)
+    if (aoMostrarPagina[alvo.dataset.pagina]) {
+      const desvio = aoMostrarPagina[alvo.dataset.pagina](rota);
+      if (desvio && lerRota(desvio).pagina !== alvo.dataset.pagina) {
+        navegar(desvio);
+        return;
+      }
+    }
+
     paginas.forEach(function (p) {
       p.hidden = p !== alvo;
     });
 
     document.title = alvo.dataset.titulo ? alvo.dataset.titulo + " · " + TITULO_BASE : TITULO_BASE;
-    if (aoMostrarPagina[alvo.dataset.pagina]) aoMostrarPagina[alvo.dataset.pagina]();
 
     const rotaAtual = "#/" + alvo.dataset.pagina + (rota.trecho ? "/" + rota.trecho : "");
     document.querySelectorAll('.topo__nav a[href^="#/"]').forEach(function (a) {
