@@ -7,7 +7,7 @@ Feito em HTML, CSS e JavaScript puros, sem dependências. Funciona em qualquer h
 de arquivos estáticos e também como um único arquivo HTML.
 
 O site tem menu suspenso no topo (Informações, Programação, Trabalhos) e páginas separadas:
-Home, O evento, Programação, Palestrantes, Inscrições, Trabalhos, Enviar trabalho, Normas de submissão,
+Home, O evento, Programação, Palestrantes, Inscrições, Área do inscrito, Trabalhos, Enviar trabalho, Normas de submissão,
 Comissões, Local, Datas importantes, Perguntas frequentes, Realização e apoio, Avisos,
 Contato e Privacidade. Todas as páginas ficam no mesmo `index.html`, uma por `<section
 data-pagina="...">`; o menu abre uma de cada vez pelos links `#/pagina` (por exemplo,
@@ -25,6 +25,7 @@ site/
   css/style.css     visual (cores do logo, tipografia, layout, menu suspenso)
   js/main.js        bloco CONFIG com links, datas, contatos, comissões e palestrantes,
                     e a troca de páginas pelo menu
+  js/banco-teste.js banco de teste que roda no navegador com ?teste (arquivo gerado)
   assets/           capa.jpg (arte colorida do topo da Home), capa-fundo.jpg (fundo das
                     páginas), capa-clara.jpg (versão clara, só serve de origem para o fundo),
                     linha-batimentos.png (traçado de ECG da marca, usado sob a faixa do topo),
@@ -34,6 +35,8 @@ gerar_fundo.py      recria capa-fundo.jpg a partir de capa-clara.jpg, sem o logo
 banco/
   apps-script.gs    banco dos formulários (Apps Script ligado a uma planilha Google)
   testar-banco.js   testes do banco num simulador: node banco/testar-banco.js
+  banco-teste-molde.js  molde do banco de teste no navegador
+  gerar-banco-teste.js  junta o molde e apps-script.gs em site/js/banco-teste.js
 
 Os arquivos originais enviados pela equipe de design ficam na raiz do projeto
 (`arte-capa-colorida-v2.png`, `linha-batimentos.png`, `logo-compacto-*.png` e os anteriores).
@@ -87,11 +90,21 @@ Se a arte mudar, substitua `site/assets/capa.jpg`. Se a versão clara também mu
 
 ## Formulários e banco de dados
 
-O site tem dois formulários com a identidade visual do evento:
+O site tem formulários com a identidade visual do evento:
 
-- **Inscrição**, na página Inscrições.
-- **Envio de trabalhos**, na página Enviar trabalho. É a "área do inscrito" citada no edital:
-  o primeiro autor se identifica com o CPF e o e-mail da inscrição.
+- **Inscrição**, na página Inscrições. Nela a pessoa cria uma senha, e a inscrição já abre a
+  área do inscrito.
+- **Área do inscrito** (`#/area`), a "área do inscrito" citada no edital. A pessoa entra com
+  o e-mail da inscrição e a senha, vê os dados da inscrição e os trabalhos em que é primeiro
+  autor ou coautor, e tem o botão para submeter trabalho. Quem esqueceu a senha, ou se
+  inscreveu antes de existir a senha, recebe um código de 6 números no e-mail da inscrição e
+  cria uma senha nova.
+- **Envio de trabalhos**, na página Enviar trabalho. Só abre para quem entrou na área do
+  inscrito; quem envia é sempre o primeiro autor, identificado pela sessão. Sem entrar, a
+  página mostra o convite para entrar ou se inscrever.
+
+A sessão fica só na aba do navegador: ao fechar a aba, a pessoa sai. No banco, a sessão vence
+depois de 6 horas sem uso. Isso protege quem usa computador compartilhado na unidade.
 
 Como o site não tem servidor, os formulários enviam os dados para um banco: uma planilha do
 Google com um programa em Apps Script, guardado em `banco/apps-script.gs`. O banco faz o
@@ -99,14 +112,23 @@ seguinte:
 
 - grava cada inscrição na aba Inscrições e cada trabalho na aba Trabalhos;
 - gera o número de inscrição, como INS-0001, e o protocolo do trabalho, como TRB-0001;
-- recusa CPF que já está inscrito;
-- só aceita trabalho de quem está inscrito, conferindo CPF e e-mail, e exige apresentador inscrito;
+- recusa CPF que já está inscrito e e-mail que já está em outra inscrição, porque o e-mail é o
+  login da área do inscrito;
+- guarda a senha na aba Acessos só em versão embaralhada (500 rodadas de HMAC-SHA-256 com sal
+  próprio e um segredo guardado fora da planilha). Ninguém consegue ler a senha na planilha;
+- abre a sessão, mostra o painel, manda o código para criar ou trocar a senha e encerra a sessão;
+- depois de 5 senhas erradas seguidas, faz o e-mail esperar 15 minutos; manda no máximo 3
+  códigos por hora para o mesmo e-mail, e cada código vale 30 minutos e aceita 5 tentativas;
+- só aceita trabalho de quem entrou na área do inscrito, e exige apresentador inscrito;
+- no envio de trabalho, preenche nome e instituição dos coautores inscritos. Só responde a quem
+  entrou e só quando o CPF e o e-mail do coautor batem com a mesma inscrição;
+- exige celular com DDD e o 9 inicial;
 - aplica as regras do edital: até 3 trabalhos como primeiro autor, até 8 autores, 2.500
   caracteres sem espaços no resumo, até 200 caracteres no título e prazo até 06/11, no horário de Brasília;
 - manda e-mail de confirmação e anota na planilha se ele saiu.
 
-Enquanto `banco.url` estiver vazio em `site/js/main.js`, os dois formulários aparecem com o
-envio desligado e um aviso, para ninguém achar que se inscreveu ou enviou trabalho.
+Enquanto `banco.url` estiver vazio em `site/js/main.js`, os formulários e a área do inscrito
+aparecem desligados e com um aviso, para ninguém achar que se inscreveu ou enviou trabalho.
 
 ### Como instalar o banco
 
@@ -142,12 +164,70 @@ se a implantação funcionou.
   Gmail comum e 1.500 numa conta Workspace. Quando o limite acaba, o registro é gravado mesmo
   assim e a coluna "E-mail de confirmação" mostra que o e-mail não saiu.
 - **Privacidade:** a planilha guarda CPF, e-mail e celular. Compartilhe só com a Comissão
-  Organizadora.
-- **Modo de teste:** para ver os formulários funcionando sem gravar nada, abra o site com
-  `?teste` antes do `#`, por exemplo
-  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`.
+  Organizadora. A aba Acessos pode ficar oculta; ela não tem as senhas, só a versão embaralhada.
+- **Segredo das senhas:** `configurar` cria a propriedade `SEGREDO_SENHAS` em **Configurações
+  do projeto > Propriedades do script**. Não apague nem mude: sem ela, nenhuma senha confere, e
+  cada pessoa precisaria criar outra pelo "Esqueci a senha".
+- **Atualizar um banco já instalado:** depois de colar o código novo, rode `configurar` de novo
+  (cria a aba Acessos e o segredo, sem apagar nada) e publique uma nova versão. Quem já estava
+  inscrito sem senha cria a sua pelo "Esqueci a senha".
+- **Modo de teste:** abra o site com `?teste` antes do `#`, por exemplo
+  `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`. Os formulários e a
+  área do inscrito aparecem liberados, com uma faixa avisando que é teste, e usam um banco que
+  roda no próprio navegador. Veja **Ambiente de teste**, abaixo.
 - **Testes do banco:** `node banco/testar-banco.js` roda o código do Apps Script num simulador
   e confere as regras do edital. Rode sempre que mudar o código do banco.
+
+### Ambiente de teste
+
+O ambiente de teste deixa a equipe usar o site de ponta a ponta (inscrição, senha, área do
+inscrito, envio de trabalho, recuperação de senha) sem mudar nada do que o público vê e sem
+precisar de planilha nem de Apps Script.
+
+- Quem entra pelo endereço normal continua vendo o site como está, e os envios vão apenas
+  para `banco.url`.
+- Quem abre com `?teste` no endereço vê os formulários liberados, com aviso de teste, mesmo
+  antes da abertura ou depois do prazo no site. O banco segue as datas do `CONFIG` dele.
+
+**Banco de teste no navegador (padrão).** Com `banco.urlTeste` vazio, o `?teste` carrega
+`site/js/banco-teste.js`, que roda o mesmo código de `banco/apps-script.gs` dentro do
+navegador. A planilha, as senhas e os e-mails ficam guardados só naquele navegador e nada sai
+do computador. No canto da tela aparece o **Painel de teste**, com:
+
+- **E-mails enviados:** as confirmações e os códigos de "Esqueci a senha", com [TESTE] no assunto;
+- **Planilha:** as abas Inscrições, Trabalhos e Acessos, como a organização veria;
+- **Apagar todos os dados de teste:** recomeça do zero naquele navegador.
+
+Cada navegador tem o seu banco: uma pessoa não vê as inscrições de teste da outra. Para testar
+a busca de coautor inscrito, inscreva o coautor no mesmo navegador antes.
+
+Links para testar, no site oficial ou na cópia do GitHub Pages:
+`.../?teste#/inscricoes/formulario`, `.../?teste#/area` e `.../?teste#/submissao`.
+
+`site/js/banco-teste.js` é gerado. Depois de mudar `banco/apps-script.gs` ou
+`banco/banco-teste-molde.js`, rode `node banco/gerar-banco-teste.js`. O
+`node banco/testar-banco.js` avisa quando o arquivo gerado ficou para trás.
+
+**Planilha de testes do Google (opcional).** Para testar com o Google de verdade, com e-mails
+chegando na caixa de entrada:
+
+1. Crie uma planilha separada, por exemplo "Simpósio UE 2026 · Banco de TESTE". Não use a
+   planilha oficial.
+2. Repita os passos 2 a 5 de **Como instalar o banco** nessa planilha. Antes de executar
+   `configurar`, mude `TESTE: false` para `TESTE: true` no código colado. Com isso, os e-mails
+   saem com `[TESTE]` no assunto e um aviso de que nada foi registrado de verdade.
+3. Cole o endereço `/exec` dessa implantação em `banco.urlTeste`, em `site/js/main.js`, e
+   publique o site. Para voltar ao banco do navegador, deixe `banco.urlTeste` vazio.
+
+Dicas para os testes:
+
+- Use os CPFs de exemplo dos testes do banco, como 529.982.247-25, 111.444.777-35 e
+  935.411.347-80. Não use dados reais de ninguém.
+- Na planilha do Google, para testar o fim de um prazo ou o limite de vagas, mude as datas ou
+  `VAGAS` no `CONFIG` da planilha de testes e publique uma nova versão dela.
+
+O endereço com `?teste` não é secreto: ele aparece neste README. Com o banco do navegador,
+quem o descobrir só mexe nos próprios dados, no próprio navegador.
 
 ### Usar outro banco de dados
 
@@ -156,14 +236,23 @@ siga o mesmo formato e colocá-lo em `banco.url`. O código em `banco/apps-scrip
 referência para as regras.
 
 - **Pedido:** `POST` com o corpo em JSON e `Content-Type: text/plain`, no formato
-  `{"acao": "inscricao", "dados": {...}}` ou `{"acao": "trabalho", "dados": {...}}`.
-- **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao` e
-  `trabalho`, que pode vir vazio.
-- **Dados do trabalho:** `cpf`, `email`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
+  `{"acao": "...", "dados": {...}}`. As ações são `inscricao`, `entrar`, `painel`,
+  `trabalho`, `conferir`, `pedirCodigo`, `novaSenha` e `sair`.
+- **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao`,
+  `trabalho` (pode vir vazio) e `senha`. A resposta traz `protocolo`, `nome` e `token`.
+- **Sessão:** `entrar` (`email`, `senha`) e `novaSenha` (`email`, `codigo`, `senha`) devolvem
+  `token`. `painel`, `trabalho`, `conferir` e `sair` recebem esse `token`. Sessão vencida ou
+  inexistente responde com `"erro": "sessao"`, e o site volta para a tela de entrar.
+- **Painel:** `{"ok": true, "inscricao": {...}, "trabalhos": [...], "submissao": {"aberta",
+  "prazo", "maximo", "restantes"}}`.
+- **Dados do trabalho:** `token`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
   `{"nome", "cpf", "email", "instituicao"}`, com instituição opcional), `apresentador`
   (`"primeiro"` ou `"coautor"`), `apresentadorCpf` (CPF do coautor que apresenta),
-  `introducao`, `metodos`, `resultados` e `conclusoes`.
-- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`.
+  `introducao`, `metodos`, `resultados` e `conclusoes`. O primeiro autor é quem está na sessão.
+- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`. Para `conferir` (`token`,
+  `cpf` e `email` do coautor), `{"ok": true, "nome": "...", "instituicao": "..."}`, só quando
+  CPF e e-mail são da mesma inscrição. `conferir` não grava nada. `pedirCodigo` responde igual
+  com ou sem inscrição, para não revelar quem está inscrito.
 - **Resposta de recusa:** `{"ok": false, "mensagem": "texto para a pessoa", "campo": "cpf"}`.
   O campo é opcional: quando vem, o site mostra a mensagem embaixo dele.
 - **Outro domínio:** se o banco ficar fora de `diid.subhue.org`, ele precisa responder com
@@ -199,6 +288,18 @@ cada envio para a `main`, e o GitHub Pages publica uma cópia em
 <https://anamazza.github.io/Congresso_SUE/>. Ela serve para conferir mudanças. Como a tag
 `canonical` aponta para o endereço oficial, os buscadores tratam o endereço oficial como o
 principal. Para desligar a cópia, apague o workflow ou desative o Pages em **Settings > Pages**.
+
+A cópia só fica no ar com o Pages ligado, e no plano gratuito do GitHub isso exige o
+repositório público. Em **Settings > Pages > Build and deployment > Source: Deploy from a
+branch** há duas formas:
+
+- **Branch `main`, pasta `/ (root)`** (como está hoje): o Pages publica o repositório inteiro e
+  o site fica em <https://anamazza.github.io/Congresso_SUE/site/>. O `index.html` da raiz do
+  repositório leva quem abre o endereço curto para lá, mantendo `?teste` e `#/pagina`.
+- **Branch `gh-pages`, pasta `/ (root)`**: o Pages publica só a pasta `site/`, copiada pelo
+  workflow, e o site fica direto em <https://anamazza.github.io/Congresso_SUE/>.
+
+Nas duas, a cópia se atualiza sozinha a cada envio para a `main`.
 
 A pasta `site/` traz também `.nojekyll`, `404.html` (página de erro que leva de volta ao início)
 e `robots.txt`, usados pelo GitHub Pages.

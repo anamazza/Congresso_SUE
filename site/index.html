@@ -85,6 +85,7 @@
         <li><a class="topo__social" data-config-href="contato.instagram" data-pendente="ocultar" href="#" aria-label="Instagram do evento">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
         </a></li>
+        <li><a class="topo__area" href="#/area" data-area-link>Área do inscrito</a></li>
         <li><a class="btn btn--primario btn--pequeno" data-config-href="inscricoes.url" data-pendente="ocultar" href="#/inscricoes">Inscreva-se</a></li>
       </ul>
     </nav>
@@ -295,7 +296,8 @@
           <p class="lead">As inscrições são feitas exclusivamente pelo formulário desta página. As vagas são limitadas à capacidade do auditório e preenchidas por ordem de inscrição.</p>
           <ul class="regras">
             <li>A inscrição é pessoal e intransferível.</li>
-            <li>Só quem está inscrito pode submeter trabalhos. A submissão é feita pelo site, na <a href="#/submissao">área do inscrito</a>.</li>
+            <li>Na inscrição você cria uma senha. Com o e-mail e essa senha você entra na <a href="#/area">área do inscrito</a>, onde vê a inscrição e envia trabalhos.</li>
+            <li>Só quem está inscrito pode submeter trabalhos, sempre pela área do inscrito.</li>
             <li>Após se inscrever, acompanhe as orientações da organização sobre a confirmação da participação.</li>
             <li>O credenciamento acontece no local, nos dias do evento.</li>
             <li>Participantes que cumprirem os critérios de frequência recebem certificado. <a href="#/cronograma/certificacao">Saiba mais sobre a certificação</a>.</li>
@@ -397,6 +399,22 @@
                 </div>
               </fieldset>
 
+              <p class="campo__dica campo--largo" id="ins-senha-dica">Crie uma senha com pelo menos 8 caracteres. Com o e-mail e esta senha você entra na área do inscrito para ver a inscrição e enviar trabalhos.</p>
+
+              <div class="campo">
+                <label for="ins-senha">Senha</label>
+                <input id="ins-senha" name="senha" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="ins-senha-dica ins-senha-erro">
+                <p class="campo__erro" id="ins-senha-erro" hidden></p>
+              </div>
+
+              <div class="campo">
+                <label for="ins-senha2">Repita a senha</label>
+                <input id="ins-senha2" name="senha2" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="ins-senha2-erro">
+                <p class="campo__erro" id="ins-senha2-erro" hidden></p>
+              </div>
+
+              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="ins-senha ins-senha2"> Mostrar a senha</label>
+
               <div class="campo campo--largo campo--aceite">
                 <label class="opcao" for="ins-aceite">
                   <input id="ins-aceite" name="aceite" type="checkbox" required aria-describedby="ins-aceite-erro">
@@ -424,8 +442,8 @@
             <h2>Recebemos a sua inscrição<span data-sucesso="nome"></span>.</h2>
             <p class="inscricao__protocolo">Número de inscrição <strong data-sucesso="protocolo"></strong></p>
             <p>Enviamos uma confirmação para <strong data-sucesso="email"></strong>. Se não chegar em alguns minutos, olhe a caixa de spam. A organização também vai enviar as orientações sobre a confirmação da vaga.</p>
-            <p class="nota">Guarde o número de inscrição. Para enviar trabalho, use o mesmo CPF e o mesmo e-mail na <a href="#/submissao">área do inscrito</a>. Para corrigir algum dado, fale com a organização pela página <a href="#/contato">Contato</a>.</p>
-            <button class="btn btn--secundario" type="button" data-novo>Fazer outra inscrição</button>
+            <p class="nota">Guarde o número de inscrição. Você já entrou na área do inscrito, onde aparecem a sua inscrição e o envio de trabalhos. Nas próximas vezes, entre com este e-mail e a senha que você criou. Para corrigir algum dado, fale com a organização pela página <a href="#/contato">Contato</a>.</p>
+            <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ir para a área do inscrito</a> <button class="btn btn--secundario" type="button" data-novo>Fazer outra inscrição</button></p>
           </div>
         </div>
       </div>
@@ -445,7 +463,7 @@
         <div>
           <h2 class="subtitulo">Como enviar</h2>
           <ul class="regras">
-            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/submissao">área do inscrito</a>.</li>
+            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/area">área do inscrito</a>.</li>
             <li>Cada trabalho precisa ter um apresentador inscrito no simpósio.</li>
             <li>Trabalhos enviados após o prazo final não serão considerados.</li>
             <li>O resumo tem até 2.500 caracteres sem espaços, com introdução, métodos, resultados e conclusões. O título tem até 200 caracteres. Veja as <a href="#/normas">normas de submissão</a> antes de enviar.</li>
@@ -510,30 +528,25 @@
       <header class="pagina__cabecalho">
         <p class="eyebrow">Área do inscrito</p>
         <h1>Envie o seu trabalho</h1>
-        <p class="lead">O envio é feito pelo primeiro autor, que precisa estar inscrito no simpósio. Antes de começar, leia as <a href="#/normas">normas de submissão</a>.</p>
+        <p class="lead">O envio é feito pelo primeiro autor, que precisa estar inscrito no simpósio e entrar na área do inscrito. Antes de começar, leia as <a href="#/normas">normas de submissão</a>.</p>
       </header>
 
       <div class="inscricao" id="trabalho">
         <p class="inscricao__aviso" id="trb-aviso" hidden></p>
 
+        <!-- Sem sessão aberta, o formulário fica escondido e aparece este convite -->
+        <div class="acesso" id="trb-acesso" hidden>
+          <h2>Entre para enviar o trabalho</h2>
+          <p id="trb-acesso-texto">O envio de trabalhos fica na área do inscrito. Entre com o e-mail e a senha que você criou na inscrição.</p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Entrar na área do inscrito</a> <a class="btn btn--secundario" href="#/inscricoes/formulario">Fazer a inscrição</a></p>
+        </div>
+
         <form class="inscricao__form" id="form-trabalho" novalidate>
           <fieldset class="inscricao__campos">
             <legend class="sr-only">Envio de trabalho</legend>
 
-            <h2 class="form-secao">1. Sua inscrição</h2>
-            <p class="campo__dica campo--largo">Use o CPF e o e-mail da sua inscrição. Ainda não se inscreveu? <a href="#/inscricoes/formulario">Faça a inscrição</a> antes de enviar o trabalho.</p>
-
-            <div class="campo">
-              <label for="trb-cpf">CPF</label>
-              <input id="trb-cpf" name="cpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" required aria-describedby="trb-cpf-erro">
-              <p class="campo__erro" id="trb-cpf-erro" hidden></p>
-            </div>
-
-            <div class="campo">
-              <label for="trb-email">E-mail da inscrição</label>
-              <input id="trb-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="trb-email-erro">
-              <p class="campo__erro" id="trb-email-erro" hidden></p>
-            </div>
+            <h2 class="form-secao">1. Primeiro autor</h2>
+            <p class="autor-sessao campo--largo" id="trb-autor">Você envia como primeiro autor: <strong data-autor="nome"></strong> · inscrição <span data-autor="protocolo"></span>. <button class="link-botao" type="button" data-sair>Não é você? Sair</button></p>
 
             <h2 class="form-secao">2. Trabalho</h2>
 
@@ -571,7 +584,7 @@
             </div>
 
             <h2 class="form-secao">3. Autores</h2>
-            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 7 coautores, na ordem em que devem aparecer no trabalho. De cada coautor são pedidos nome completo, CPF e e-mail.</p>
+            <p class="campo__dica campo--largo">Você é o autor 1. Acrescente até 7 coautores, na ordem em que devem aparecer no trabalho. De cada coautor são pedidos CPF, e-mail e nome completo. Se o coautor estiver inscrito no simpósio, o nome e a instituição se preenchem sozinhos.</p>
 
             <div class="campo campo--largo">
               <ol class="coautores" id="trb-coautores"></ol>
@@ -602,6 +615,7 @@
                 <p class="campo__dica" id="trb-introducao-dica">Apresente o tema, o que já se sabe, as lacunas e o objetivo ou a hipótese do estudo.</p>
                 <textarea id="trb-introducao" name="introducao" rows="5" maxlength="4000" required aria-describedby="trb-introducao-dica trb-contador trb-introducao-erro"></textarea>
                 <p class="campo__erro" id="trb-introducao-erro" hidden></p>
+                <p class="campo__limite" id="trb-introducao-limite" aria-live="polite"></p>
               </div>
 
               <div class="campo campo--largo">
@@ -609,6 +623,7 @@
                 <p class="campo__dica" id="trb-metodos-dica">Delineamento, local, número de participantes, critérios de inclusão e exclusão, intervenções e métodos estatísticos.</p>
                 <textarea id="trb-metodos" name="metodos" rows="5" maxlength="4000" required aria-describedby="trb-metodos-dica trb-contador trb-metodos-erro"></textarea>
                 <p class="campo__erro" id="trb-metodos-erro" hidden></p>
+                <p class="campo__limite" id="trb-metodos-limite" aria-live="polite"></p>
               </div>
 
               <div class="campo campo--largo">
@@ -616,6 +631,7 @@
                 <p class="campo__dica" id="trb-resultados-dica">Sujeitos do estudo e perdas, medidas com desvio-padrão ou intervalo de confiança e significância estatística, quando pertinente.</p>
                 <textarea id="trb-resultados" name="resultados" rows="6" maxlength="4000" required aria-describedby="trb-resultados-dica trb-contador trb-resultados-erro"></textarea>
                 <p class="campo__erro" id="trb-resultados-erro" hidden></p>
+                <p class="campo__limite" id="trb-resultados-limite" aria-live="polite"></p>
               </div>
 
               <div class="campo campo--largo">
@@ -623,6 +639,7 @@
                 <p class="campo__dica" id="trb-conclusoes-dica">Implicações dos achados, sustentadas pelos dados. Se houver espaço, limitações e possibilidade de generalização.</p>
                 <textarea id="trb-conclusoes" name="conclusoes" rows="4" maxlength="4000" required aria-describedby="trb-conclusoes-dica trb-contador trb-conclusoes-erro"></textarea>
                 <p class="campo__erro" id="trb-conclusoes-erro" hidden></p>
+                <p class="campo__limite" id="trb-conclusoes-limite" aria-live="polite"></p>
               </div>
 
             <h2 class="form-secao">5. Declaração</h2>
@@ -654,8 +671,135 @@
           <p class="inscricao__protocolo">Protocolo <strong data-sucesso="protocolo"></strong></p>
           <p><strong data-sucesso="titulo"></strong></p>
           <p>Enviamos uma confirmação para <strong data-sucesso="email"></strong>. O resultado final da avaliação sai em <span data-config="datas.aprovados">a divulgar</span>.</p>
-          <p class="nota">Guarde o protocolo. Cada autor pode enviar até 3 trabalhos como primeiro autor.</p>
-          <button class="btn btn--secundario" type="button" data-novo>Enviar outro trabalho</button>
+          <p class="nota">Guarde o protocolo. O trabalho também aparece na área do inscrito. Cada autor pode enviar até 3 trabalhos como primeiro autor.</p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ver na área do inscrito</a> <button class="btn btn--secundario" type="button" data-novo>Enviar outro trabalho</button></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ÁREA DO INSCRITO ===================== -->
+  <section class="pagina" data-pagina="area" data-titulo="Área do inscrito" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Área do inscrito</p>
+        <h1 id="area-titulo">Entre na sua área</h1>
+        <p class="lead" id="area-lead">Aqui você vê a sua inscrição e envia trabalhos. Use o e-mail da inscrição e a senha que você criou.</p>
+      </header>
+
+      <div class="inscricao area">
+        <p class="inscricao__aviso" id="area-aviso" hidden></p>
+
+        <!-- Entrar -->
+        <div id="area-entrar">
+          <form class="inscricao__form" id="form-entrar" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Entrar na área do inscrito</legend>
+              <div class="campo campo--largo">
+                <label for="ent-email">E-mail da inscrição</label>
+                <input id="ent-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="ent-email-erro">
+                <p class="campo__erro" id="ent-email-erro" hidden></p>
+              </div>
+              <div class="campo campo--largo">
+                <label for="ent-senha">Senha</label>
+                <input id="ent-senha" name="senha" type="password" autocomplete="current-password" maxlength="100" required aria-describedby="ent-senha-erro">
+                <p class="campo__erro" id="ent-senha-erro" hidden></p>
+              </div>
+              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="ent-senha"> Mostrar a senha</label>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Entrar</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="area__links"><button class="link-botao" type="button" data-area-ver="recuperar">Esqueci a senha</button> · Ainda não se inscreveu? <a href="#/inscricoes/formulario">Faça a inscrição</a></p>
+          <p class="nota">Fez a inscrição antes de existir a senha? Use "Esqueci a senha" para criar a sua com um código enviado ao e-mail da inscrição.</p>
+        </div>
+
+        <!-- Criar ou recuperar a senha: código por e-mail -->
+        <div id="area-recuperar" hidden>
+          <form class="inscricao__form" id="form-codigo" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Pedir código por e-mail</legend>
+              <p class="campo__dica campo--largo">Informe o e-mail da inscrição. Vamos enviar um código de 6 números para você criar uma senha nova.</p>
+              <div class="campo campo--largo">
+                <label for="cod-email">E-mail da inscrição</label>
+                <input id="cod-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="cod-email-erro">
+                <p class="campo__erro" id="cod-email-erro" hidden></p>
+              </div>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Enviar código</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="area__links"><button class="link-botao" type="button" data-area-ver="nova">Já tenho um código</button> · <button class="link-botao" type="button" data-area-ver="entrar">Voltar para entrar</button></p>
+        </div>
+
+        <div id="area-nova" hidden>
+          <p class="inscricao__aviso inscricao__aviso--info" id="nov-enviado" hidden></p>
+          <form class="inscricao__form" id="form-nova" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Criar senha com o código</legend>
+              <div class="campo">
+                <label for="nov-email">E-mail da inscrição</label>
+                <input id="nov-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="nov-email-erro">
+                <p class="campo__erro" id="nov-email-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="nov-codigo">Código recebido</label>
+                <input id="nov-codigo" name="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required aria-describedby="nov-codigo-erro">
+                <p class="campo__erro" id="nov-codigo-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="nov-senha">Senha nova</label>
+                <input id="nov-senha" name="senha" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="nov-senha-dica nov-senha-erro">
+                <p class="campo__dica" id="nov-senha-dica">Pelo menos 8 caracteres.</p>
+                <p class="campo__erro" id="nov-senha-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="nov-senha2">Repita a senha nova</label>
+                <input id="nov-senha2" name="senha2" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="nov-senha2-erro">
+                <p class="campo__erro" id="nov-senha2-erro" hidden></p>
+              </div>
+              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="nov-senha nov-senha2"> Mostrar a senha</label>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Salvar a senha e entrar</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="area__links"><button class="link-botao" type="button" data-area-ver="recuperar">Pedir outro código</button> · <button class="link-botao" type="button" data-area-ver="entrar">Voltar para entrar</button></p>
+        </div>
+
+        <!-- Depois de entrar -->
+        <div id="area-painel" hidden>
+          <p class="area__carregando" id="area-carregando" role="status">Carregando a sua inscrição…</p>
+          <div id="area-conteudo" hidden>
+            <div class="area__topo">
+              <p class="area__ola">Olá, <strong data-painel="primeiroNome"></strong>.</p>
+              <button class="btn btn--secundario btn--pequeno" type="button" data-sair>Sair</button>
+            </div>
+
+            <h2 class="form-secao">Sua inscrição</h2>
+            <p class="inscricao__protocolo">Número de inscrição <strong data-painel="protocolo"></strong></p>
+            <dl class="area__dados">
+              <div><dt>Nome</dt><dd data-painel="nome"></dd></div>
+              <div><dt>CPF</dt><dd data-painel="cpf"></dd></div>
+              <div><dt>E-mail</dt><dd data-painel="email"></dd></div>
+              <div><dt>Celular</dt><dd data-painel="celular"></dd></div>
+              <div><dt>Categoria</dt><dd data-painel="categoria"></dd></div>
+              <div><dt>Instituição</dt><dd data-painel="instituicao"></dd></div>
+              <div><dt>Inscrição feita em</dt><dd data-painel="data"></dd></div>
+            </dl>
+            <p class="nota">Para corrigir algum dado, fale com a organização pela página <a href="#/contato">Contato</a>.</p>
+
+            <h2 class="form-secao">Seus trabalhos</h2>
+            <ul class="area__trabalhos" id="area-trabalhos"></ul>
+            <p class="nota" id="area-trabalhos-vazio">Você ainda não enviou trabalhos. Enviar é opcional.</p>
+            <p class="nota" id="area-submissao-nota"></p>
+            <p><a class="btn btn--primario" id="area-submeter" href="#/submissao">Submeter trabalho</a></p>
+          </div>
         </div>
       </div>
     </div>
@@ -790,6 +934,14 @@
           <summary>Como faço a inscrição?</summary>
           <div>
             <p>Pelo <a href="#/inscricoes/formulario">formulário de inscrição</a> da página Inscrições, neste site. Inscrições de <span data-config="inscricoes.inicio">a divulgar</span> a <span data-config="inscricoes.fim">a divulgar</span>. As vagas são limitadas e preenchidas por ordem de inscrição. A inscrição é pessoal e intransferível.</p>
+            <p>Na inscrição você cria uma senha. Com o e-mail e essa senha você entra na <a href="#/area">área do inscrito</a>, onde vê a inscrição e envia trabalhos.</p>
+          </div>
+        </details>
+
+        <details class="faq__item">
+          <summary>Esqueci a senha da área do inscrito. E agora?</summary>
+          <div>
+            <p>Na <a href="#/area">área do inscrito</a>, use "Esqueci a senha". Um código de 6 números chega no e-mail da inscrição, e com ele você cria uma senha nova. O mesmo caminho serve para quem se inscreveu antes de existir a senha.</p>
           </div>
         </details>
         <details class="faq__item">
@@ -895,7 +1047,7 @@
         <div>
           <h2 class="subtitulo">Regras gerais</h2>
           <ul class="regras">
-            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/submissao">área do inscrito</a>, dentro do prazo do <a href="#/cronograma">cronograma</a>. Trabalhos enviados após o prazo não serão considerados.</li>
+            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/area">área do inscrito</a>, dentro do prazo do <a href="#/cronograma">cronograma</a>. Trabalhos enviados após o prazo não serão considerados.</li>
             <li>Cada trabalho deve ter um apresentador inscrito no simpósio.</li>
             <li>Cada autor pode submeter no máximo 3 trabalhos como primeiro autor. Cada trabalho pode ter até 8 autores, somando autores e coautores. De cada coautor são pedidos nome completo, CPF e e-mail.</li>
             <li>O trabalho deve se encaixar em um dos <a href="#/trabalhos/eixos">eixos temáticos</a> do simpósio.</li>
@@ -968,7 +1120,7 @@
       <h2 class="subtitulo">Quem é responsável pelos dados</h2>
       <p>A Secretaria Municipal de Saúde do Rio de Janeiro, por meio da Subsecretaria de Atenção Hospitalar, Urgência e Emergência (SUBHUE), organizadora do simpósio.</p>
       <h2 class="subtitulo">Quais dados são coletados</h2>
-      <p>Os dados informados no formulário de inscrição: nome, CPF, e-mail, celular, categoria profissional, instituição e a intenção de submeter trabalho. Na submissão de trabalhos, também os dados dos autores. O sistema que recebe as inscrições registra a data e a hora de cada envio.</p>
+      <p>Os dados informados no formulário de inscrição: nome, CPF, e-mail, celular, categoria profissional, instituição e a intenção de submeter trabalho. Na submissão de trabalhos, também os dados dos autores. A senha da área do inscrito não é guardada como foi digitada: o sistema guarda só uma versão embaralhada, que ninguém, nem a organização, consegue transformar de volta na senha. O sistema que recebe as inscrições registra a data e a hora de cada envio.</p>
       <h2 class="subtitulo">Para que os dados são usados</h2>
       <ul class="regras">
         <li>Organizar as inscrições, controlar as vagas e fazer o credenciamento no evento.</li>
@@ -1007,6 +1159,7 @@
         <li><a href="#/evento">O evento</a></li>
         <li><a href="#/programacao">Programação</a></li>
         <li><a href="#/inscricoes">Inscrições</a></li>
+        <li><a href="#/area">Área do inscrito</a></li>
         <li><a href="#/trabalhos">Trabalhos científicos</a></li>
         <li><a href="#/local">Local</a></li>
         <li><a href="#/cronograma">Datas importantes</a></li>

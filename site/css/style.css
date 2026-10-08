@@ -1053,10 +1053,14 @@ ul, ol { margin: 0; padding: 0; }
 .campo__erro { color: var(--vermelho); font-weight: 600; }
 .campo__contagem { max-width: none; text-align: right; font-variant-numeric: tabular-nums; }
 .campo__contagem.is-excedido { color: var(--vermelho); font-weight: 700; }
+/* Aviso de limite do resumo: só ocupa espaço quando tem texto */
+.campo__limite { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--vermelho); font-weight: 600; }
+.campo__limite:empty { display: none; }
 
 .campo input[type="text"],
 .campo input[type="email"],
 .campo input[type="tel"],
+.campo input[type="password"],
 .campo select {
   width: 100%;
   min-height: 2.95rem;
@@ -1158,7 +1162,8 @@ ul, ol { margin: 0; padding: 0; }
 
 .inscricao__sucesso { text-align: center; padding: 0.5rem 0; }
 .inscricao__sucesso:focus { outline: none; }
-.inscricao__sucesso p { margin-inline: auto; }
+/* overflow-wrap: título ou e-mail sem espaços quebra a linha em vez de vazar do bloco */
+.inscricao__sucesso p { margin-inline: auto; overflow-wrap: anywhere; }
 .inscricao__icone { display: block; margin: 0 auto 1rem; color: var(--azul); }
 .inscricao__sucesso .btn { margin-top: 0.5rem; }
 
@@ -1246,6 +1251,11 @@ p.campo--largo { margin: 0; max-width: none; }
   cursor: pointer;
 }
 .coautor__remover:hover { color: var(--vermelho-escuro); }
+
+/* Resultado da conferência da inscrição (autor 1 e coautores) */
+.coautor__nota { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--texto-2); }
+.coautor__nota:empty { display: none; }
+.coautor__nota.is-ok { color: var(--azul-escuro); font-weight: 600; }
 .campo .coautores + .campo__erro + p { margin: 0.6rem 0 0; }
 
 /* Contador do resumo: fica visível abaixo do menu enquanto a pessoa escreve */
@@ -1355,3 +1365,105 @@ p.campo--largo { margin: 0; max-width: none; }
   .pagina { padding: 1.5rem 0; }
   a { color: inherit; text-decoration: none; }
 }
+
+/* ------------------------------ Área do inscrito ------------------------------ */
+/* Link no topo: discreto, ao lado do botão de inscrição */
+.menu a.topo__area { white-space: nowrap; }
+
+/* Caixa "Mostrar a senha" e outras opções soltas, fora de um grupo */
+.opcao.opcao--simples {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: -0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--texto-2);
+  cursor: pointer;
+}
+
+/* Botão com cara de link, para ações dentro do texto */
+.link-botao {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--azul-escuro);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+.link-botao:hover { color: var(--azul); }
+
+/* Botões lado a lado nas telas de confirmação e na trava do envio */
+.inscricao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.5rem auto 0;
+}
+
+.inscricao__aviso--info {
+  background: #E8F4F8;
+  border-color: #B9DCE9;
+  border-left-color: var(--azul);
+}
+
+/* Envio de trabalho sem sessão aberta */
+.acesso { text-align: center; padding: 0.5rem 0; }
+.acesso h2 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.8rem); font-weight: 800; }
+.acesso p { margin-inline: auto; }
+
+.autor-sessao {
+  padding: 0.85rem 1rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+
+.area__links { margin: 1.25rem 0 0.5rem; max-width: none; font-size: 0.95rem; }
+.area__carregando { margin: 0; color: var(--texto-2); font-weight: 600; }
+
+.area__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.area__ola { margin: 0; font-size: 1.15rem; }
+
+#area-conteudo .form-secao { margin: 1.75rem 0 0.75rem; }
+#area-conteudo .inscricao__protocolo { margin: 1rem 0; }
+
+.area__dados {
+  display: grid;
+  gap: 0.6rem 1.5rem;
+  margin: 0 0 1rem;
+}
+@media (min-width: 640px) {
+  .area__dados { grid-template-columns: 1fr 1fr; }
+}
+.area__dados dt {
+  font-family: var(--fonte-titulo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+.area__dados dd { margin: 0.1rem 0 0; overflow-wrap: anywhere; }
+
+.area__trabalhos { list-style: none; display: grid; gap: 0.75rem; margin: 1rem 0; padding: 0; }
+.area__trabalhos:empty { display: none; }
+.area__trabalho {
+  padding: 1rem 1.1rem;
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+.area__trabalho h3 { margin: 0.2rem 0 0.35rem; font-size: 1.05rem; overflow-wrap: anywhere; }
+.area__trabalho p { margin: 0; max-width: none; font-size: 0.92rem; color: var(--texto-2); }
+.area__trabalho-topo { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; font-size: 0.85rem; color: var(--texto-2); }
+.area__trabalho-topo strong { color: var(--tinta); letter-spacing: 0.04em; }
