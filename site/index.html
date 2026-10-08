@@ -71,9 +71,9 @@
             <summary>Trabalhos</summary>
             <ul class="submenu">
               <li><a href="#/trabalhos">Submissão de trabalhos</a></li>
-              <li class="submenu__aviso">Para enviar trabalho, é preciso estar inscrito</li>
-              <li><a href="#/inscricoes/formulario" data-fora-do-grupo>1. Faça sua inscrição</a></li>
-              <li><a href="#/area" data-fora-do-grupo>2. Envie pela área do inscrito</a></li>
+              <li class="submenu__aviso" data-trabalhos-aviso>Para enviar trabalho, é preciso estar inscrito</li>
+              <li data-trabalhos-passo="inscricao"><a href="#/inscricoes/formulario" data-fora-do-grupo>1. Faça sua inscrição</a></li>
+              <li data-trabalhos-passo="envio"><a href="#/area" data-fora-do-grupo>2. Envie pela área do inscrito</a></li>
               <li><a href="#/trabalhos/eixos">Eixos temáticos</a></li>
               <li><a href="#/trabalhos/avaliacao">Avaliação e apresentação</a></li>
               <li><a href="#/normas">Normas de submissão</a></li>
@@ -455,6 +455,11 @@
       <!-- A inscrição é regra para submeter: os dois passos aparecem antes de tudo -->
       <section class="passos" aria-labelledby="passos-titulo">
         <h2 class="passos__titulo" id="passos-titulo">Para enviar trabalho, é preciso estar inscrito no simpósio</h2>
+        <!-- Para quem entrou como inscrito: limite atingido, quantos ainda cabem ou prazo encerrado -->
+        <div class="passos__situacao" id="passos-situacao" hidden>
+          <p id="passos-situacao-texto"></p>
+          <a class="btn btn--primario" id="passos-situacao-botao" href="#/area">Ver meus trabalhos</a>
+        </div>
         <ol class="passos__lista">
           <li class="passos__item">
             <p class="passos__nome">Faça sua inscrição</p>
