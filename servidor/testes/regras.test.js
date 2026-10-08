@@ -147,6 +147,7 @@ async function rodar(tipo, resultados) {
     r = await b.enviar("trabalho", trabalho(tokenMaria));
     const t = b.repo.trabalhos.porProtocolo("TRB-0001");
     ok(r.ok && r.protocolo === "TRB-0001", "trabalho de inscrita com sessão recebe TRB-0001");
+    ok(r.restantes === 2 && r.maximo === 3, "resposta do envio diz quantos trabalhos ainda cabem como primeiro autor");
     ok(t.autorNome === "Maria da Silva" && t.autorCpf === "52998224725" && t.autorEmail === "maria@exemplo.com" && t.apresentadorNome === "Maria da Silva", "primeiro autor, e-mail e apresentador vêm da inscrição da sessão");
     ok(t.coautores.length === 1 && t.coautores[0].email === "joao.souza@exemplo.com" && t.totalAutores === 2 && t.situacao === "Em avaliação", "coautor gravado e trabalho começa em avaliação");
     ok(t.caracteres === "Introduçãodoestudo.Métodosdoestudo.ResultadoscomIC95%.Conclusões.".length && t.emailConfirmacao === "enviado", "caracteres contados sem espaços e confirmação enviada");
@@ -162,6 +163,7 @@ async function rodar(tipo, resultados) {
     const sete = Array.from({ length: 7 }, (_, i) => coautor(i + 2));
     r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Oito autores", coautores: sete }));
     ok(r.ok && b.repo.trabalhos.porProtocolo("TRB-0003").totalAutores === 8, "oito autores no total são aceitos");
+    ok(r.restantes === 0, "depois do terceiro trabalho, a resposta avisa que não cabe mais nenhum");
     r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Nove autores", coautores: sete.concat([coautor(9)]) }));
     ok(!r.ok && r.campo === "coautores", "nove autores são recusados");
     r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Repetido", metodos: "" }));

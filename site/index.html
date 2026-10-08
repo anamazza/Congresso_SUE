@@ -551,12 +551,21 @@
           <p class="inscricao__acoes"><a class="btn btn--primario" href="#/inscricoes/formulario">Faça sua inscrição</a> <a class="btn btn--secundario" href="#/area">Já sou inscrito: entrar</a></p>
         </div>
 
+        <!-- Quem já não pode enviar (limite do edital ou prazo) vê isto antes de começar a escrever -->
+        <p class="area__carregando" id="trb-carregando" role="status" hidden>Conferindo os seus trabalhos…</p>
+        <div class="acesso" id="trb-limite" hidden>
+          <h2 id="trb-limite-titulo">Você já enviou o máximo de trabalhos</h2>
+          <p id="trb-limite-texto"></p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ver meus trabalhos</a></p>
+        </div>
+
         <form class="inscricao__form" id="form-trabalho" novalidate>
           <fieldset class="inscricao__campos">
             <legend class="sr-only">Envio de trabalho</legend>
 
             <h2 class="form-secao">1. Primeiro autor</h2>
             <p class="autor-sessao campo--largo" id="trb-autor">Você envia como primeiro autor: <strong data-autor="nome"></strong> · inscrição <span data-autor="protocolo"></span>. <button class="link-botao" type="button" data-sair>Não é você? Sair</button></p>
+            <p class="campo__dica campo--largo" id="trb-restantes" hidden></p>
 
             <h2 class="form-secao">2. Trabalho</h2>
 
@@ -681,8 +690,8 @@
           <p class="inscricao__protocolo">Protocolo <strong data-sucesso="protocolo"></strong></p>
           <p><strong data-sucesso="titulo"></strong></p>
           <p>Enviamos uma confirmação para <strong data-sucesso="email"></strong>. O resultado final da avaliação sai em <span data-config="datas.aprovados">a divulgar</span>.</p>
-          <p class="nota">Guarde o protocolo. O trabalho também aparece na área do inscrito. Cada autor pode enviar até 3 trabalhos como primeiro autor.</p>
-          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ver na área do inscrito</a> <button class="btn btn--secundario" type="button" data-novo>Enviar outro trabalho</button></p>
+          <p class="nota">Guarde o protocolo. O trabalho também aparece na área do inscrito. <span data-sucesso="restantes"></span></p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ver na área do inscrito</a> <button class="btn btn--secundario" type="button" data-novo id="trb-outro">Enviar outro trabalho</button></p>
         </div>
       </div>
     </div>
