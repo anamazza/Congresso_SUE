@@ -900,8 +900,9 @@ const CONFIG = {
         });
     });
 
-    if (sucesso) {
-      sucesso.querySelector("[data-novo]").addEventListener("click", function () {
+    const botaoNovo = sucesso && sucesso.querySelector("[data-novo]");
+    if (botaoNovo) {
+      botaoNovo.addEventListener("click", function () {
         sucesso.hidden = true;
         form.hidden = false;
         if (modoTeste && aviso) aviso.hidden = false;
@@ -970,8 +971,10 @@ const CONFIG = {
           senha: el.senha.value,
         };
       },
-      // A inscrição já abre a sessão da área do inscrito
+      // A inscrição já abre a sessão da área do inscrito; a confirmação fica
+      // na tela até a pessoa sair da página
       aoConcluir: function (resposta) {
+        inscricaoRecente = true;
         if (resposta.token) abrirSessao(resposta);
         return false;
       },
@@ -985,6 +988,73 @@ const CONFIG = {
         return "";
       },
     });
+
+    // Com a sessão aberta, a página Inscrições não mostra o formulário: quem já
+    // está inscrito vê o número de inscrição, e quem é só da comissão ou da
+    // organização vê como se inscrever. Assim ninguém registra outra pessoa
+    // (nem a si de novo) logado na própria conta.
+    let inscricaoRecente = false;
+    const caixaLogado = document.getElementById("ins-logado");
+    const cabecalhoInsc = document.getElementById("ins-cabecalho");
+    const avisoInsc = document.getElementById("ins-aviso");
+    const sucessoInsc = document.getElementById("ins-sucesso");
+    const avisoInscVisivel = !avisoInsc.hidden;
+    const botaoPainelInsc = document.getElementById("ins-botao-painel");
+    const ORIGINAL_BOTAO_INSC = botaoPainelInsc ? { texto: botaoPainelInsc.textContent, href: botaoPainelInsc.getAttribute("href"), pendente: botaoPainelInsc.classList.contains("btn--pendente") } : null;
+
+    function mostrarJaInscrito(r) {
+      const protocolo = r && r.inscricao ? r.inscricao.protocolo : "";
+      document.getElementById("ins-logado-texto").textContent =
+        "Você já tem inscrição no simpósio" + (protocolo ? ", com o número " + protocolo : "") +
+        ". A inscrição é pessoal: cada participante faz a sua, com o próprio e-mail. Para corrigir algum dado, fale com a organização pela página Contato.";
+    }
+
+    function atualizarInscricao() {
+      if (botaoPainelInsc) {
+        botaoPainelInsc.textContent = sessao ? "Ver minha área" : ORIGINAL_BOTAO_INSC.texto;
+        botaoPainelInsc.setAttribute("href", sessao ? rotaInicial() : ORIGINAL_BOTAO_INSC.href);
+        botaoPainelInsc.classList.toggle("btn--pendente", !sessao && ORIGINAL_BOTAO_INSC.pendente);
+      }
+      if (!sessao) {
+        caixaLogado.hidden = true;
+        cabecalhoInsc.hidden = false;
+        if (sucessoInsc.hidden) {
+          formInscricao.hidden = false;
+          avisoInsc.hidden = !avisoInscVisivel;
+        }
+        return;
+      }
+      // Logo depois de se inscrever, fica a confirmação
+      if (inscricaoRecente) return;
+      caixaLogado.hidden = false;
+      cabecalhoInsc.hidden = true;
+      avisoInsc.hidden = true;
+      formInscricao.hidden = true;
+      sucessoInsc.hidden = true;
+      const sair = document.getElementById("ins-logado-sair");
+      const botao = document.getElementById("ins-logado-botao");
+      if (temPapel("inscrito")) {
+        document.getElementById("ins-logado-titulo").textContent = "Você já está inscrito(a)";
+        mostrarJaInscrito(painelAtual);
+        botao.textContent = "Ver minha inscrição";
+        botao.setAttribute("href", "#/area");
+        sair.hidden = true;
+        carregarPainel(false).then(function (r) { if (r && temPapel("inscrito")) mostrarJaInscrito(r); });
+      } else {
+        document.getElementById("ins-logado-titulo").textContent = "Você entrou com uma conta da comissão ou da organização";
+        document.getElementById("ins-logado-texto").textContent =
+          "Essa conta não tem inscrição no simpósio, e a inscrição não é feita por ela. Para se inscrever, saia da conta e faça a inscrição com um e-mail diferente do que você usa na comissão ou na organização.";
+        botao.textContent = "Ir para a minha área";
+        botao.setAttribute("href", rotaInicial());
+        sair.hidden = false;
+      }
+    }
+    aoMostrarPagina.inscricoes = function () {
+      inscricaoRecente = false;
+      atualizarInscricao();
+    };
+    aoMudarSessao.push(atualizarInscricao);
+    atualizarInscricao();
   }
 
   // ----- Formulário de envio de trabalhos (área do inscrito) -----
@@ -1628,6 +1698,107 @@ const CONFIG = {
       });
     });
 
+    // "08/10/2026 16:04" vira "08/10/2026, às 16:04"
+    function dataPorExtenso(data) {
+      const m = String(data || "").match(/^(\S+) (\d{2}:\d{2})$/);
+      return m ? m[1] + ", às " + m[2] : data;
+    }
+
+    function secaoDoTrabalho(titulo) {
+      const secao = document.createElement("section");
+      secao.className = "trabalho__secao";
+      const h = document.createElement("h4");
+      h.className = "trabalho__secao-titulo";
+      h.textContent = titulo;
+      secao.appendChild(h);
+      return secao;
+    }
+
+    // Expandido: tudo o que foi enviado, em seções, para a pessoa conferir. O
+    // trabalho não muda pelo site: para corrigir, o caminho é a organização.
+    function dadosDoTrabalho(t) {
+      const enviou = t.papel === "Primeiro autor";
+      const detalhes = document.createElement("details");
+      detalhes.className = "trabalho__detalhes";
+      const resumo = document.createElement("summary");
+      resumo.textContent = enviou ? "Ver todos os dados enviados" : "Ver autores e resumo";
+      detalhes.appendChild(resumo);
+      const corpo = document.createElement("div");
+      corpo.className = "trabalho__corpo";
+      detalhes.appendChild(corpo);
+
+      // Sobre o trabalho: lista de rótulo e valor, uma linha por informação
+      const sobre = secaoDoTrabalho("Sobre o trabalho");
+      sobre.appendChild(listaDeDados([
+        ["Tipo de trabalho", t.tipo], ["Eixo temático", t.eixo],
+        ["Tamanho do resumo", formatoNumero.format(t.caracteres) + " de " + formatoNumero.format(t.maxCaracteres) + " caracteres, sem espaços"],
+      ], "lista-resumo"));
+      corpo.appendChild(sobre);
+
+      // Autores: um bloco por pessoa, com os dados em campos próprios
+      const secaoAutores = secaoDoTrabalho(t.autores.length === 1 ? "Autor" : "Autores, na ordem do trabalho");
+      const autores = document.createElement("ol");
+      autores.className = "trabalho__autores";
+      t.autores.forEach(function (a, n) {
+        const item = document.createElement("li");
+        item.className = "trabalho__autor";
+        const cabeca = document.createElement("p");
+        cabeca.className = "trabalho__autor-nome";
+        const nome = document.createElement("strong");
+        nome.textContent = a.nome;
+        cabeca.appendChild(nome);
+        const papel = document.createElement("span");
+        papel.className = "trabalho__autor-papel";
+        papel.textContent = n === 0 ? "Primeiro autor" : "Coautor";
+        cabeca.appendChild(papel);
+        item.appendChild(cabeca);
+        const campos = [];
+        if (a.cpf) campos.push(["CPF", a.cpf]);
+        if (a.email) campos.push(["E-mail", a.email]);
+        campos.push(["Instituição", a.instituicao || "não informada"]);
+        item.appendChild(listaDeDados(campos, "trabalho__autor-dados"));
+        autores.appendChild(item);
+      });
+      secaoAutores.appendChild(autores);
+      corpo.appendChild(secaoAutores);
+
+      // Resumo: as quatro partes, cada uma com o seu título
+      const secaoResumo = secaoDoTrabalho("Resumo");
+      [["Introdução", t.introducao], ["Métodos", t.metodos], ["Resultados", t.resultados], ["Conclusões", t.conclusoes]].forEach(function (parte) {
+        const h = document.createElement("h5");
+        h.className = "trabalho__parte";
+        h.textContent = parte[0];
+        secaoResumo.appendChild(h);
+        secaoResumo.appendChild(paragrafo(parte[1], "trabalho__texto"));
+      });
+      corpo.appendChild(secaoResumo);
+
+      // Como pedir correção: por e-mail, se a organização informou um, ou pela página Contato
+      const corrigir = document.createElement("div");
+      corrigir.className = "trabalho__corrigir";
+      const tituloCorrigir = document.createElement("p");
+      tituloCorrigir.className = "trabalho__corrigir-titulo";
+      tituloCorrigir.textContent = "Precisa corrigir algo?";
+      corrigir.appendChild(tituloCorrigir);
+      const texto = document.createElement("p");
+      texto.appendChild(document.createTextNode("O trabalho não pode ser alterado pelo site. " +
+        (enviou ? "Fale com a organização " : "Avise o primeiro autor ou fale com a organização ")));
+      const contato = document.createElement("a");
+      const emailContato = ler("contato.email");
+      if (emailContato) {
+        contato.href = "mailto:" + emailContato + "?subject=" + encodeURIComponent("Correção no trabalho " + t.protocolo);
+        contato.textContent = "por e-mail (" + emailContato + ")";
+      } else {
+        contato.href = "#/contato";
+        contato.textContent = "pela página Contato";
+      }
+      texto.appendChild(contato);
+      texto.appendChild(document.createTextNode(", informando o protocolo " + t.protocolo + " e o que precisa mudar."));
+      corrigir.appendChild(texto);
+      corpo.appendChild(corrigir);
+      return detalhes;
+    }
+
     function preencherPainel(r) {
       const i = r.inscricao;
       const valores = {
@@ -1638,29 +1809,45 @@ const CONFIG = {
         el.textContent = valores[el.dataset.painel] || "não informado";
       });
 
+      // Recarregar a lista não fecha o trabalho que a pessoa abriu
+      const abertos = {};
+      listaTrabalhos.querySelectorAll("details[open]").forEach(function (d) { abertos[d.closest("li").dataset.protocolo] = true; });
       listaTrabalhos.textContent = "";
       r.trabalhos.forEach(function (t) {
         const li = document.createElement("li");
         li.className = "area__trabalho";
-        const topo = document.createElement("p");
-        topo.className = "area__trabalho-topo";
-        const protocolo = document.createElement("strong");
+        li.dataset.protocolo = t.protocolo;
+        // Retraído: protocolo e situação no topo, título e o essencial em
+        // rótulo e valor; o comentário da comissão fica sempre à vista
+        const topo = document.createElement("div");
+        topo.className = "trabalho__topo";
+        const protocolo = document.createElement("span");
+        protocolo.className = "trabalho__protocolo";
         protocolo.textContent = t.protocolo;
         topo.appendChild(protocolo);
-        topo.appendChild(document.createTextNode(t.papel + (t.data ? " · enviado em " + t.data : "")));
-        const titulo = document.createElement("h3");
-        titulo.textContent = t.titulo;
-        const detalhes = document.createElement("p");
-        detalhes.textContent = t.tipo + " · " + t.eixo + " · Apresentação: " + t.apresentador;
         if (t.situacao) topo.appendChild(selo(t.situacao));
         li.appendChild(topo);
+        const titulo = document.createElement("h3");
+        titulo.className = "trabalho__titulo";
+        titulo.textContent = t.titulo;
         li.appendChild(titulo);
-        li.appendChild(detalhes);
+        li.appendChild(listaDeDados([
+          ["Sua participação", t.papel], ["Enviado em", dataPorExtenso(t.data)], ["Quem apresenta", t.apresentador],
+        ], "trabalho__resumo-dados"));
         if (t.comentario) {
-          const comentario = document.createElement("p");
-          comentario.className = "area__comentario";
-          comentario.textContent = "Comentário da comissão: " + t.comentario;
+          const comentario = document.createElement("div");
+          comentario.className = "trabalho__comentario";
+          const rotulo = document.createElement("p");
+          rotulo.className = "trabalho__comentario-rotulo";
+          rotulo.textContent = "Comentário da Comissão Científica";
+          comentario.appendChild(rotulo);
+          comentario.appendChild(paragrafo(t.comentario, "trabalho__comentario-texto"));
           li.appendChild(comentario);
+        }
+        if (t.autores) {
+          const tudo = dadosDoTrabalho(t);
+          tudo.open = !!abertos[t.protocolo];
+          li.appendChild(tudo);
         }
         listaTrabalhos.appendChild(li);
       });

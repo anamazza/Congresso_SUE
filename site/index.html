@@ -321,14 +321,21 @@
             <div><dt>Encerramento</dt><dd data-config="inscricoes.fim">a divulgar</dd></div>
             <div><dt>Vagas</dt><dd>Limitadas</dd></div>
           </dl>
-          <a class="btn btn--primario btn--pendente" data-config-href="inscricoes.url" data-texto-ativo="Preencher a inscrição" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
+          <a class="btn btn--primario btn--pendente" id="ins-botao-painel" data-config-href="inscricoes.url" data-texto-ativo="Preencher a inscrição" data-texto-pendente="Inscrições em breve" href="#/inscricoes">Inscrições em breve</a>
         </div>
       </div>
 
       <!-- Formulário de inscrição. O destino das respostas fica em CONFIG.formulario (js/main.js). -->
       <div class="bloco" id="formulario">
         <div class="inscricao">
-          <header class="inscricao__cabecalho">
+          <!-- Quem entrou no site não preenche outra inscrição, nem para si nem para outra pessoa -->
+          <div class="acesso" id="ins-logado" hidden>
+            <h2 id="ins-logado-titulo">Você já está inscrito(a)</h2>
+            <p id="ins-logado-texto"></p>
+            <p class="inscricao__acoes"><a class="btn btn--primario" id="ins-logado-botao" href="#/area">Ver minha inscrição</a> <button class="btn btn--secundario" type="button" id="ins-logado-sair" data-sair hidden>Sair</button></p>
+          </div>
+
+          <header class="inscricao__cabecalho" id="ins-cabecalho">
             <p class="eyebrow">Formulário de inscrição</p>
             <h2>Preencha seus dados</h2>
             <p class="nota">Todos os campos são obrigatórios, exceto quando indicado. Os dados servem para organizar o simpósio e emitir o certificado, conforme o <a href="#/privacidade">aviso de privacidade</a>.</p>
@@ -436,7 +443,7 @@
             <p class="inscricao__protocolo">Número de inscrição <strong data-sucesso="protocolo"></strong></p>
             <p>Enviamos uma confirmação para <strong data-sucesso="email"></strong>. Se não chegar em alguns minutos, olhe a caixa de spam. A organização também vai enviar as orientações sobre a confirmação da vaga.</p>
             <p class="nota">Guarde o número de inscrição. Você já entrou na área do inscrito, onde aparecem a sua inscrição e o envio de trabalhos. Nas próximas vezes, entre com este e-mail e a senha que você criou. Para corrigir algum dado, fale com a organização pela página <a href="#/contato">Contato</a>.</p>
-            <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ir para a área do inscrito</a> <button class="btn btn--secundario" type="button" data-novo>Fazer outra inscrição</button></p>
+            <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Ir para a área do inscrito</a></p>
           </div>
         </div>
       </div>
