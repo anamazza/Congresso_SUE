@@ -1725,12 +1725,17 @@ const CONFIG = {
     });
   }
 
-  // Link do menu: "Entrar" sem sessão; "Minha área" leva à página do perfil
+  // Link do menu: "Entrar" sem sessão; com sessão, "Minha área" vira o botão
+  // de destaque do topo (leva à página do perfil) e "Inscreva-se" sai
   const linksArea = document.querySelectorAll("[data-area-link]");
   function atualizarMenuArea() {
+    document.documentElement.classList.toggle("com-sessao", !!sessao);
     linksArea.forEach(function (a) {
       a.textContent = sessao ? "Minha área" : "Entrar";
       a.setAttribute("href", sessao ? rotaInicial() : "#/area");
+      a.classList.toggle("btn", !!sessao);
+      a.classList.toggle("btn--primario", !!sessao);
+      a.classList.toggle("btn--pequeno", !!sessao);
     });
   }
   aoMudarSessao.push(atualizarMenuArea);
