@@ -1698,54 +1698,90 @@ const CONFIG = {
       });
     });
 
-    // Tudo o que foi enviado no trabalho, para a pessoa conferir. O trabalho não
-    // muda pelo site: para corrigir, o caminho é falar com a organização.
+    // "08/10/2026 16:04" vira "08/10/2026, às 16:04"
+    function dataPorExtenso(data) {
+      const m = String(data || "").match(/^(\S+) (\d{2}:\d{2})$/);
+      return m ? m[1] + ", às " + m[2] : data;
+    }
+
+    function secaoDoTrabalho(titulo) {
+      const secao = document.createElement("section");
+      secao.className = "trabalho__secao";
+      const h = document.createElement("h4");
+      h.className = "trabalho__secao-titulo";
+      h.textContent = titulo;
+      secao.appendChild(h);
+      return secao;
+    }
+
+    // Expandido: tudo o que foi enviado, em seções, para a pessoa conferir. O
+    // trabalho não muda pelo site: para corrigir, o caminho é a organização.
     function dadosDoTrabalho(t) {
       const enviou = t.papel === "Primeiro autor";
       const detalhes = document.createElement("details");
-      detalhes.className = "area__detalhes";
+      detalhes.className = "trabalho__detalhes";
       const resumo = document.createElement("summary");
       resumo.textContent = enviou ? "Ver todos os dados enviados" : "Ver autores e resumo";
       detalhes.appendChild(resumo);
+      const corpo = document.createElement("div");
+      corpo.className = "trabalho__corpo";
+      detalhes.appendChild(corpo);
 
-      detalhes.appendChild(listaDeDados([
-        ["Tipo de trabalho", t.tipo], ["Eixo temático", t.eixo], ["Apresentação", t.apresentador],
-        ["Enviado em", t.data],
+      // Sobre o trabalho: lista de rótulo e valor, uma linha por informação
+      const sobre = secaoDoTrabalho("Sobre o trabalho");
+      sobre.appendChild(listaDeDados([
+        ["Tipo de trabalho", t.tipo], ["Eixo temático", t.eixo],
         ["Tamanho do resumo", formatoNumero.format(t.caracteres) + " de " + formatoNumero.format(t.maxCaracteres) + " caracteres, sem espaços"],
-      ]));
+      ], "lista-resumo"));
+      corpo.appendChild(sobre);
 
-      const tituloAutores = document.createElement("h4");
-      tituloAutores.textContent = t.autores.length === 1 ? "Autor" : "Autores, na ordem do trabalho";
-      detalhes.appendChild(tituloAutores);
+      // Autores: um bloco por pessoa, com os dados em campos próprios
+      const secaoAutores = secaoDoTrabalho(t.autores.length === 1 ? "Autor" : "Autores, na ordem do trabalho");
       const autores = document.createElement("ol");
-      autores.className = "area__autores";
+      autores.className = "trabalho__autores";
       t.autores.forEach(function (a, n) {
         const item = document.createElement("li");
+        item.className = "trabalho__autor";
+        const cabeca = document.createElement("p");
+        cabeca.className = "trabalho__autor-nome";
         const nome = document.createElement("strong");
         nome.textContent = a.nome;
-        item.appendChild(nome);
-        if (n === 0) item.appendChild(document.createTextNode(" (primeiro autor)"));
-        const extras = [a.cpf ? "CPF " + a.cpf : "", a.email || "", a.instituicao || ""].filter(Boolean);
-        if (extras.length) {
-          const linha = document.createElement("span");
-          linha.textContent = extras.join(" · ");
-          item.appendChild(linha);
-        }
+        cabeca.appendChild(nome);
+        const papel = document.createElement("span");
+        papel.className = "trabalho__autor-papel";
+        papel.textContent = n === 0 ? "Primeiro autor" : "Coautor";
+        cabeca.appendChild(papel);
+        item.appendChild(cabeca);
+        const campos = [];
+        if (a.cpf) campos.push(["CPF", a.cpf]);
+        if (a.email) campos.push(["E-mail", a.email]);
+        campos.push(["Instituição", a.instituicao || "não informada"]);
+        item.appendChild(listaDeDados(campos, "trabalho__autor-dados"));
         autores.appendChild(item);
       });
-      detalhes.appendChild(autores);
+      secaoAutores.appendChild(autores);
+      corpo.appendChild(secaoAutores);
 
+      // Resumo: as quatro partes, cada uma com o seu título
+      const secaoResumo = secaoDoTrabalho("Resumo");
       [["Introdução", t.introducao], ["Métodos", t.metodos], ["Resultados", t.resultados], ["Conclusões", t.conclusoes]].forEach(function (parte) {
-        const h = document.createElement("h4");
+        const h = document.createElement("h5");
+        h.className = "trabalho__parte";
         h.textContent = parte[0];
-        detalhes.appendChild(h);
-        detalhes.appendChild(paragrafo(parte[1], "area__texto"));
+        secaoResumo.appendChild(h);
+        secaoResumo.appendChild(paragrafo(parte[1], "trabalho__texto"));
       });
+      corpo.appendChild(secaoResumo);
 
       // Como pedir correção: por e-mail, se a organização informou um, ou pela página Contato
-      const corrigir = document.createElement("p");
-      corrigir.className = "area__corrigir";
-      corrigir.appendChild(document.createTextNode("Encontrou algo para corrigir? O trabalho não pode ser alterado pelo site. " +
+      const corrigir = document.createElement("div");
+      corrigir.className = "trabalho__corrigir";
+      const tituloCorrigir = document.createElement("p");
+      tituloCorrigir.className = "trabalho__corrigir-titulo";
+      tituloCorrigir.textContent = "Precisa corrigir algo?";
+      corrigir.appendChild(tituloCorrigir);
+      const texto = document.createElement("p");
+      texto.appendChild(document.createTextNode("O trabalho não pode ser alterado pelo site. " +
         (enviou ? "Fale com a organização " : "Avise o primeiro autor ou fale com a organização ")));
       const contato = document.createElement("a");
       const emailContato = ler("contato.email");
@@ -1756,9 +1792,10 @@ const CONFIG = {
         contato.href = "#/contato";
         contato.textContent = "pela página Contato";
       }
-      corrigir.appendChild(contato);
-      corrigir.appendChild(document.createTextNode(", informando o protocolo " + t.protocolo + " e o que precisa mudar."));
-      detalhes.appendChild(corrigir);
+      texto.appendChild(contato);
+      texto.appendChild(document.createTextNode(", informando o protocolo " + t.protocolo + " e o que precisa mudar."));
+      corrigir.appendChild(texto);
+      corpo.appendChild(corrigir);
       return detalhes;
     }
 
@@ -1780,24 +1817,31 @@ const CONFIG = {
         const li = document.createElement("li");
         li.className = "area__trabalho";
         li.dataset.protocolo = t.protocolo;
-        const topo = document.createElement("p");
-        topo.className = "area__trabalho-topo";
-        const protocolo = document.createElement("strong");
+        // Retraído: protocolo e situação no topo, título e o essencial em
+        // rótulo e valor; o comentário da comissão fica sempre à vista
+        const topo = document.createElement("div");
+        topo.className = "trabalho__topo";
+        const protocolo = document.createElement("span");
+        protocolo.className = "trabalho__protocolo";
         protocolo.textContent = t.protocolo;
         topo.appendChild(protocolo);
-        topo.appendChild(document.createTextNode(t.papel + (t.data ? " · enviado em " + t.data : "")));
-        const titulo = document.createElement("h3");
-        titulo.textContent = t.titulo;
-        const detalhes = document.createElement("p");
-        detalhes.textContent = t.tipo + " · " + t.eixo + " · Apresentação: " + t.apresentador;
         if (t.situacao) topo.appendChild(selo(t.situacao));
         li.appendChild(topo);
+        const titulo = document.createElement("h3");
+        titulo.className = "trabalho__titulo";
+        titulo.textContent = t.titulo;
         li.appendChild(titulo);
-        li.appendChild(detalhes);
+        li.appendChild(listaDeDados([
+          ["Sua participação", t.papel], ["Enviado em", dataPorExtenso(t.data)], ["Quem apresenta", t.apresentador],
+        ], "trabalho__resumo-dados"));
         if (t.comentario) {
-          const comentario = document.createElement("p");
-          comentario.className = "area__comentario";
-          comentario.textContent = "Comentário da comissão: " + t.comentario;
+          const comentario = document.createElement("div");
+          comentario.className = "trabalho__comentario";
+          const rotulo = document.createElement("p");
+          rotulo.className = "trabalho__comentario-rotulo";
+          rotulo.textContent = "Comentário da Comissão Científica";
+          comentario.appendChild(rotulo);
+          comentario.appendChild(paragrafo(t.comentario, "trabalho__comentario-texto"));
           li.appendChild(comentario);
         }
         if (t.autores) {
