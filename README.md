@@ -289,10 +289,17 @@ cada envio para a `main`, e o GitHub Pages publica uma cópia em
 `canonical` aponta para o endereço oficial, os buscadores tratam o endereço oficial como o
 principal. Para desligar a cópia, apague o workflow ou desative o Pages em **Settings > Pages**.
 
-A cópia só fica no ar com o Pages ligado. No plano gratuito do GitHub, isso exige o repositório
-público. Para ligar: **Settings > General > Danger Zone > Change visibility > Public**, depois
-**Settings > Pages > Build and deployment > Source: Deploy from a branch**, branch `gh-pages`,
-pasta `/ (root)`, **Save**. Em alguns minutos o endereço acima passa a responder.
+A cópia só fica no ar com o Pages ligado, e no plano gratuito do GitHub isso exige o
+repositório público. Em **Settings > Pages > Build and deployment > Source: Deploy from a
+branch** há duas formas:
+
+- **Branch `main`, pasta `/ (root)`** (como está hoje): o Pages publica o repositório inteiro e
+  o site fica em <https://anamazza.github.io/Congresso_SUE/site/>. O `index.html` da raiz do
+  repositório leva quem abre o endereço curto para lá, mantendo `?teste` e `#/pagina`.
+- **Branch `gh-pages`, pasta `/ (root)`**: o Pages publica só a pasta `site/`, copiada pelo
+  workflow, e o site fica direto em <https://anamazza.github.io/Congresso_SUE/>.
+
+Nas duas, a cópia se atualiza sozinha a cada envio para a `main`.
 
 A pasta `site/` traz também `.nojekyll`, `404.html` (página de erro que leva de volta ao início)
 e `robots.txt`, usados pelo GitHub Pages.
