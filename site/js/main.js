@@ -900,8 +900,9 @@ const CONFIG = {
         });
     });
 
-    if (sucesso) {
-      sucesso.querySelector("[data-novo]").addEventListener("click", function () {
+    const botaoNovo = sucesso && sucesso.querySelector("[data-novo]");
+    if (botaoNovo) {
+      botaoNovo.addEventListener("click", function () {
         sucesso.hidden = true;
         form.hidden = false;
         if (modoTeste && aviso) aviso.hidden = false;
@@ -970,8 +971,10 @@ const CONFIG = {
           senha: el.senha.value,
         };
       },
-      // A inscrição já abre a sessão da área do inscrito
+      // A inscrição já abre a sessão da área do inscrito; a confirmação fica
+      // na tela até a pessoa sair da página
       aoConcluir: function (resposta) {
+        inscricaoRecente = true;
         if (resposta.token) abrirSessao(resposta);
         return false;
       },
@@ -985,6 +988,73 @@ const CONFIG = {
         return "";
       },
     });
+
+    // Com a sessão aberta, a página Inscrições não mostra o formulário: quem já
+    // está inscrito vê o número de inscrição, e quem é só da comissão ou da
+    // organização vê como se inscrever. Assim ninguém registra outra pessoa
+    // (nem a si de novo) logado na própria conta.
+    let inscricaoRecente = false;
+    const caixaLogado = document.getElementById("ins-logado");
+    const cabecalhoInsc = document.getElementById("ins-cabecalho");
+    const avisoInsc = document.getElementById("ins-aviso");
+    const sucessoInsc = document.getElementById("ins-sucesso");
+    const avisoInscVisivel = !avisoInsc.hidden;
+    const botaoPainelInsc = document.getElementById("ins-botao-painel");
+    const ORIGINAL_BOTAO_INSC = botaoPainelInsc ? { texto: botaoPainelInsc.textContent, href: botaoPainelInsc.getAttribute("href"), pendente: botaoPainelInsc.classList.contains("btn--pendente") } : null;
+
+    function mostrarJaInscrito(r) {
+      const protocolo = r && r.inscricao ? r.inscricao.protocolo : "";
+      document.getElementById("ins-logado-texto").textContent =
+        "Você já tem inscrição no simpósio" + (protocolo ? ", com o número " + protocolo : "") +
+        ". A inscrição é pessoal: cada participante faz a sua, com o próprio e-mail. Para corrigir algum dado, fale com a organização pela página Contato.";
+    }
+
+    function atualizarInscricao() {
+      if (botaoPainelInsc) {
+        botaoPainelInsc.textContent = sessao ? "Ver minha área" : ORIGINAL_BOTAO_INSC.texto;
+        botaoPainelInsc.setAttribute("href", sessao ? rotaInicial() : ORIGINAL_BOTAO_INSC.href);
+        botaoPainelInsc.classList.toggle("btn--pendente", !sessao && ORIGINAL_BOTAO_INSC.pendente);
+      }
+      if (!sessao) {
+        caixaLogado.hidden = true;
+        cabecalhoInsc.hidden = false;
+        if (sucessoInsc.hidden) {
+          formInscricao.hidden = false;
+          avisoInsc.hidden = !avisoInscVisivel;
+        }
+        return;
+      }
+      // Logo depois de se inscrever, fica a confirmação
+      if (inscricaoRecente) return;
+      caixaLogado.hidden = false;
+      cabecalhoInsc.hidden = true;
+      avisoInsc.hidden = true;
+      formInscricao.hidden = true;
+      sucessoInsc.hidden = true;
+      const sair = document.getElementById("ins-logado-sair");
+      const botao = document.getElementById("ins-logado-botao");
+      if (temPapel("inscrito")) {
+        document.getElementById("ins-logado-titulo").textContent = "Você já está inscrito(a)";
+        mostrarJaInscrito(painelAtual);
+        botao.textContent = "Ver minha inscrição";
+        botao.setAttribute("href", "#/area");
+        sair.hidden = true;
+        carregarPainel(false).then(function (r) { if (r && temPapel("inscrito")) mostrarJaInscrito(r); });
+      } else {
+        document.getElementById("ins-logado-titulo").textContent = "Você entrou com uma conta da comissão ou da organização";
+        document.getElementById("ins-logado-texto").textContent =
+          "Essa conta não tem inscrição no simpósio, e a inscrição não é feita por ela. Para se inscrever, saia da conta e faça a inscrição com um e-mail diferente do que você usa na comissão ou na organização.";
+        botao.textContent = "Ir para a minha área";
+        botao.setAttribute("href", rotaInicial());
+        sair.hidden = false;
+      }
+    }
+    aoMostrarPagina.inscricoes = function () {
+      inscricaoRecente = false;
+      atualizarInscricao();
+    };
+    aoMudarSessao.push(atualizarInscricao);
+    atualizarInscricao();
   }
 
   // ----- Formulário de envio de trabalhos (área do inscrito) -----
