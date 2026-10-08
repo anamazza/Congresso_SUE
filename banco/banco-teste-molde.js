@@ -229,10 +229,16 @@
   // ---------- Fim do código do banco ----------
 
   CONFIG.TESTE = true;
-  if (!dados.folhas[ABAS.inscricoes.nome]) {
-    configurar();
-    salvar();
+  if (!dados.folhas[ABAS.inscricoes.nome]) configurar();
+
+  // Avaliador de teste, para experimentar a área da comissão
+  const AVALIADOR_TESTE = ["comissao@teste.com", "Avaliador de Teste"];
+  function garantirAvaliadorDeTeste() {
+    const folha = aba(planilha, ABAS.comissao);
+    if (folha.getLastRow() < 2) folha.appendRow([AVALIADOR_TESTE[0], AVALIADOR_TESTE[1], "", "", ""]);
   }
+  garantirAvaliadorDeTeste();
+  salvar();
 
   window.bancoDeTeste = {
     enviar: function (acao, dadosDoSite) {
@@ -279,6 +285,10 @@
       ".teste-painel th{background:#F4F6F9}",
       ".teste-painel__vazio{color:#5E6675;margin:0}",
       ".teste-painel__rodape{padding:.6rem 1rem;border-top:1px solid #DDE3EA}",
+      ".teste-painel__form{display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0 .25rem}",
+      ".teste-painel__form input{flex:1 1 10rem;min-width:0;padding:.4rem .5rem;border:1px solid #B8C2CE;border-radius:4px;font:inherit}",
+      ".teste-painel__form button{padding:.4rem .8rem;border:0;border-radius:4px;background:#0078A0;color:#fff;font:600 .85rem system-ui,sans-serif;cursor:pointer}",
+      ".teste-painel ul{margin:.25rem 0 .5rem;padding-left:1.1rem}",
       ".teste-painel__apagar{border:1px solid #880A12;background:#fff;color:#880A12;border-radius:6px;padding:.45rem .8rem;font:600 .85rem system-ui,sans-serif;cursor:pointer}",
     ].join("");
     document.head.appendChild(estilo);
@@ -299,7 +309,8 @@
       '<p class="teste-painel__nota">O banco de teste roda neste navegador. Os dados ficam só aqui e não vão para lugar nenhum.</p>' +
       '<div class="teste-painel__abas" role="tablist">' +
       '<button type="button" role="tab" data-aba="emails">E-mails enviados</button>' +
-      '<button type="button" role="tab" data-aba="planilha">Planilha</button></div>' +
+      '<button type="button" role="tab" data-aba="planilha">Planilha</button>' +
+      '<button type="button" role="tab" data-aba="comissao">Comissão</button></div>' +
       '<div class="teste-painel__corpo"></div>' +
       '<div class="teste-painel__rodape"><button type="button" class="teste-painel__apagar">Apagar todos os dados de teste</button></div>';
     document.body.appendChild(caixaPainel);
@@ -325,6 +336,7 @@
       if (!window.confirm("Apagar todas as inscrições, trabalhos, senhas e e-mails de teste deste navegador?")) return;
       dados = dadosVazios();
       configurar();
+      garantirAvaliadorDeTeste();
       salvar();
       try {
         window.sessionStorage.removeItem(CHAVE_SESSAO_SITE);
@@ -334,6 +346,13 @@
       window.location.reload();
     });
     atualizarPainel();
+  }
+
+  function textoPainel(texto) {
+    const p = document.createElement("p");
+    p.className = "teste-painel__vazio";
+    p.textContent = texto;
+    return p;
   }
 
   function celula(valor) {
@@ -377,6 +396,32 @@
         caixa.appendChild(texto);
         corpo.appendChild(caixa);
       });
+      return;
+    }
+
+    if (abaAtual === "comissao") {
+      corpo.appendChild(textoPainel("Para testar a área da comissão, abra a página Área da comissão (link no rodapé) com um destes e-mails. No primeiro acesso, use \"Primeiro acesso ou esqueci a senha\": o código aparece em E-mails enviados."));
+      const lista = document.createElement("ul");
+      (dados.folhas[ABAS.comissao.nome] || []).slice(1).forEach(function (l) {
+        const li = document.createElement("li");
+        li.textContent = l[0] + " · " + (l[1] || "sem nome") + " · " + (l[2] ? "senha criada" : "sem senha ainda");
+        lista.appendChild(li);
+      });
+      corpo.appendChild(lista);
+      const form = document.createElement("form");
+      form.className = "teste-painel__form";
+      form.innerHTML = '<input type="email" placeholder="E-mail do avaliador" aria-label="E-mail do avaliador" required>' +
+        '<input type="text" placeholder="Nome" aria-label="Nome do avaliador">' +
+        '<button type="submit">Adicionar avaliador</button>';
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const email = form.elements[0].value.trim().toLowerCase();
+        if (!emailValido(email)) return form.elements[0].focus();
+        if (!buscarAvaliador(planilha, email)) aba(planilha, ABAS.comissao).appendRow([email, form.elements[1].value.trim(), "", "", ""]);
+        salvar();
+        atualizarPainel();
+      });
+      corpo.appendChild(form);
       return;
     }
 
