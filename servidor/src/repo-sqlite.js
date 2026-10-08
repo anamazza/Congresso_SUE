@@ -29,7 +29,7 @@ const TABELAS = {
       introducao: "introducao", metodos: "metodos", resultados: "resultados", conclusoes: "conclusoes",
       caracteres: "caracteres", emailConfirmacao: "email_confirmacao", situacao: "situacao",
       avaliadorNome: "avaliador_nome", avaliadorEmail: "avaliador_email", avaliadoEm: "avaliado_em",
-      comentario: "comentario", emailResultado: "email_resultado",
+      comentario: "comentario", emailResultado: "email_resultado", excluidoEm: "excluido_em",
     },
   },
   contas: {
@@ -56,7 +56,7 @@ const ESQUEMA = `
     introducao TEXT, metodos TEXT, resultados TEXT, conclusoes TEXT, caracteres INTEGER,
     email_confirmacao TEXT DEFAULT '', situacao TEXT NOT NULL DEFAULT 'Em avaliação',
     avaliador_nome TEXT DEFAULT '', avaliador_email TEXT DEFAULT '', avaliado_em TEXT DEFAULT '',
-    comentario TEXT DEFAULT '', email_resultado TEXT DEFAULT ''
+    comentario TEXT DEFAULT '', email_resultado TEXT DEFAULT '', excluido_em TEXT DEFAULT ''
   );
   CREATE INDEX IF NOT EXISTS trabalhos_autor ON trabalhos (autor_cpf);
   CREATE TABLE IF NOT EXISTS contas (
@@ -72,6 +72,14 @@ function criarRepoSqlite(opcoes) {
   const db = new DatabaseSync(opcoes.arquivo);
   db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;");
   db.exec(ESQUEMA);
+  // Bancos criados por uma versão anterior ganham as colunas novas
+  Object.keys(TABELAS).forEach(function (nome) {
+    const existentes = db.prepare("PRAGMA table_info(" + nome + ")").all().map(function (c) { return c.name; });
+    Object.keys(TABELAS[nome].campos).forEach(function (campo) {
+      const coluna = TABELAS[nome].campos[campo];
+      if (existentes.indexOf(coluna) < 0) db.exec("ALTER TABLE " + nome + " ADD COLUMN " + coluna + " TEXT DEFAULT ''");
+    });
+  });
   let emTransacao = false;
 
   function paraObjeto(nome, linha) {

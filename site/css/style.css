@@ -1262,6 +1262,7 @@ p.campo--largo { margin: 0; max-width: none; }
 .coautor__nota { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--texto-2); }
 .coautor__nota:empty { display: none; }
 .coautor__nota.is-ok { color: var(--azul-escuro); font-weight: 600; }
+.coautor__nota.is-erro { color: var(--vermelho); font-weight: 600; }
 .campo .coautores + .campo__erro + p { margin: 0.6rem 0 0; }
 
 /* Contador do resumo: fica visível abaixo do menu enquanto a pessoa escreve */
@@ -1552,6 +1553,7 @@ p.campo--largo { margin: 0; max-width: none; }
   white-space: nowrap;
 }
 .selo--avaliacao { background: #FFF4D6; color: #7A5600; }
+.selo--excluido { background: #ECEEF2; color: #4A5160; }
 .selo--aceito { background: #E3F4EA; color: #1E6B3A; }
 .selo--recusado { background: #FBEFF0; color: var(--vermelho-escuro); }
 .area__trabalho-topo { align-items: center; }
@@ -1667,6 +1669,14 @@ p.campo--largo { margin: 0; max-width: none; }
 }
 .area__trabalho .trabalho__corrigir p { color: var(--texto); font-size: 0.95rem; }
 .area__trabalho .trabalho__corrigir .trabalho__corrigir-titulo { margin-bottom: 0.2rem; font-weight: 700; color: var(--tinta); }
+
+/* Desistir do trabalho: ação sem volta, separada e discreta */
+.trabalho__desistir { display: grid; gap: 0.5rem; justify-items: start; padding-top: 1rem; border-top: 1px solid var(--linha); }
+.area__trabalho .trabalho__desistir p { color: var(--texto); font-size: 0.95rem; max-width: 72ch; }
+.area__trabalho .trabalho__desistir .trabalho__corrigir-titulo { font-weight: 700; color: var(--tinta); }
+.trabalho__excluir { border-color: var(--vermelho); color: var(--vermelho-escuro); }
+.trabalho__excluir:hover { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }
+.area__trabalho .trabalho__desistir .inscricao__status:empty { display: none; }
 .area__comentario {
   margin: 0.5rem 0 0;
   padding: 0.5rem 0.75rem;

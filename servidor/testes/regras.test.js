@@ -350,12 +350,49 @@ async function rodar(tipo, resultados) {
     ok((await b.enviar("orgPainel", { token: tokenOrg })).comissao.length === 0, "a comissão fica vazia depois da remoção");
     ok(!(await b.enviar("aceitarConvite", { convite: b.ultimoConvite(), senha: "mais uma senha" })).ok, "convite de quem saiu da comissão não vale mais");
 
-    // Inscrita convidada para a comissão: precisa aceitar o convite para avaliar
-    await b.enviar("orgConvidar", { token: tokenOrg, nome: "Maria da Silva", email: "maria@exemplo.com" });
+    // Quem tem trabalho no simpósio não pode ser convidada para avaliar
+    const emailsAntes = b.emails.length;
+    r = await b.enviar("orgConvidar", { token: tokenOrg, nome: "Maria da Silva", email: "maria@exemplo.com" });
+    ok(!r.ok && r.erro === "autor_de_trabalho" && r.campo === "email" && r.mensagem.includes("TRB-0001, TRB-0002") && r.mensagem.includes("primeiro autor") && b.emails.length === emailsAntes,
+      "autora com trabalho enviado não recebe convite (e nenhum e-mail sai)");
+    ok(!b.repo.contas.porEmail("maria@exemplo.com").comissao, "a conta da autora continua fora da comissão");
+    const tokenJoao = await b.inscrever({ nome: "João Souza", cpf: gerarCpf(300000001), email: "joao.souza@exemplo.com" });
+    r = await b.enviar("orgConvidar", { token: tokenOrg, nome: "João Souza", email: "joao.souza@exemplo.com" });
+    ok(!r.ok && r.erro === "autor_de_trabalho" && r.mensagem.includes("coautor"), "coautor de trabalho enviado também não pode ser convidado");
+
+    // A autora desiste dos trabalhos: exclui pela área do inscrito
+    ok((await b.enviar("excluirTrabalho", { token: tokenJoao, protocolo: "TRB-0001" })).erro === "nao_encontrado", "coautor não exclui o trabalho de outra pessoa");
+    r = await b.enviar("excluirTrabalho", { token: tokenMaria, protocolo: "TRB-0001" });
+    ok(r.ok && b.repo.trabalhos.porProtocolo("TRB-0001").situacao === "Excluído" && b.repo.trabalhos.porProtocolo("TRB-0001").excluidoEm && b.emails[b.emails.length - 1].assunto.includes("Trabalho excluído"),
+      "a primeira autora exclui o trabalho e recebe a confirmação por e-mail");
+    ok(!(await b.enviar("excluirTrabalho", { token: tokenMaria, protocolo: "TRB-0001" })).ok, "trabalho excluído não é excluído de novo");
+    await b.enviar("excluirTrabalho", { token: tokenMaria, protocolo: "TRB-0002" });
+    let painelMaria = await b.enviar("painel", { token: tokenMaria });
+    ok(painelMaria.trabalhos.length === 0 && painelMaria.submissao.restantes === 3, "trabalhos excluídos somem da área do inscrito e liberam o limite de envios");
+    ok((await b.enviar("painel", { token: tokenJoao })).trabalhos.length === 0, "e somem também da área dos coautores");
+    ok((await b.enviar("orgPainel", { token: tokenOrg })).trabalhos.filter((t) => t.situacao === "Excluído").length === 2, "a organização continua vendo os trabalhos excluídos, marcados como Excluído");
+
+    // Sem trabalhos, o convite sai; quem está na comissão não envia trabalho
+    r = await b.enviar("orgConvidar", { token: tokenOrg, nome: "Maria da Silva", email: "maria@exemplo.com" });
+    ok(r.ok, "sem trabalhos, a inscrita pode ser convidada");
     ok((await b.enviar("entrar", { email: "maria@exemplo.com", senha: SENHA })).papeis.join() === "inscrito", "inscrita convidada continua só inscrita até aceitar o convite");
+    painelMaria = await b.enviar("painel", { token: tokenMaria });
+    ok(painelMaria.submissao.avaliador === true, "com o convite pendente, o painel já avisa que ela não envia trabalho");
+    r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Enviado durante o convite" }));
+    ok(!r.ok && r.erro === "avaliador" && r.mensagem.includes("Comissão Científica"), "convidada para a comissão não envia trabalho, mesmo antes de aceitar");
     const r2 = await b.enviar("aceitarConvite", { convite: b.ultimoConvite(), senha: "senha nova da Maria" });
     ok(r2.ok && r2.papeis.join() === "comissao,inscrito", "depois do convite, a mesma conta tem os dois perfis");
+    r = await b.enviar("trabalho", trabalho(r2.token, { titulo: "Enviado como avaliadora" }));
+    ok(!r.ok && r.erro === "avaliador", "avaliadora com inscrição não envia trabalho");
+    r = await b.enviar("trabalho", trabalho(tokenJoao, { titulo: "Do João com a avaliadora", coautores: [{ nome: "Maria da Silva", cpf: CPFS[0], email: "maria@exemplo.com" }] }));
+    ok(!r.ok && r.erro === "coautor_avaliador" && r.campo === "coautores", "avaliadora não entra como coautora");
+    r = await b.enviar("conferir", { token: tokenJoao, cpf: CPFS[0], email: "maria@exemplo.com" });
+    ok(!r.ok && r.erro === "coautor_avaliador", "a conferência do coautor já avisa que é avaliadora");
     ok((await b.enviar("orgRemoverComissao", { token: tokenOrg, email: "maria@exemplo.com" })).ok && (await b.enviar("entrar", { email: "maria@exemplo.com", senha: "senha nova da Maria" })).papeis.join() === "inscrito", "tirar da comissão mantém a inscrição");
+    r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Depois de sair da comissão" }));
+    ok(r.ok && r.restantes === 2, "fora da comissão, ela volta a poder enviar trabalho");
+    r = await b.enviar("trabalho", trabalho(tokenMaria));
+    ok(r.ok, "título de um trabalho excluído pode ser enviado de novo");
   }
 
 }

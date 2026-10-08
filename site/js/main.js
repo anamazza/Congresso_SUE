@@ -546,7 +546,7 @@ const CONFIG = {
   // Selo "Em avaliação", "Aceito" ou "Recusado"
   function selo(situacao) {
     const el = document.createElement("span");
-    el.className = "selo selo--" + ({ "Aceito": "aceito", "Recusado": "recusado" }[situacao] || "avaliacao");
+    el.className = "selo selo--" + ({ "Aceito": "aceito", "Recusado": "recusado", "Excluído": "excluido" }[situacao] || "avaliacao");
     el.textContent = situacao;
     return el;
   }
@@ -688,6 +688,23 @@ const CONFIG = {
       lugar.appendChild(a);
     });
     lugar.hidden = !lugar.children.length;
+  }
+
+  // Quem avalia (ou organiza) não envia trabalho: conflito de interesse
+  function situacaoDeAvaliador() {
+    if (temPapel("organizacao") && !temPapel("comissao")) {
+      return {
+        titulo: "A organização não envia trabalhos",
+        texto: "Esta conta é da organização do simpósio, que acompanha a avaliação, e por isso não envia trabalhos.",
+      };
+    }
+    return {
+      titulo: "Avaliadores não enviam trabalhos",
+      texto: "Você faz parte da Comissão Científica (ou recebeu o convite para ela) e, enquanto for avaliador(a), não pode enviar trabalhos. Se quiser submeter, peça à organização para tirar você da comissão.",
+    };
+  }
+  function ehAvaliadorOuOrganizacao() {
+    return temPapel("comissao") || temPapel("organizacao");
   }
 
   // "Olá, Ana." ou, para contas sem nome (como as da organização), o e-mail
@@ -1434,9 +1451,16 @@ const CONFIG = {
     function aplicarLimite(r) {
       carregandoEnvio.hidden = true;
       const sub = r && r.submissao;
-      const bloqueio = !sub ? "" : !sub.aberta ? "prazo" : sub.restantes < 1 ? "limite" : "";
+      const bloqueio = !sub ? "" : sub.avaliador ? "avaliador" : !sub.aberta ? "prazo" : sub.restantes < 1 ? "limite" : "";
       caixaLimite.hidden = !bloqueio;
-      if (bloqueio === "limite") {
+      const botaoLimite = document.getElementById("trb-limite-botao");
+      botaoLimite.textContent = bloqueio === "avaliador" ? "Ir para a minha área" : "Ver meus trabalhos";
+      botaoLimite.setAttribute("href", bloqueio === "avaliador" ? rotaInicial() : "#/area");
+      if (bloqueio === "avaliador") {
+        const a = situacaoDeAvaliador();
+        document.getElementById("trb-limite-titulo").textContent = a.titulo;
+        document.getElementById("trb-limite-texto").textContent = a.texto;
+      } else if (bloqueio === "limite") {
         document.getElementById("trb-limite-titulo").textContent = "Você já enviou o máximo de trabalhos";
         document.getElementById("trb-limite-texto").textContent = "Cada autor pode enviar até " + sub.maximo +
           " trabalhos como primeiro autor, e você já enviou " + sub.maximo + ". Você ainda pode aparecer como coautor nos trabalhos enviados por outras pessoas.";
@@ -1455,16 +1479,18 @@ const CONFIG = {
     }
 
     function atualizarEnvio() {
-      const travado = estadoSubmissao === "aberto" && !temPapel("inscrito");
-      caixaAcesso.hidden = !travado;
       caixaLimite.hidden = true;
       carregandoEnvio.hidden = true;
+      // Avaliador ou organização: o motivo é o conflito de interesse, não a inscrição
+      if (estadoSubmissao === "aberto" && sessao && ehAvaliadorOuOrganizacao()) {
+        caixaAcesso.hidden = true;
+        aplicarLimite({ submissao: { avaliador: true } });
+        return;
+      }
+      const travado = estadoSubmissao === "aberto" && !temPapel("inscrito");
+      caixaAcesso.hidden = !travado;
       if (travado) {
-        if (sessao) {
-          textoAcesso.textContent = "Você entrou com uma conta da comissão ou da organização, que não tem inscrição no simpósio. Para enviar trabalho como autor, faça a inscrição com outro e-mail.";
-        } else {
-          textoAcesso.textContent = avisoSessao ? avisoSessao + " " + textoAcessoPadrao : textoAcessoPadrao;
-        }
+        textoAcesso.textContent = avisoSessao ? avisoSessao + " " + textoAcessoPadrao : textoAcessoPadrao;
         formTrabalho.hidden = true;
         sucessoTrabalho.hidden = true;
         return;
@@ -1541,6 +1567,12 @@ const CONFIG = {
           delete li.dataset.chave; // falha de conexão: tenta de novo na próxima vez
           return;
         }
+        nota.classList.remove("is-erro");
+        if (r.erro === "coautor_avaliador") {
+          nota.textContent = r.mensagem + " Troque o coautor ou fale com a organização.";
+          nota.classList.add("is-erro");
+          return;
+        }
         const achou = !!r.ok;
         const nome = preencherDaInscricao(li, "nome", achou ? r.nome : "");
         const instituicao = preencherDaInscricao(li, "instituicao", achou ? r.instituicao : "");
@@ -1559,6 +1591,7 @@ const CONFIG = {
       const li = e.target.closest(".coautor");
       delete li.dataset.chave;
       li.querySelector(".coautor__nota").textContent = "";
+      li.querySelector(".coautor__nota").classList.remove("is-erro");
     });
   }
 
@@ -1802,6 +1835,52 @@ const CONFIG = {
       texto.appendChild(document.createTextNode(", informando o protocolo " + t.protocolo + " e o que precisa mudar."));
       corrigir.appendChild(texto);
       corpo.appendChild(corrigir);
+
+      // Desistir: só o primeiro autor exclui. O trabalho sai da avaliação e
+      // deixa de contar no limite de envios (ação sem volta pelo site).
+      if (enviou) {
+        const desistir = document.createElement("div");
+        desistir.className = "trabalho__desistir";
+        const tituloDesistir = document.createElement("p");
+        tituloDesistir.className = "trabalho__corrigir-titulo";
+        tituloDesistir.textContent = "Desistir do trabalho";
+        desistir.appendChild(tituloDesistir);
+        desistir.appendChild(paragrafo("Se você não vai mais apresentar este trabalho, pode excluí-lo. Ele sai da avaliação, some da sua área e da área dos coautores, e não pode ser recuperado pelo site. Para enviar de novo, é preciso preencher tudo outra vez."));
+        const excluir = document.createElement("button");
+        excluir.type = "button";
+        excluir.className = "btn btn--secundario btn--pequeno trabalho__excluir";
+        excluir.textContent = "Excluir este trabalho";
+        const status = paragrafo("", "inscricao__status");
+        status.setAttribute("role", "status");
+        excluir.addEventListener("click", function () {
+          if (!window.confirm("Excluir o trabalho " + t.protocolo + "?\n\n\"" + t.titulo + "\"\n\nEle sai da avaliação do simpósio e não pode ser recuperado pelo site.")) return;
+          excluir.disabled = true;
+          status.classList.remove("is-erro");
+          status.textContent = "Excluindo…";
+          enviarAoBanco("excluirTrabalho", { token: sessao ? sessao.token : "", protocolo: t.protocolo }).then(function (r) {
+            if (r && r.ok) {
+              painelAtual = null;
+              atualizarArea();
+              const aviso = document.getElementById("area-aviso-trabalhos");
+              aviso.textContent = "O trabalho " + t.protocolo + " foi excluído. A confirmação foi enviada para o seu e-mail.";
+              aviso.hidden = false;
+              aviso.scrollIntoView({ block: "center" });
+              return;
+            }
+            if (tratarAcessoNegado(r)) return;
+            excluir.disabled = false;
+            status.textContent = (r && r.mensagem) || "Não foi possível excluir agora. Tente de novo.";
+            status.classList.add("is-erro");
+          }, function () {
+            excluir.disabled = false;
+            status.textContent = "Não foi possível excluir agora. Verifique a conexão e tente de novo.";
+            status.classList.add("is-erro");
+          });
+        });
+        desistir.appendChild(excluir);
+        desistir.appendChild(status);
+        corpo.appendChild(desistir);
+      }
       return detalhes;
     }
 
@@ -1862,7 +1941,9 @@ const CONFIG = {
       const sub = r.submissao;
       const nota = document.getElementById("area-submissao-nota");
       const botao = document.getElementById("area-submeter");
-      if (!sub.aberta) {
+      if (sub.avaliador) {
+        nota.textContent = situacaoDeAvaliador().texto;
+      } else if (!sub.aberta) {
         nota.textContent = "O envio de trabalhos está fechado. O prazo final é " + sub.prazo + ".";
       } else if (sub.restantes < 1) {
         nota.textContent = "Você já enviou " + sub.maximo + " trabalhos como primeiro autor, o máximo do edital.";
@@ -1870,7 +1951,7 @@ const CONFIG = {
         nota.textContent = "Você ainda pode enviar " + sub.restantes + (sub.restantes === 1 ? " trabalho" : " trabalhos") +
           " como primeiro autor, até " + sub.prazo + ".";
       }
-      botao.hidden = !sub.aberta || sub.restantes < 1;
+      botao.hidden = sub.avaliador || !sub.aberta || sub.restantes < 1;
     }
 
     // Devolve a rota da página certa quando quem entrou não é inscrito
@@ -1880,6 +1961,7 @@ const CONFIG = {
         if (avisoSessao) ligacaoEntrar.definirStatus(avisoSessao, true);
         return "";
       }
+      document.getElementById("area-aviso-trabalhos").hidden = true;
       if (!temPapel("inscrito")) {
         if (sessao.papeis.length) return rotaInicial();
         fecharSessao("O seu acesso foi encerrado. Entre de novo.");
@@ -1950,6 +2032,10 @@ const CONFIG = {
   };
 
   function situacaoDeTrabalhos(r) {
+    if (sessao && (ehAvaliadorOuOrganizacao() || (r && r.submissao && r.submissao.avaliador))) {
+      const a = situacaoDeAvaliador();
+      return { aviso: a.titulo, texto: a.texto, botao: "Ir para a minha área", rota: rotaInicial() };
+    }
     if (!sessao || !temPapel("inscrito") || !r || !r.submissao) return null;
     const sub = r.submissao;
     if (!sub.aberta) {
@@ -2111,7 +2197,9 @@ const CONFIG = {
     }
     li.appendChild(detalhes);
 
-    if (!emAvaliacao) {
+    if (t.situacao === "Excluído") {
+      li.appendChild(paragrafo("Excluído pelo primeiro autor" + (t.excluidoEm ? " em " + t.excluidoEm : "") + ". Não aparece mais para a comissão.", "com-trabalho__decisao"));
+    } else if (!emAvaliacao) {
       li.appendChild(paragrafo(t.situacao + " por " + (t.avaliadoPor || "comissão") + (t.dataAvaliacao ? " em " + t.dataAvaliacao : "") +
         " · " + resultadoDoEmail(t.emailResultado) + " ao autor.", "com-trabalho__decisao"));
       if (t.comentario) li.appendChild(paragrafo("Comentário enviado: " + t.comentario, "area__comentario"));
@@ -2124,8 +2212,11 @@ const CONFIG = {
     let filtro = o.filtroInicial;
     let trabalhos = [];
     function desenhar() {
-      const contas = { "": trabalhos.length, "Em avaliação": 0, "Aceito": 0, "Recusado": 0 };
-      trabalhos.forEach(function (t) { contas[t.situacao] = (contas[t.situacao] || 0) + 1; });
+      const contas = { "": 0, "Em avaliação": 0, "Aceito": 0, "Recusado": 0, "Excluído": 0 };
+      trabalhos.forEach(function (t) {
+        contas[t.situacao] = (contas[t.situacao] || 0) + 1;
+        if (t.situacao !== "Excluído") contas[""]++;
+      });
       o.raiz.querySelectorAll("[data-conta]").forEach(function (el) { el.textContent = contas[el.dataset.conta] || 0; });
       o.raiz.querySelectorAll("[data-filtro]").forEach(function (b) {
         b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro));
@@ -2135,7 +2226,7 @@ const CONFIG = {
       o.lista.querySelectorAll("details[open]").forEach(function (d) { abertos[d.closest("li").dataset.protocolo] = true; });
       o.lista.textContent = "";
       const visiveis = trabalhos.filter(function (t) {
-        if (filtro && t.situacao !== filtro) return false;
+        if (filtro ? t.situacao !== filtro : t.situacao === "Excluído") return false;
         if (!termo) return true;
         return (t.protocolo + " " + t.titulo + " " + t.primeiroAutor + " " + t.coautores + " " + t.eixo).toLowerCase().indexOf(termo) >= 0;
       });
@@ -2289,7 +2380,7 @@ const CONFIG = {
       const numeros = {
         inscricoes: d.inscricoes.length,
         vagas: d.vagas > 0 ? "de " + formatoNumero.format(d.vagas) + " vagas" : "",
-        trabalhos: d.trabalhos.length,
+        trabalhos: d.trabalhos.length - conta("Excluído"),
         avaliacao: conta("Em avaliação"),
         aceitos: conta("Aceito"),
         recusados: conta("Recusado"),

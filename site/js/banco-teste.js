@@ -85,6 +85,9 @@
   const MAX_TENTATIVAS_CODIGO = 5; // tentativas para acertar cada código
   const DECISOES = { aceito: "Aceito", recusado: "Recusado" };
   const EM_AVALIACAO = "Em avaliação";
+  // Trabalho que o primeiro autor excluiu (desistiu). Fica guardado para a
+  // organização, mas sai da avaliação, da área do inscrito e do limite de envios.
+  const EXCLUIDO = "Excluído";
 
   /* ---------------------------------------------------------------------
      deps = {
@@ -118,6 +121,7 @@
       sair: sair,
       painel: painel,
       trabalho: trabalho,
+      excluirTrabalho: excluirTrabalho,
       conferir: conferir,
       // Comissão
       comissaoTrabalhos: comissaoTrabalhos,
@@ -317,7 +321,7 @@
       if (!s) return s === null ? semSessao() : semPerfil("inscrito");
       const insc = s.inscricao;
       const cpf = insc.cpf;
-      const trabalhos = repo.trabalhos.listar()
+      const trabalhos = trabalhosAtivos()
         .filter(function (t) {
           return t.autorCpf === cpf || t.coautores.some(function (c) { return c.cpf === cpf; });
         })
@@ -345,6 +349,8 @@
           prazo: cfg.SUBMISSAO_FIM.split("-").reverse().join("/"),
           maximo: cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR,
           restantes: Math.max(0, cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR - comoPrimeiro),
+          // Avaliador ou organização não envia trabalho (vale também com convite pendente)
+          avaliador: naoPodeSubmeter(s.conta),
         },
         papeis: papeisDe(s.conta),
       };
@@ -377,6 +383,7 @@
       if (!s) return s === null ? semSessao() : semPerfil("inscrito");
       const insc = s.inscricao;
       const cpf = insc.cpf;
+      if (naoPodeSubmeter(s.conta)) return falha("avaliador", mensagemNaoSubmete(s.conta));
 
       const titulo = texto(d.titulo, 1000);
       if (!titulo) return falha("titulo", "Informe o título do trabalho.", "titulo");
@@ -404,6 +411,10 @@
       }
       if (coautores.some(function (c) { return c.nome.split(" ").length < 2 || !cpfValido(c.cpf) || !emailValido(c.email); })) {
         return falha("coautores", "Informe nome completo, CPF válido e e-mail de cada coautor.", "coautores");
+      }
+      const avaliadorCoautor = coautores.filter(function (c) { return contaDaComissao(c.cpf, c.email); })[0];
+      if (avaliadorCoautor) {
+        return falha("coautor_avaliador", avaliadorCoautor.nome + " faz parte da Comissão Científica e, enquanto for avaliador(a), não pode ser autor(a) de trabalhos.", "coautores");
       }
       const cpfsAutores = [cpf].concat(coautores.map(function (c) { return c.cpf; }));
       if (cpfsAutores.some(function (c, i) { return cpfsAutores.indexOf(c) !== i; })) {
@@ -438,7 +449,7 @@
 
       const r = repo.atomico(function () {
         const todos = repo.trabalhos.listar();
-        const doAutor = todos.filter(function (t) { return t.autorCpf === cpf; });
+        const doAutor = todos.filter(function (t) { return t.autorCpf === cpf && t.situacao !== EXCLUIDO; });
         const repetido = doAutor.filter(function (t) { return t.titulo.trim().toLowerCase() === titulo.toLowerCase(); })[0];
         if (repetido) return falha("trabalho_repetido", "Este trabalho já foi enviado, com o protocolo " + repetido.protocolo + ".");
         if (doAutor.length >= cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR) {
@@ -451,6 +462,7 @@
           apresentadorNome: apresentadorNome, apresentadorCpf: apresentadorCpf,
           introducao: partes[0], metodos: partes[1], resultados: partes[2], conclusoes: partes[3], caracteres: caracteres,
           emailConfirmacao: "", situacao: EM_AVALIACAO, avaliadorNome: "", avaliadorEmail: "", avaliadoEm: "", comentario: "", emailResultado: "",
+          excluidoEm: "",
         });
         return { ok: true, protocolo: protocolo, restantes: Math.max(0, cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR - doAutor.length - 1) };
       });
@@ -481,6 +493,9 @@
       if (!cpfValido(cpf)) return falha("cpf", "Confira o CPF.", "cpf");
       const email = texto(d.email, 120).toLowerCase();
       if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+      if (contaDaComissao(cpf, email)) {
+        return falha("coautor_avaliador", "Esta pessoa faz parte da Comissão Científica e, enquanto for avaliadora, não pode ser autora de trabalhos.", "cpf");
+      }
       const insc = repo.inscricoes.porCpf(cpf);
       if (!insc) {
         return falha("nao_inscrito", "Não encontramos inscrição com este CPF. Confira os números ou faça a sua inscrição antes de enviar o trabalho.", "cpf");
@@ -505,14 +520,14 @@
         introducao: t.introducao, metodos: t.metodos, resultados: t.resultados, conclusoes: t.conclusoes,
         caracteres: t.caracteres, situacao: t.situacao, avaliadoPor: t.avaliadorNome,
         dataAvaliacao: dataHora(t.avaliadoEm), comentario: t.comentario || "", emailResultado: t.emailResultado || "",
-        emailConfirmacao: t.emailConfirmacao || "",
+        emailConfirmacao: t.emailConfirmacao || "", excluidoEm: dataHora(t.excluidoEm),
       };
     }
 
     async function comissaoTrabalhos(d) {
       const s = sessaoDe(d.token, "comissao");
       if (!s) return s === null ? semSessao() : semPerfil("comissao");
-      return { ok: true, avaliador: s.conta.nome || s.conta.email, trabalhos: repo.trabalhos.listar().map(trabalhoCompleto) };
+      return { ok: true, avaliador: s.conta.nome || s.conta.email, trabalhos: trabalhosAtivos().map(trabalhoCompleto) };
     }
 
     // Aceita ou recusa um trabalho e avisa o primeiro autor por e-mail na hora.
@@ -587,6 +602,9 @@
       const email = texto(d.email, 120).toLowerCase();
       if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
 
+      const autoria = autoriaDe(email);
+      if (autoria.length) return falha("autor_de_trabalho", mensagemDeAutoria(nome, autoria), "email");
+
       const r = repo.atomico(function () {
         const conta = repo.contas.porEmail(email);
         if (conta && conta.comissao) return falha("ja_na_comissao", nome + " já está na comissão.", "email");
@@ -654,6 +672,9 @@
       const senha = senhaRecebida(d.senha);
       const erroSenha = conferirSenha(senha);
       if (erroSenha) return falha("senha", erroSenha, "senha");
+      if (autoriaDe(email).length) {
+        return falha("autor_de_trabalho", "Você é autor(a) de um trabalho enviado ao simpósio e, por isso, não pode ser avaliador(a). Fale com a organização.");
+      }
       gravarSenha(email, senha);
       repo.cache.remove("convite:" + deps.resumo(String(d.convite)));
       return Object.assign({ ok: true }, abrirSessao(email));
@@ -662,6 +683,77 @@
     function emailDoConvite(token) {
       if (typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) return "";
       return repo.cache.get("convite:" + deps.resumo(token)) || "";
+    }
+
+    /* -------------------------------------------------------------------
+       Conflito de interesse: quem avalia não é autor
+       ------------------------------------------------------------------- */
+    function trabalhosAtivos() {
+      return repo.trabalhos.listar().filter(function (t) { return t.situacao !== EXCLUIDO; });
+    }
+
+    // Comissão (mesmo com convite ainda pendente) e organização não enviam trabalho
+    function naoPodeSubmeter(conta) {
+      return !!conta && (!!conta.comissao || cfg.ORGANIZACAO.indexOf(conta.email) >= 0);
+    }
+    function mensagemNaoSubmete(conta) {
+      if (conta.comissao) {
+        return "Você faz parte da Comissão Científica e, enquanto for avaliador(a), não pode enviar trabalhos. Se quiser submeter, peça à organização para sair da comissão.";
+      }
+      return "Esta conta é da organização do simpósio, que acompanha a avaliação, e por isso não envia trabalhos.";
+    }
+
+    // Há uma conta da comissão com este CPF ou e-mail?
+    function contaDaComissao(cpf, email) {
+      const porEmail = email ? repo.contas.porEmail(email) : null;
+      if (porEmail && porEmail.comissao) return true;
+      if (!cpf) return false;
+      return repo.contas.listar().some(function (c) { return c.comissao && c.cpf === cpf; });
+    }
+
+    // Trabalhos (não excluídos) em que a pessoa deste e-mail é autora ou coautora
+    function autoriaDe(email) {
+      const insc = repo.inscricoes.porEmail(email);
+      const conta = repo.contas.porEmail(email);
+      const cpf = (insc && insc.cpf) || (conta && conta.cpf) || "";
+      const lista = [];
+      trabalhosAtivos().forEach(function (t) {
+        if (t.autorEmail === email || (cpf && t.autorCpf === cpf)) lista.push({ protocolo: t.protocolo, primeiro: true });
+        else if (t.coautores.some(function (c) { return c.email === email || (cpf && c.cpf === cpf); })) lista.push({ protocolo: t.protocolo, primeiro: false });
+      });
+      return lista;
+    }
+    function mensagemDeAutoria(nome, autoria) {
+      const protocolos = autoria.map(function (a) { return a.protocolo; }).join(", ");
+      const primeiro = autoria.some(function (a) { return a.primeiro; });
+      return nome + " não pode ser avaliador(a) porque " + (autoria.length === 1 ? "tem o trabalho " : "tem os trabalhos ") + protocolos +
+        " no simpósio, como " + (primeiro ? "primeiro autor" : "coautor") + ". O convite só pode ser feito se " +
+        (autoria.length === 1 ? "o trabalho for excluído" : "os trabalhos forem excluídos") +
+        " pelo primeiro autor, na área do inscrito, em caso de desistência.";
+    }
+
+    // O primeiro autor desiste do trabalho e o exclui pela área do inscrito
+    async function excluirTrabalho(d) {
+      const s = sessaoDe(d.token, "inscrito");
+      if (!s) return s === null ? semSessao() : semPerfil("inscrito");
+      const protocolo = texto(d.protocolo, 20);
+      const insc = s.inscricao;
+      const r = repo.atomico(function () {
+        const t = repo.trabalhos.porProtocolo(protocolo);
+        if (!t || t.situacao === EXCLUIDO || t.autorCpf !== insc.cpf) {
+          return falha("nao_encontrado", "Trabalho não encontrado entre os que você enviou como primeiro autor.");
+        }
+        repo.trabalhos.atualizar(protocolo, { situacao: EXCLUIDO, excluidoEm: agora().toISOString() });
+        return { ok: true, trabalho: t };
+      });
+      if (!r.ok) return r;
+      await enviarEmail(insc.email, "Trabalho excluído · " + protocolo + " · " + cfg.EVENTO, [
+        "Olá, " + insc.nome.split(" ")[0] + ".",
+        "O trabalho \"" + r.trabalho.titulo + "\" (protocolo " + protocolo + ") foi excluído a seu pedido e saiu da avaliação do " + cfg.EVENTO + ".",
+        "Se a exclusão não foi feita por você, fale com a organização.",
+      ]);
+      const restantes = trabalhosAtivos().filter(function (t) { return t.autorCpf === insc.cpf; }).length;
+      return { ok: true, protocolo: protocolo, restantes: Math.max(0, cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR - restantes) };
     }
 
     /* -------------------------------------------------------------------
