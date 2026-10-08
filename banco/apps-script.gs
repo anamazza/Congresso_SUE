@@ -2,8 +2,9 @@
    1º Simpósio de Urgência e Emergência · banco de inscrições e trabalhos
    ---------------------------------------------------------------------
    Este código roda no Google Apps Script, ligado a uma planilha do Google.
-   Ele recebe os dois formulários do site, confere as regras do edital,
-   grava cada envio numa aba da planilha e manda um e-mail de confirmação.
+   Ele recebe os formulários do site, confere as regras do edital, grava
+   cada envio numa aba da planilha e manda um e-mail de confirmação. Também
+   cuida da área do inscrito: senha, entrada, sessão e recuperação de senha.
 
    Instalação: siga a seção "Banco de dados" do README do repositório.
    O mesmo código serve para a planilha de testes, com TESTE: true
@@ -33,6 +34,10 @@ const CONFIG = {
   MAX_CARACTERES: 2500, // resumo, sem contar os espaços
   MAX_TITULO: 200,      // título, contando os espaços
 
+  // Área do inscrito
+  SENHA_MINIMA: 8,   // caracteres
+  SESSAO_HORAS: 6,   // tempo sem uso até pedir a senha de novo (máximo 6)
+
   // true só na cópia ligada à planilha de testes: os e-mails saem com
   // [TESTE] no assunto e um aviso de que nada foi registrado de verdade
   TESTE: false,
@@ -60,10 +65,26 @@ const ABAS = {
       "Resultados", "Conclusões", "Caracteres sem espaços", "Avaliação", "E-mail de confirmação",
     ],
   },
+  // Senhas da área do inscrito. A senha nunca é guardada: só uma versão
+  // embaralhada, que não dá para desfazer. Pode ocultar esta aba.
+  acessos: {
+    nome: "Acessos",
+    colunas: ["E-mail", "CPF", "Senha protegida", "Criada em", "Atualizada em"],
+  },
 };
 
 // Posição (começando em 0) das colunas usadas nas buscas
-const COL = { INS_NOME: 2, INS_CPF: 3, INS_EMAIL: 4, INS_INSTITUICAO: 7, TRB_TITULO: 2, TRB_CPF: 6 };
+const COL = {
+  INS_NOME: 2, INS_CPF: 3, INS_EMAIL: 4, INS_CELULAR: 5, INS_CATEGORIA: 6, INS_INSTITUICAO: 7,
+  TRB_TITULO: 2, TRB_CPF: 6, TRB_COAUTORES: 8,
+  ACE_EMAIL: 0, ACE_CPF: 1, ACE_SENHA: 2,
+};
+
+// Proteção das senhas e limites da área do inscrito
+const ITERACOES_SENHA = 500;      // rodadas de embaralhamento de cada senha
+const MAX_FALHAS_ENTRADA = 5;     // senhas erradas seguidas antes de esperar 15 minutos
+const MAX_CODIGOS_POR_HORA = 3;   // códigos de recuperação por e-mail
+const MAX_TENTATIVAS_CODIGO = 5;  // tentativas para acertar cada código
 
 const CATEGORIAS = [
   "Médico(a)", "Enfermeiro(a)", "Técnico(a) ou auxiliar de enfermagem", "Fisioterapeuta",
@@ -93,6 +114,7 @@ function configurar() {
   Object.keys(ABAS).forEach(function (chave) {
     prepararAba(planilha, ABAS[chave]);
   });
+  segredoSenhas(true);
   console.log("Pronto. Abas criadas na planilha \"" + planilha.getName() + "\". Agora publique como app da Web.");
 }
 
@@ -126,7 +148,20 @@ function doGet() {
   return responder({ ok: true, mensagem: (CONFIG.TESTE ? "Banco de TESTE do " : "Banco do ") + CONFIG.EVENTO + " no ar." });
 }
 
-// O site envia { acao: "inscricao" | "trabalho" | "conferir", dados: {...} } em JSON.
+// O site envia { acao: "...", dados: {...} } em JSON. As ações que só leem
+// a planilha rodam sem a trava; as que gravam esperam a vez.
+const ACOES = {
+  inscricao: registrarInscricao,
+  trabalho: registrarTrabalho,
+  novaSenha: definirNovaSenha,
+  entrar: entrar,
+  painel: painel,
+  conferir: conferirInscricao,
+  pedirCodigo: pedirCodigo,
+  sair: sair,
+};
+const SO_LEITURA = ["entrar", "painel", "conferir", "pedirCodigo", "sair"];
+
 function doPost(e) {
   let pedido;
   try {
@@ -138,13 +173,18 @@ function doPost(e) {
     return responder(falha("pedido_invalido", "Não foi possível ler os dados enviados."));
   }
 
-  // Conferência de CPF e e-mail enquanto a pessoa preenche: só lê, sem trava
-  if (pedido.acao === "conferir") {
+  if (!Object.prototype.hasOwnProperty.call(ACOES, pedido.acao)) {
+    return responder(falha("acao_invalida", "Tipo de envio desconhecido."));
+  }
+  const acao = ACOES[pedido.acao];
+  const dados = pedido.dados && typeof pedido.dados === "object" ? pedido.dados : {};
+
+  if (SO_LEITURA.indexOf(pedido.acao) >= 0) {
     try {
-      return responder(conferirInscricao(abrirPlanilha(), pedido.dados && typeof pedido.dados === "object" ? pedido.dados : {}));
+      return responder(acao(abrirPlanilha(), dados));
     } catch (erro) {
       console.error(erro);
-      return responder(falha("erro_interno", "Não foi possível conferir a inscrição agora."));
+      return responder(falha("erro_interno", "Não foi possível concluir agora. Tente de novo em alguns minutos."));
     }
   }
 
@@ -155,11 +195,7 @@ function doPost(e) {
     return responder(falha("ocupado", "Muitos envios ao mesmo tempo. Aguarde alguns segundos e tente de novo."));
   }
   try {
-    const planilha = abrirPlanilha();
-    const dados = pedido.dados && typeof pedido.dados === "object" ? pedido.dados : {};
-    if (pedido.acao === "inscricao") return responder(registrarInscricao(planilha, dados));
-    if (pedido.acao === "trabalho") return responder(registrarTrabalho(planilha, dados));
-    return responder(falha("acao_invalida", "Tipo de envio desconhecido."));
+    return responder(acao(abrirPlanilha(), dados));
   } catch (erro) {
     console.error(erro);
     return responder(falha("erro_interno", "Não foi possível gravar os dados agora. Tente de novo em alguns minutos."));
@@ -194,6 +230,9 @@ function registrarInscricao(planilha, d) {
   const instituicao = texto(d.instituicao, 120);
   if (!instituicao) return falha("instituicao", "Informe a instituição ou unidade.", "instituicao");
   const intencao = INTENCAO_TRABALHO.indexOf(d.trabalho) >= 0 ? d.trabalho : "Não informado";
+  const senha = senhaRecebida(d.senha);
+  const erroSenha = conferirSenha(senha);
+  if (erroSenha) return falha("senha", erroSenha, "senha");
 
   const folha = aba(planilha, ABAS.inscricoes);
   const registros = linhas(folha, ABAS.inscricoes.colunas.length);
@@ -204,6 +243,14 @@ function registrarInscricao(planilha, d) {
       "Este CPF já está inscrito no simpósio, com o número " + existente[0] +
         ". Para corrigir algum dado, fale com a organização.",
       "cpf"
+    );
+  }
+  // O e-mail é o login da área do inscrito: um por inscrição
+  if (registros.some(function (l) { return String(l[COL.INS_EMAIL]).trim().toLowerCase() === email; })) {
+    return falha(
+      "email_duplicado",
+      "Este e-mail já está em outra inscrição. Cada pessoa precisa de um e-mail próprio, que também é o login da área do inscrito.",
+      "email"
     );
   }
   if (CONFIG.VAGAS > 0 && registros.length >= CONFIG.VAGAS) {
@@ -223,11 +270,12 @@ function registrarInscricao(planilha, d) {
     "Recebemos a sua inscrição no " + CONFIG.EVENTO + ", nos dias " + CONFIG.DATAS + ", na " + CONFIG.LOCAL + ".",
     "Número de inscrição: " + protocolo,
     "As vagas são limitadas e preenchidas por ordem de inscrição. A organização vai enviar as orientações sobre a confirmação da sua participação.",
-    "Se for submeter trabalho, use o mesmo CPF e o mesmo e-mail desta inscrição na área do inscrito do site.",
+    "Para ver a sua inscrição e enviar trabalhos, entre na área do inscrito com este e-mail e a senha que você criou: " + CONFIG.SITE + "#/area",
   ]);
   folha.getRange(numeroLinha, ABAS.inscricoes.colunas.length).setValue(situacaoEmail);
+  gravarAcesso(planilha, email, cpf, senha);
 
-  return { ok: true, protocolo: protocolo, nome: primeiroNome };
+  return { ok: true, protocolo: protocolo, nome: primeiroNome, token: abrirSessao(cpf) };
 }
 
 /* ---------------------------------------------------------------------
@@ -261,9 +309,11 @@ function buscarInscricao(planilha, d) {
   return { cpf: cpf, email: email, inscricao: inscricao, inscritos: inscritos };
 }
 
-// O site pergunta enquanto a pessoa preenche. Só responde com o nome e a
-// instituição a quem já sabe o CPF e o e-mail da inscrição.
+// Usado no envio de trabalho, para preencher os coautores inscritos. Só
+// responde a quem entrou na área do inscrito, e só com o nome e a
+// instituição de quem tem o CPF e o e-mail informados.
 function conferirInscricao(planilha, d) {
+  if (!cpfDaSessao(d.token)) return semSessao();
   const achado = buscarInscricao(planilha, d);
   if (achado.recusa) return achado.recusa;
   return {
@@ -285,13 +335,13 @@ function registrarTrabalho(planilha, d) {
     return falha("fora_do_prazo", "O prazo de envio de trabalhos está encerrado.");
   }
 
-  // Quem envia é o primeiro autor, identificado pelo CPF e pelo e-mail da inscrição
-  const autor = buscarInscricao(planilha, d);
-  if (autor.recusa) return autor.recusa;
-  const cpf = autor.cpf;
-  const email = autor.email;
-  const inscritos = autor.inscritos;
-  const inscricao = autor.inscricao;
+  // Quem envia é o primeiro autor, que entrou na área do inscrito
+  const cpf = cpfDaSessao(d.token);
+  if (!cpf) return semSessao();
+  const inscritos = linhas(aba(planilha, ABAS.inscricoes), ABAS.inscricoes.colunas.length);
+  const inscricao = inscritos.filter(function (l) { return soDigitos(l[COL.INS_CPF]) === cpf; })[0];
+  if (!inscricao) return semSessao();
+  const email = String(inscricao[COL.INS_EMAIL]).trim().toLowerCase();
 
   const titulo = texto(d.titulo, 1000);
   if (!titulo) return falha("titulo", "Informe o título do trabalho.", "titulo");
@@ -396,6 +446,251 @@ function registrarTrabalho(planilha, d) {
   folha.getRange(numeroLinha, ABAS.trabalhos.colunas.length).setValue(situacaoEmail);
 
   return { ok: true, protocolo: protocolo, titulo: titulo, caracteres: caracteres, apresentador: apresentador };
+}
+
+/* ---------------------------------------------------------------------
+   Área do inscrito: entrada, painel, senha e sessão
+   --------------------------------------------------------------------- */
+function entrar(planilha, d) {
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+  const senha = senhaRecebida(d.senha);
+  if (!senha) return falha("senha", "Informe a senha.", "senha");
+
+  const cache = CacheService.getScriptCache();
+  const chaveFalhas = "falhas:" + resumo(email);
+  const falhas = Number(cache.get(chaveFalhas) || 0);
+  if (falhas >= MAX_FALHAS_ENTRADA) {
+    return falha("bloqueado", "Muitas tentativas erradas com este e-mail. Aguarde 15 minutos ou crie uma nova senha em \"Esqueci a senha\".");
+  }
+  const acesso = buscarAcesso(planilha, email);
+  const cpf = acesso ? soDigitos(acesso[COL.ACE_CPF]) : "";
+  const inscricao = cpf ? inscricaoPor(planilha, COL.INS_CPF, cpf) : null;
+  if (!inscricao || !senhaConfere(senha, acesso[COL.ACE_SENHA])) {
+    cache.put(chaveFalhas, String(falhas + 1), 900);
+    return falha(
+      "credenciais",
+      "E-mail ou senha incorretos. Se esqueceu a senha, ou se fez a inscrição antes de existir a área do inscrito, use \"Esqueci a senha\".",
+      "senha"
+    );
+  }
+  cache.remove(chaveFalhas);
+  return { ok: true, token: abrirSessao(cpf), nome: String(inscricao[COL.INS_NOME]).split(" ")[0] };
+}
+
+// Dados da inscrição e trabalhos de quem entrou
+function painel(planilha, d) {
+  const cpf = cpfDaSessao(d.token);
+  if (!cpf) return semSessao();
+  const inscricao = inscricaoPor(planilha, COL.INS_CPF, cpf);
+  if (!inscricao) return semSessao();
+
+  const marcaCoautor = "CPF " + formatarCpf(cpf);
+  const trabalhos = linhas(aba(planilha, ABAS.trabalhos), ABAS.trabalhos.colunas.length)
+    .filter(function (l) {
+      return soDigitos(l[COL.TRB_CPF]) === cpf || String(l[COL.TRB_COAUTORES]).indexOf(marcaCoautor) >= 0;
+    })
+    .map(function (l) {
+      return {
+        protocolo: String(l[0]), data: dataHora(l[1]), titulo: String(l[COL.TRB_TITULO]),
+        tipo: String(l[3]), eixo: String(l[4]), apresentador: String(l[10]),
+        papel: soDigitos(l[COL.TRB_CPF]) === cpf ? "Primeiro autor" : "Coautor",
+      };
+    });
+  const comoPrimeiro = trabalhos.filter(function (t) { return t.papel === "Primeiro autor"; }).length;
+
+  return {
+    ok: true,
+    inscricao: {
+      protocolo: String(inscricao[0]), data: dataHora(inscricao[1]), nome: String(inscricao[COL.INS_NOME]),
+      cpf: formatarCpf(cpf), email: String(inscricao[COL.INS_EMAIL]), celular: String(inscricao[COL.INS_CELULAR]),
+      categoria: String(inscricao[COL.INS_CATEGORIA]), instituicao: String(inscricao[COL.INS_INSTITUICAO]),
+    },
+    trabalhos: trabalhos,
+    submissao: {
+      aberta: dentroDoPeriodo(CONFIG.SUBMISSAO_INICIO, CONFIG.SUBMISSAO_FIM),
+      prazo: CONFIG.SUBMISSAO_FIM.split("-").reverse().join("/"),
+      maximo: CONFIG.MAX_TRABALHOS_PRIMEIRO_AUTOR,
+      restantes: Math.max(0, CONFIG.MAX_TRABALHOS_PRIMEIRO_AUTOR - comoPrimeiro),
+    },
+  };
+}
+
+// Manda um código de 6 números para criar ou trocar a senha. A resposta é a
+// mesma com ou sem inscrição, para não revelar quem está inscrito.
+function pedirCodigo(planilha, d) {
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+
+  const cache = CacheService.getScriptCache();
+  const chaveEnvios = "envios:" + resumo(email);
+  const envios = Number(cache.get(chaveEnvios) || 0);
+  if (envios >= MAX_CODIGOS_POR_HORA) {
+    return falha("muitos_codigos", "Já enviamos " + MAX_CODIGOS_POR_HORA + " códigos para este e-mail há pouco. Use o código mais recente ou aguarde uma hora.");
+  }
+  cache.put(chaveEnvios, String(envios + 1), 3600);
+
+  const inscricao = inscricaoPor(planilha, COL.INS_EMAIL, email);
+  if (inscricao) {
+    const numeros = parseInt(Utilities.getUuid().replace(/-/g, "").slice(0, 12), 16);
+    const codigo = String(numeros % 1000000).padStart(6, "0");
+    cache.put("codigo:" + resumo(email), JSON.stringify({ h: resumo(codigo + ":" + email), n: 0 }), 1800);
+    enviarEmail(email, "Código para a sua senha · " + CONFIG.EVENTO, [
+      "Olá, " + String(inscricao[COL.INS_NOME]).split(" ")[0] + ".",
+      "Use este código para criar ou trocar a senha da área do inscrito: " + codigo,
+      "O código vale por 30 minutos. Se você não pediu, ignore este e-mail: a sua senha continua a mesma.",
+    ]);
+  }
+  return { ok: true, mensagem: "Se houver inscrição com este e-mail, enviamos um código de 6 números. Ele vale por 30 minutos." };
+}
+
+function definirNovaSenha(planilha, d) {
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+  const codigo = soDigitos(d.codigo);
+  if (codigo.length !== 6) return falha("codigo", "O código tem 6 números.", "codigo");
+  const senha = senhaRecebida(d.senha);
+  const erroSenha = conferirSenha(senha);
+  if (erroSenha) return falha("senha", erroSenha, "senha");
+
+  const cache = CacheService.getScriptCache();
+  const chave = "codigo:" + resumo(email);
+  let guardado = null;
+  try {
+    guardado = JSON.parse(cache.get(chave) || "null");
+  } catch (erro) {
+    guardado = null;
+  }
+  if (!guardado || guardado.n >= MAX_TENTATIVAS_CODIGO) {
+    cache.remove(chave);
+    return falha("codigo_vencido", "Código vencido ou inválido. Peça um novo código.", "codigo");
+  }
+  if (guardado.h !== resumo(codigo + ":" + email)) {
+    guardado.n++;
+    cache.put(chave, JSON.stringify(guardado), 1800);
+    return falha("codigo", "Código incorreto. Confira os 6 números do e-mail mais recente.", "codigo");
+  }
+  cache.remove(chave);
+
+  const inscricao = inscricaoPor(planilha, COL.INS_EMAIL, email);
+  if (!inscricao) return falha("codigo_vencido", "Código vencido ou inválido. Peça um novo código.", "codigo");
+  const cpf = soDigitos(inscricao[COL.INS_CPF]);
+  gravarAcesso(planilha, email, cpf, senha);
+  cache.remove("falhas:" + resumo(email));
+  return { ok: true, token: abrirSessao(cpf), nome: String(inscricao[COL.INS_NOME]).split(" ")[0] };
+}
+
+function sair(_planilha, d) {
+  if (typeof d.token === "string" && d.token) CacheService.getScriptCache().remove("sessao:" + resumo(d.token));
+  return { ok: true };
+}
+
+// ----- Sessão: um código aleatório guardado no cache por algumas horas -----
+function abrirSessao(cpf) {
+  const token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, "");
+  CacheService.getScriptCache().put("sessao:" + resumo(token), cpf, segundosDeSessao());
+  return token;
+}
+
+// CPF de quem está com a sessão aberta; "" se ela não existe ou venceu.
+// Cada uso renova o prazo.
+function cpfDaSessao(token) {
+  if (typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) return "";
+  const cache = CacheService.getScriptCache();
+  const chave = "sessao:" + resumo(token);
+  const cpf = cache.get(chave);
+  if (cpf) cache.put(chave, cpf, segundosDeSessao());
+  return cpf || "";
+}
+
+function segundosDeSessao() {
+  return Math.min(21600, Math.max(1, CONFIG.SESSAO_HORAS) * 3600);
+}
+
+function semSessao() {
+  return falha("sessao", "Sua sessão terminou. Entre de novo na área do inscrito.");
+}
+
+// ----- Senhas -----
+function senhaRecebida(valor) {
+  return typeof valor === "string" ? valor : "";
+}
+
+function conferirSenha(senha) {
+  if (senha.length < CONFIG.SENHA_MINIMA) return "A senha precisa ter pelo menos " + CONFIG.SENHA_MINIMA + " caracteres.";
+  if (senha.length > 100) return "A senha pode ter até 100 caracteres.";
+  return "";
+}
+
+// Grava "rodadas$sal$resultado". O segredo fica nas propriedades do script,
+// fora da planilha; sem ele, a aba Acessos não serve para descobrir senhas.
+function protegerSenha(senha, sal, rodadas) {
+  const segredo = segredoSenhas(false);
+  if (!segredo) return "";
+  let h = sal + ":" + senha;
+  for (let i = 0; i < rodadas; i++) h = hex(Utilities.computeHmacSha256Signature(h, segredo));
+  return rodadas + "$" + sal + "$" + h;
+}
+
+function senhaConfere(senha, guardada) {
+  const partes = String(guardada || "").split("$");
+  if (partes.length !== 3 || !(Number(partes[0]) > 0)) return false;
+  const calculada = protegerSenha(senha, partes[1], Number(partes[0]));
+  return !!calculada && calculada === String(guardada);
+}
+
+// Não apague a propriedade SEGREDO_SENHAS: sem ela, nenhuma senha confere.
+function segredoSenhas(criar) {
+  const props = PropertiesService.getScriptProperties();
+  let segredo = props.getProperty("SEGREDO_SENHAS");
+  if (!segredo && criar) {
+    segredo = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, "");
+    props.setProperty("SEGREDO_SENHAS", segredo);
+  }
+  return segredo || "";
+}
+
+// Cria ou troca a senha do e-mail. Chamada só por ações que rodam com a trava.
+function gravarAcesso(planilha, email, cpf, senha) {
+  segredoSenhas(true);
+  const protegida = protegerSenha(senha, Utilities.getUuid().replace(/-/g, ""), ITERACOES_SENHA);
+  const folha = aba(planilha, ABAS.acessos);
+  const registros = linhas(folha, ABAS.acessos.colunas.length);
+  for (let i = 0; i < registros.length; i++) {
+    if (String(registros[i][COL.ACE_EMAIL]).trim().toLowerCase() === email) {
+      folha.getRange(i + 2, 2, 1, 2).setValues([[formatarCpf(cpf), protegida]]);
+      folha.getRange(i + 2, 5).setValue(new Date());
+      return;
+    }
+  }
+  folha.appendRow(protegerLinha([email, formatarCpf(cpf), protegida, new Date(), new Date()]));
+}
+
+function buscarAcesso(planilha, email) {
+  return linhas(aba(planilha, ABAS.acessos), ABAS.acessos.colunas.length).filter(function (l) {
+    return String(l[COL.ACE_EMAIL]).trim().toLowerCase() === email;
+  })[0] || null;
+}
+
+// Primeira inscrição com o CPF ou o e-mail informado
+function inscricaoPor(planilha, coluna, valor) {
+  return linhas(aba(planilha, ABAS.inscricoes), ABAS.inscricoes.colunas.length).filter(function (l) {
+    return coluna === COL.INS_CPF ? soDigitos(l[coluna]) === valor : String(l[coluna]).trim().toLowerCase() === valor;
+  })[0] || null;
+}
+
+function resumo(texto) {
+  return hex(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(texto), Utilities.Charset.UTF_8));
+}
+
+function hex(bytes) {
+  return bytes.map(function (b) { return ((b & 0xff) + 0x100).toString(16).slice(1); }).join("");
+}
+
+function dataHora(valor) {
+  return Object.prototype.toString.call(valor) === "[object Date]"
+    ? Utilities.formatDate(valor, CONFIG.FUSO, "dd/MM/yyyy HH:mm")
+    : String(valor || "");
 }
 
 /* ---------------------------------------------------------------------

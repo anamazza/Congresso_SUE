@@ -7,7 +7,7 @@ Feito em HTML, CSS e JavaScript puros, sem dependências. Funciona em qualquer h
 de arquivos estáticos e também como um único arquivo HTML.
 
 O site tem menu suspenso no topo (Informações, Programação, Trabalhos) e páginas separadas:
-Home, O evento, Programação, Palestrantes, Inscrições, Trabalhos, Enviar trabalho, Normas de submissão,
+Home, O evento, Programação, Palestrantes, Inscrições, Área do inscrito, Trabalhos, Enviar trabalho, Normas de submissão,
 Comissões, Local, Datas importantes, Perguntas frequentes, Realização e apoio, Avisos,
 Contato e Privacidade. Todas as páginas ficam no mesmo `index.html`, uma por `<section
 data-pagina="...">`; o menu abre uma de cada vez pelos links `#/pagina` (por exemplo,
@@ -87,11 +87,21 @@ Se a arte mudar, substitua `site/assets/capa.jpg`. Se a versão clara também mu
 
 ## Formulários e banco de dados
 
-O site tem dois formulários com a identidade visual do evento:
+O site tem formulários com a identidade visual do evento:
 
-- **Inscrição**, na página Inscrições.
-- **Envio de trabalhos**, na página Enviar trabalho. É a "área do inscrito" citada no edital:
-  o primeiro autor se identifica com o CPF e o e-mail da inscrição.
+- **Inscrição**, na página Inscrições. Nela a pessoa cria uma senha, e a inscrição já abre a
+  área do inscrito.
+- **Área do inscrito** (`#/area`), a "área do inscrito" citada no edital. A pessoa entra com
+  o e-mail da inscrição e a senha, vê os dados da inscrição e os trabalhos em que é primeiro
+  autor ou coautor, e tem o botão para submeter trabalho. Quem esqueceu a senha, ou se
+  inscreveu antes de existir a senha, recebe um código de 6 números no e-mail da inscrição e
+  cria uma senha nova.
+- **Envio de trabalhos**, na página Enviar trabalho. Só abre para quem entrou na área do
+  inscrito; quem envia é sempre o primeiro autor, identificado pela sessão. Sem entrar, a
+  página mostra o convite para entrar ou se inscrever.
+
+A sessão fica só na aba do navegador: ao fechar a aba, a pessoa sai. No banco, a sessão vence
+depois de 6 horas sem uso. Isso protege quem usa computador compartilhado na unidade.
 
 Como o site não tem servidor, os formulários enviam os dados para um banco: uma planilha do
 Google com um programa em Apps Script, guardado em `banco/apps-script.gs`. O banco faz o
@@ -99,18 +109,23 @@ seguinte:
 
 - grava cada inscrição na aba Inscrições e cada trabalho na aba Trabalhos;
 - gera o número de inscrição, como INS-0001, e o protocolo do trabalho, como TRB-0001;
-- recusa CPF que já está inscrito;
-- só aceita trabalho de quem está inscrito, conferindo CPF e e-mail, e exige apresentador inscrito;
-- confere CPF e e-mail enquanto a pessoa preenche o envio de trabalho: mostra o nome do autor 1
-  e preenche nome e instituição dos coautores inscritos. Só responde com esses dados quando o
-  CPF e o e-mail batem com a mesma inscrição; o CPF sozinho não revela nada;
+- recusa CPF que já está inscrito e e-mail que já está em outra inscrição, porque o e-mail é o
+  login da área do inscrito;
+- guarda a senha na aba Acessos só em versão embaralhada (500 rodadas de HMAC-SHA-256 com sal
+  próprio e um segredo guardado fora da planilha). Ninguém consegue ler a senha na planilha;
+- abre a sessão, mostra o painel, manda o código para criar ou trocar a senha e encerra a sessão;
+- depois de 5 senhas erradas seguidas, faz o e-mail esperar 15 minutos; manda no máximo 3
+  códigos por hora para o mesmo e-mail, e cada código vale 30 minutos e aceita 5 tentativas;
+- só aceita trabalho de quem entrou na área do inscrito, e exige apresentador inscrito;
+- no envio de trabalho, preenche nome e instituição dos coautores inscritos. Só responde a quem
+  entrou e só quando o CPF e o e-mail do coautor batem com a mesma inscrição;
 - exige celular com DDD e o 9 inicial;
 - aplica as regras do edital: até 3 trabalhos como primeiro autor, até 8 autores, 2.500
   caracteres sem espaços no resumo, até 200 caracteres no título e prazo até 06/11, no horário de Brasília;
 - manda e-mail de confirmação e anota na planilha se ele saiu.
 
-Enquanto `banco.url` estiver vazio em `site/js/main.js`, os dois formulários aparecem com o
-envio desligado e um aviso, para ninguém achar que se inscreveu ou enviou trabalho.
+Enquanto `banco.url` estiver vazio em `site/js/main.js`, os formulários e a área do inscrito
+aparecem desligados e com um aviso, para ninguém achar que se inscreveu ou enviou trabalho.
 
 ### Como instalar o banco
 
@@ -146,7 +161,13 @@ se a implantação funcionou.
   Gmail comum e 1.500 numa conta Workspace. Quando o limite acaba, o registro é gravado mesmo
   assim e a coluna "E-mail de confirmação" mostra que o e-mail não saiu.
 - **Privacidade:** a planilha guarda CPF, e-mail e celular. Compartilhe só com a Comissão
-  Organizadora.
+  Organizadora. A aba Acessos pode ficar oculta; ela não tem as senhas, só a versão embaralhada.
+- **Segredo das senhas:** `configurar` cria a propriedade `SEGREDO_SENHAS` em **Configurações
+  do projeto > Propriedades do script**. Não apague nem mude: sem ela, nenhuma senha confere, e
+  cada pessoa precisaria criar outra pelo "Esqueci a senha".
+- **Atualizar um banco já instalado:** depois de colar o código novo, rode `configurar` de novo
+  (cria a aba Acessos e o segredo, sem apagar nada) e publique uma nova versão. Quem já estava
+  inscrito sem senha cria a sua pelo "Esqueci a senha".
 - **Modo de teste:** abra o site com `?teste` antes do `#`, por exemplo
   `https://diid.subhue.org/static-html/congresso-sue/?teste#/submissao`. Os formulários
   aparecem liberados, com uma faixa avisando que é teste. Sem a planilha de testes, o envio
@@ -202,17 +223,23 @@ siga o mesmo formato e colocá-lo em `banco.url`. O código em `banco/apps-scrip
 referência para as regras.
 
 - **Pedido:** `POST` com o corpo em JSON e `Content-Type: text/plain`, no formato
-  `{"acao": "inscricao", "dados": {...}}`, `{"acao": "trabalho", "dados": {...}}` ou
-  `{"acao": "conferir", "dados": {"cpf", "email"}}`.
-- **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao` e
-  `trabalho`, que pode vir vazio.
-- **Dados do trabalho:** `cpf`, `email`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
+  `{"acao": "...", "dados": {...}}`. As ações são `inscricao`, `entrar`, `painel`,
+  `trabalho`, `conferir`, `pedirCodigo`, `novaSenha` e `sair`.
+- **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao`,
+  `trabalho` (pode vir vazio) e `senha`. A resposta traz `protocolo`, `nome` e `token`.
+- **Sessão:** `entrar` (`email`, `senha`) e `novaSenha` (`email`, `codigo`, `senha`) devolvem
+  `token`. `painel`, `trabalho`, `conferir` e `sair` recebem esse `token`. Sessão vencida ou
+  inexistente responde com `"erro": "sessao"`, e o site volta para a tela de entrar.
+- **Painel:** `{"ok": true, "inscricao": {...}, "trabalhos": [...], "submissao": {"aberta",
+  "prazo", "maximo", "restantes"}}`.
+- **Dados do trabalho:** `token`, `titulo`, `tipo`, `eixo`, `coautores` (lista de
   `{"nome", "cpf", "email", "instituicao"}`, com instituição opcional), `apresentador`
   (`"primeiro"` ou `"coautor"`), `apresentadorCpf` (CPF do coautor que apresenta),
-  `introducao`, `metodos`, `resultados` e `conclusoes`.
-- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`. Para `conferir`,
-  `{"ok": true, "nome": "...", "instituicao": "..."}`, só quando CPF e e-mail são da mesma
-  inscrição. `conferir` não grava nada.
+  `introducao`, `metodos`, `resultados` e `conclusoes`. O primeiro autor é quem está na sessão.
+- **Resposta de sucesso:** `{"ok": true, "protocolo": "INS-0001"}`. Para `conferir` (`token`,
+  `cpf` e `email` do coautor), `{"ok": true, "nome": "...", "instituicao": "..."}`, só quando
+  CPF e e-mail são da mesma inscrição. `conferir` não grava nada. `pedirCodigo` responde igual
+  com ou sem inscrição, para não revelar quem está inscrito.
 - **Resposta de recusa:** `{"ok": false, "mensagem": "texto para a pessoa", "campo": "cpf"}`.
   O campo é opcional: quando vem, o site mostra a mensagem embaixo dele.
 - **Outro domínio:** se o banco ficar fora de `diid.subhue.org`, ele precisa responder com

@@ -462,6 +462,11 @@ const CONFIG = {
   function emailValido(v) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || "").trim());
   }
+  const SENHA_MINIMA = 8;
+  function regraSenha(v) {
+    if (!v) return "Crie uma senha para a área do inscrito.";
+    return v.length < SENHA_MINIMA ? "A senha precisa ter pelo menos " + SENHA_MINIMA + " caracteres." : "";
+  }
   const regraEmail = function (v) {
     if (!v.trim()) return "Informe o seu e-mail.";
     return emailValido(v) ? "" : "Confira o e-mail. Ele precisa ter o formato nome@exemplo.com.";
@@ -470,9 +475,7 @@ const CONFIG = {
   function enviarAoBanco(acao, dados) {
     if (modoTeste && !urlBancoTeste) {
       return new Promise(function (ok) {
-        setTimeout(function () {
-          ok({ ok: true, protocolo: (acao === "inscricao" ? "INS" : "TRB") + "-TESTE" });
-        }, 700);
+        setTimeout(function () { ok(simularBanco(acao, dados)); }, 700);
       });
     }
     return fetch(modoTeste ? urlBancoTeste : urlBanco, {
@@ -486,7 +489,112 @@ const CONFIG = {
     });
   }
 
-  // Liga um formulário: estado, validação, envio e tela de confirmação
+  // Modo de teste sem planilha: respostas de mentira, nada sai do navegador
+  function simularBanco(acao, dados) {
+    const primeiro = limpar(dados.nome || "Pessoa de Teste").split(" ")[0];
+    if (acao === "inscricao") return { ok: true, protocolo: "INS-TESTE", nome: primeiro, token: "simulado" };
+    if (acao === "trabalho") return { ok: true, protocolo: "TRB-TESTE" };
+    if (acao === "entrar" || acao === "novaSenha") return { ok: true, token: "simulado", nome: "Pessoa" };
+    if (acao === "pedirCodigo") return { ok: true, mensagem: "Modo de teste: nenhum código é enviado. Digite quaisquer 6 números." };
+    if (acao === "painel") {
+      return {
+        ok: true,
+        inscricao: {
+          protocolo: "INS-TESTE", data: "", nome: "Pessoa de Teste", cpf: "000.000.000-00", email: "teste@exemplo.com",
+          celular: "(21) 99999-9999", categoria: "Outra área", instituicao: "Simulação",
+        },
+        trabalhos: [],
+        submissao: { aberta: true, prazo: ler("submissao.prazo"), maximo: 3, restantes: 3 },
+      };
+    }
+    return { ok: acao === "sair" };
+  }
+
+  // ---------- Sessão da área do inscrito ----------
+  // Fica só nesta aba do navegador (sessionStorage): ao fechar a aba, a
+  // pessoa sai. Mais seguro nos computadores compartilhados das unidades.
+  const CHAVE_SESSAO = "simposio-ue-sessao";
+  let sessao = (function () {
+    try {
+      const s = JSON.parse(window.sessionStorage.getItem(CHAVE_SESSAO) || "null");
+      return s && typeof s.token === "string" && s.token ? s : null;
+    } catch (erro) {
+      return null;
+    }
+  })();
+  let avisoSessao = "";   // motivo da última saída forçada, mostrado na tela de entrar
+  let painelAtual = null; // última resposta do banco com a inscrição e os trabalhos
+  let painelPedido = null;
+  const aoMudarSessao = [];
+  const aoMostrarPagina = {}; // ganchos chamados quando o menu abre uma página
+
+  function abrirSessao(token, nome) {
+    sessao = { token: token, nome: nome || "" };
+    painelAtual = null;
+    avisoSessao = "";
+    try {
+      window.sessionStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+    } catch (erro) {
+      // Sem armazenamento: a sessão vale até a página ser recarregada
+    }
+    aoMudarSessao.forEach(function (f) { f(); });
+  }
+
+  // Sem motivo: a pessoa clicou em Sair. Com motivo: o banco encerrou a sessão.
+  function fecharSessao(motivo) {
+    if (sessao && !motivo) enviarAoBanco("sair", { token: sessao.token }).catch(function () {});
+    sessao = null;
+    painelAtual = null;
+    avisoSessao = motivo || "";
+    try {
+      window.sessionStorage.removeItem(CHAVE_SESSAO);
+    } catch (erro) {
+      // nada a apagar
+    }
+    aoMudarSessao.forEach(function (f) { f(); });
+  }
+
+  // Inscrição e trabalhos de quem entrou. Com "forcar", pergunta de novo ao banco.
+  function carregarPainel(forcar) {
+    if (!sessao) return Promise.resolve(null);
+    if (painelAtual && !forcar) return Promise.resolve(painelAtual);
+    if (painelPedido) return painelPedido;
+    const token = sessao.token;
+    painelPedido = enviarAoBanco("painel", { token: token }).then(function (r) {
+      painelPedido = null;
+      if (!sessao || sessao.token !== token) return null;
+      if (r && r.ok) {
+        painelAtual = r;
+        return r;
+      }
+      if (r && r.erro === "sessao") fecharSessao(r.mensagem);
+      return null;
+    }, function () {
+      painelPedido = null;
+      return null;
+    });
+    return painelPedido;
+  }
+
+  document.querySelectorAll("[data-sair]").forEach(function (botao) {
+    botao.addEventListener("click", function () { fecharSessao(); });
+  });
+
+  // "Mostrar a senha": troca o tipo dos campos listados na caixa
+  document.querySelectorAll("[data-mostrar-senha]").forEach(function (caixa) {
+    function aplicar() {
+      caixa.dataset.mostrarSenha.split(" ").forEach(function (id) {
+        const campo = document.getElementById(id);
+        if (campo) campo.type = caixa.checked ? "text" : "password";
+      });
+    }
+    caixa.addEventListener("change", aplicar);
+    if (caixa.form) caixa.form.addEventListener("reset", function () { setTimeout(aplicar, 0); });
+  });
+
+  // Liga um formulário: estado, validação, envio e tela de confirmação.
+  // Opcionais: o.aoConcluir(resposta, dados) devolve true quando ele mesmo
+  // cuida do sucesso; o.aoRecusar(resposta) devolve true quando trata a recusa.
   function ligarFormulario(o) {
     const form = o.form;
     const el = form.elements;
@@ -543,9 +651,11 @@ const CONFIG = {
       botao.disabled = true;
       botao.classList.add("btn--pendente");
       botao.textContent = o.estado === "encerrado" ? o.textos.botaoEncerrado : o.textos.botaoPendente;
-      aviso.textContent = o.estado === "encerrado" ? o.textos.avisoEncerrado : o.textos.avisoPendente;
-      aviso.hidden = false;
-    } else if (modoTeste) {
+      if (aviso) {
+        aviso.textContent = o.estado === "encerrado" ? o.textos.avisoEncerrado : o.textos.avisoPendente;
+        aviso.hidden = false;
+      }
+    } else if (modoTeste && aviso) {
       aviso.textContent = urlBancoTeste
         ? "Ambiente de teste: os envios vão para a planilha de testes, e não para a lista oficial. O e-mail de confirmação chega com [TESTE] no assunto."
         : "Modo de teste: os dados preenchidos aqui não são enviados para ninguém.";
@@ -575,11 +685,12 @@ const CONFIG = {
     form.addEventListener("change", reavaliar);
 
     function mostrarSucesso(dados, resposta) {
+      if (!sucesso) return;
       sucesso.querySelectorAll("[data-sucesso]").forEach(function (alvo) {
         alvo.textContent = o.sucesso(alvo.dataset.sucesso, dados, resposta || {});
       });
       form.hidden = true;
-      aviso.hidden = true;
+      if (aviso) aviso.hidden = true;
       sucesso.hidden = false;
       sucesso.focus();
       sucesso.scrollIntoView({ block: "center" });
@@ -611,7 +722,7 @@ const CONFIG = {
       enviarAoBanco(o.acao, dados)
         .then(function (resposta) {
           if (resposta && resposta.ok) {
-            mostrarSucesso(dados, resposta);
+            if (!(o.aoConcluir && o.aoConcluir(resposta, dados))) mostrarSucesso(dados, resposta);
             form.reset();
             if (o.aoLimpar) o.aoLimpar();
             tentouEnviar = false;
@@ -619,6 +730,7 @@ const CONFIG = {
             return;
           }
           // O banco recusou: mostra o motivo no campo indicado ou embaixo do botão
+          if (o.aoRecusar && o.aoRecusar(resposta || {})) return;
           const msg = (resposta && resposta.mensagem) || "Não foi possível concluir o envio. Tente de novo.";
           const campo = resposta && resposta.campo;
           if (campo && document.getElementById(o.prefixo + "-" + campo + "-erro")) {
@@ -639,16 +751,18 @@ const CONFIG = {
         });
     });
 
-    sucesso.querySelector("[data-novo]").addEventListener("click", function () {
-      sucesso.hidden = true;
-      form.hidden = false;
-      if (modoTeste) aviso.hidden = false;
-      definirStatus("");
-      const primeiro = form.querySelector("input:not([type=hidden]):not([tabindex='-1'])");
-      if (primeiro) primeiro.focus();
-    });
+    if (sucesso) {
+      sucesso.querySelector("[data-novo]").addEventListener("click", function () {
+        sucesso.hidden = true;
+        form.hidden = false;
+        if (modoTeste && aviso) aviso.hidden = false;
+        definirStatus("");
+        const primeiro = form.querySelector("input:not([type=hidden]):not([tabindex='-1'])");
+        if (primeiro) primeiro.focus();
+      });
+    }
 
-    return { mostrarErro: mostrarErro };
+    return { mostrarErro: mostrarErro, definirStatus: definirStatus };
   }
 
   // ----- Formulário de inscrição -----
@@ -686,6 +800,11 @@ const CONFIG = {
         instituicao: function (v) {
           return v.trim() ? "" : "Informe a instituição ou unidade onde você trabalha ou estuda.";
         },
+        senha: regraSenha,
+        senha2: function (v) {
+          if (!v) return "Repita a senha.";
+          return v === formInscricao.elements.senha.value ? "" : "As duas senhas estão diferentes.";
+        },
         aceite: function (_v, campo) {
           return campo.checked ? "" : "Para se inscrever, é preciso concordar com o edital e com o aviso de privacidade.";
         },
@@ -701,7 +820,13 @@ const CONFIG = {
           categoria: el.categoria.value,
           instituicao: limpar(el.instituicao.value),
           trabalho: marcado ? marcado.value : "",
+          senha: el.senha.value,
         };
+      },
+      // A inscrição já abre a sessão da área do inscrito
+      aoConcluir: function (resposta) {
+        if (resposta.token) abrirSessao(resposta.token, resposta.nome);
+        return false;
       },
       sucesso: function (chave, dados, resposta) {
         if (chave === "nome") {
@@ -912,9 +1037,13 @@ const CONFIG = {
     elT.titulo.addEventListener("input", atualizarTitulo);
     atualizarTitulo();
 
+    // CPF de quem entrou, para não repetir a pessoa entre os coautores
+    function cpfDoAutor() {
+      return soDigitos(painelAtual && painelAtual.inscricao ? painelAtual.inscricao.cpf : "");
+    }
+    let emailDoEnvio = "";
+
     const regrasTrabalho = {
-      cpf: regraCpf,
-      email: regraEmail,
       titulo: function (v) {
         const n = limpar(v).length;
         if (!n) return "Informe o título do trabalho.";
@@ -927,7 +1056,7 @@ const CONFIG = {
         return v ? "" : "Escolha o eixo temático.";
       },
       coautores: function () {
-        const cpfProprio = soDigitos(elT.cpf.value);
+        const cpfProprio = cpfDoAutor();
         const vistos = {};
         let incompleto = false;
         let repetido = false;
@@ -985,7 +1114,7 @@ const CONFIG = {
       },
     };
 
-    const ligacaoTrabalho = ligarFormulario({
+    ligarFormulario({
       form: formTrabalho,
       prefixo: "trb",
       acao: "trabalho",
@@ -996,7 +1125,6 @@ const CONFIG = {
         avisoPendente: "O envio de trabalhos ainda não está aberto. Ele será liberado em breve nesta página. Você já pode conferir o que será pedido.",
         avisoEncerrado: "O prazo de envio de trabalhos está encerrado.",
       },
-      mascaras: { cpf: mascaraCpf },
       regras: regrasTrabalho,
       foco: function (nome) {
         if (nome === "coautores") return listaCoautores.querySelector("[aria-invalid]");
@@ -1004,9 +1132,9 @@ const CONFIG = {
         return null;
       },
       coletar: function () {
+        emailDoEnvio = painelAtual && painelAtual.inscricao ? painelAtual.inscricao.email : "";
         const dados = {
-          cpf: mascaraCpf(elT.cpf.value),
-          email: elT.email.value.trim().toLowerCase(),
+          token: sessao ? sessao.token : "",
           titulo: limpar(elT.titulo.value),
           tipo: elT.tipo.value,
           eixo: elT.eixo.value,
@@ -1032,22 +1160,59 @@ const CONFIG = {
         renumerarCoautores();
         guardarResumo();
         avisarLimite("", "");
-        limparInscrito();
         atualizarContador();
         atualizarTitulo();
+      },
+      // O trabalho novo precisa aparecer na área do inscrito
+      aoConcluir: function () {
+        painelAtual = null;
+        return false;
+      },
+      aoRecusar: function (resposta) {
+        if (resposta.erro !== "sessao") return false;
+        fecharSessao(resposta.mensagem);
+        return true;
       },
       sucesso: function (chave, dados, resposta) {
         if (chave === "protocolo") return resposta.protocolo || "enviado por e-mail";
         if (chave === "titulo") return dados.titulo || "";
-        if (chave === "email") return dados.email || "o seu e-mail";
+        if (chave === "email") return emailDoEnvio || "o seu e-mail";
         return "";
       },
     });
     renumerarCoautores();
 
-    // Conferência na hora, pelo CPF e pelo e-mail da inscrição. O banco só
-    // devolve o nome e a instituição a quem já sabe os dois; o CPF sozinho
-    // não revela nada. No envio, o banco confere tudo de novo.
+    // Sem sessão, o envio aberto dá lugar ao convite para entrar. Com o
+    // envio em breve ou encerrado, o formulário aparece desligado, como antes.
+    const caixaAcesso = document.getElementById("trb-acesso");
+    const textoAcesso = document.getElementById("trb-acesso-texto");
+    const textoAcessoPadrao = textoAcesso.textContent;
+    const sucessoTrabalho = document.getElementById("trb-sucesso");
+    function atualizarEnvio() {
+      const travado = estadoSubmissao === "aberto" && !sessao;
+      caixaAcesso.hidden = !travado;
+      if (travado) {
+        textoAcesso.textContent = avisoSessao ? avisoSessao + " " + textoAcessoPadrao : textoAcessoPadrao;
+        formTrabalho.hidden = true;
+        sucessoTrabalho.hidden = true;
+        return;
+      }
+      if (sucessoTrabalho.hidden) formTrabalho.hidden = false;
+      if (!sessao) return;
+      const linhaAutor = document.getElementById("trb-autor");
+      function mostrarAutor(r) {
+        linhaAutor.querySelector('[data-autor="nome"]').textContent = r ? r.inscricao.nome : (sessao.nome || "você");
+        linhaAutor.querySelector('[data-autor="protocolo"]').textContent = r ? r.inscricao.protocolo : "…";
+      }
+      mostrarAutor(painelAtual);
+      carregarPainel(false).then(function (r) { if (r) mostrarAutor(r); });
+    }
+    aoMostrarPagina.submissao = atualizarEnvio;
+    aoMudarSessao.push(atualizarEnvio);
+    atualizarEnvio();
+
+    // Coautores inscritos: o banco só devolve nome e instituição a quem entrou
+    // e já sabe o CPF e o e-mail do coautor; o CPF sozinho não revela nada.
     const podeConferir = estadoSubmissao === "aberto" && (!modoTeste || !!urlBancoTeste);
     function chaveInscricao(cpf, email) {
       email = email.trim().toLowerCase();
@@ -1055,38 +1220,16 @@ const CONFIG = {
     }
     function conferir(chave) {
       const partes = chave.split(" ");
-      return enviarAoBanco("conferir", { cpf: mascaraCpf(partes[0]), email: partes[1] }).catch(function () { return null; });
+      return enviarAoBanco("conferir", { token: sessao ? sessao.token : "", cpf: mascaraCpf(partes[0]), email: partes[1] })
+        .then(function (r) {
+          if (r && r.erro === "sessao") {
+            fecharSessao(r.mensagem);
+            return null;
+          }
+          return r;
+        })
+        .catch(function () { return null; });
     }
-
-    // Autor 1: mostra o nome da inscrição ou aponta o campo errado
-    const linhaInscrito = document.getElementById("trb-inscrito");
-    let consultaAutor = ""; // chave da consulta em andamento
-    function limparInscrito() {
-      linhaInscrito.textContent = "";
-      linhaInscrito.classList.remove("is-ok");
-    }
-    function conferirAutor() {
-      const chave = chaveInscricao(elT.cpf.value, elT.email.value);
-      if (!chave) return limparInscrito();
-      if (!podeConferir || chave === consultaAutor) return;
-      consultaAutor = chave;
-      if (!linhaInscrito.classList.contains("is-ok")) linhaInscrito.textContent = "Conferindo a inscrição…";
-      conferir(chave).then(function (r) {
-        consultaAutor = "";
-        if (chave !== chaveInscricao(elT.cpf.value, elT.email.value)) return; // dados mudaram no meio
-        limparInscrito();
-        if (r && r.ok) {
-          linhaInscrito.textContent = "Inscrição encontrada: " + r.nome + ".";
-          linhaInscrito.classList.add("is-ok");
-        } else if (r && (r.campo === "cpf" || r.campo === "email")) {
-          ligacaoTrabalho.mostrarErro(r.campo, r.mensagem);
-        }
-      });
-    }
-    elT.cpf.addEventListener("input", limparInscrito);
-    elT.email.addEventListener("input", limparInscrito);
-    elT.cpf.addEventListener("focusout", conferirAutor);
-    elT.email.addEventListener("focusout", conferirAutor);
 
     // Coautores inscritos: nome e instituição se preenchem a partir da inscrição.
     // Só troca o que estiver vazio ou o que a própria conferência preencheu antes.
@@ -1104,7 +1247,7 @@ const CONFIG = {
       const li = e.target.closest(".coautor");
       const nota = li.querySelector(".coautor__nota");
       const chave = chaveInscricao(li.querySelector(".coautor__cpf").value, li.querySelector(".coautor__email").value);
-      if (!chave || chave.split(" ")[0] === soDigitos(elT.cpf.value) || chave === li.dataset.chave) return;
+      if (!chave || chave.split(" ")[0] === cpfDoAutor() || chave === li.dataset.chave) return;
       li.dataset.chave = chave;
       nota.classList.remove("is-ok");
       nota.textContent = "Conferindo a inscrição…";
@@ -1134,6 +1277,237 @@ const CONFIG = {
       delete li.dataset.chave;
       li.querySelector(".coautor__nota").textContent = "";
     });
+  }
+
+  // ----- Área do inscrito: entrar, criar senha e painel -----
+  const paginaArea = document.querySelector('[data-pagina="area"]');
+  if (paginaArea) {
+    const estadoArea = modoTeste || urlBanco ? "aberto" : "pendente";
+    const vistas = {
+      entrar: document.getElementById("area-entrar"),
+      recuperar: document.getElementById("area-recuperar"),
+      nova: document.getElementById("area-nova"),
+      painel: document.getElementById("area-painel"),
+    };
+    const tituloArea = document.getElementById("area-titulo");
+    const leadArea = document.getElementById("area-lead");
+    const avisoArea = document.getElementById("area-aviso");
+    const carregando = document.getElementById("area-carregando");
+    const conteudo = document.getElementById("area-conteudo");
+    const listaTrabalhos = document.getElementById("area-trabalhos");
+    let vistaSemSessao = "entrar";
+    let emailLembrado = ""; // último e-mail digitado para entrar, para a recuperação
+
+    const CABECALHOS = {
+      entrar: ["Entre na sua área", "Aqui você vê a sua inscrição e envia trabalhos. Use o e-mail da inscrição e a senha que você criou."],
+      recuperar: ["Criar ou recuperar a senha", "Você recebe um código no e-mail da inscrição e cria uma senha nova."],
+      nova: ["Criar ou recuperar a senha", "Digite o código que chegou no e-mail da inscrição e escolha a senha nova."],
+      painel: ["Sua inscrição e seus trabalhos", "Confira os dados da inscrição e envie trabalhos pelo botão no fim da página."],
+    };
+    function mostrarVista(nome) {
+      Object.keys(vistas).forEach(function (k) { vistas[k].hidden = k !== nome; });
+      tituloArea.textContent = CABECALHOS[nome][0];
+      leadArea.textContent = CABECALHOS[nome][1];
+    }
+
+    if (estadoArea !== "aberto") {
+      avisoArea.textContent = "A área do inscrito abre junto com as inscrições, nesta página.";
+      avisoArea.hidden = false;
+    } else if (modoTeste) {
+      avisoArea.textContent = urlBancoTeste
+        ? "Ambiente de teste: a área do inscrito usa a planilha de testes."
+        : "Modo de teste: nada é enviado. Qualquer e-mail e senha entram numa inscrição de mentira.";
+      avisoArea.classList.add("inscricao__aviso--teste");
+      avisoArea.hidden = false;
+    }
+    const textosArea = {
+      botaoPendente: "Em breve",
+      botaoEncerrado: "Em breve",
+      avisoPendente: "",
+      avisoEncerrado: "",
+    };
+
+    const formEntrar = document.getElementById("form-entrar");
+    const ligacaoEntrar = ligarFormulario({
+      form: formEntrar,
+      prefixo: "ent",
+      acao: "entrar",
+      estado: estadoArea,
+      textos: textosArea,
+      regras: {
+        email: regraEmail,
+        senha: function (v) { return v ? "" : "Informe a senha."; },
+      },
+      coletar: function () {
+        emailLembrado = formEntrar.elements.email.value.trim().toLowerCase();
+        return { email: emailLembrado, senha: formEntrar.elements.senha.value };
+      },
+      aoConcluir: function (r) {
+        abrirSessao(r.token, r.nome);
+        return true;
+      },
+    });
+
+    const formCodigo = document.getElementById("form-codigo");
+    const formNova = document.getElementById("form-nova");
+    ligarFormulario({
+      form: formCodigo,
+      prefixo: "cod",
+      acao: "pedirCodigo",
+      estado: estadoArea,
+      textos: textosArea,
+      regras: { email: regraEmail },
+      coletar: function () {
+        return { email: formCodigo.elements.email.value.trim().toLowerCase() };
+      },
+      aoConcluir: function (r, dados) {
+        formNova.elements.email.value = dados.email;
+        const enviado = document.getElementById("nov-enviado");
+        enviado.textContent = r.mensagem || "";
+        enviado.hidden = !r.mensagem;
+        verVista("nova");
+        formNova.elements.codigo.focus();
+        return true;
+      },
+    });
+
+    ligarFormulario({
+      form: formNova,
+      prefixo: "nov",
+      acao: "novaSenha",
+      estado: estadoArea,
+      textos: textosArea,
+      mascaras: { codigo: function (v) { return soDigitos(v).slice(0, 6); } },
+      regras: {
+        email: regraEmail,
+        codigo: function (v) {
+          if (!v) return "Digite o código que chegou no e-mail.";
+          return soDigitos(v).length === 6 ? "" : "O código tem 6 números.";
+        },
+        senha: regraSenha,
+        senha2: function (v) {
+          if (!v) return "Repita a senha.";
+          return v === formNova.elements.senha.value ? "" : "As duas senhas estão diferentes.";
+        },
+      },
+      coletar: function () {
+        return {
+          email: formNova.elements.email.value.trim().toLowerCase(),
+          codigo: soDigitos(formNova.elements.codigo.value),
+          senha: formNova.elements.senha.value,
+        };
+      },
+      aoConcluir: function (r) {
+        document.getElementById("nov-enviado").hidden = true;
+        vistaSemSessao = "entrar";
+        abrirSessao(r.token, r.nome);
+        return true;
+      },
+    });
+
+    // Botões "Esqueci a senha", "Já tenho um código", "Voltar para entrar"
+    function verVista(nome) {
+      vistaSemSessao = nome;
+      mostrarVista(nome);
+      const email = (formEntrar.elements.email.value || emailLembrado).trim();
+      if (nome === "recuperar" && email && !formCodigo.elements.email.value) formCodigo.elements.email.value = email;
+      if (nome === "nova" && !formNova.elements.email.value) formNova.elements.email.value = formCodigo.elements.email.value || email;
+    }
+    paginaArea.querySelectorAll("[data-area-ver]").forEach(function (botao) {
+      botao.addEventListener("click", function () {
+        verVista(botao.dataset.areaVer);
+        const primeiro = vistas[botao.dataset.areaVer].querySelector("input:not([value])");
+        if (primeiro) primeiro.focus();
+      });
+    });
+
+    function preencherPainel(r) {
+      const i = r.inscricao;
+      const valores = {
+        primeiroNome: i.nome.split(" ")[0], protocolo: i.protocolo, nome: i.nome, cpf: i.cpf, email: i.email,
+        celular: i.celular, categoria: i.categoria, instituicao: i.instituicao, data: i.data,
+      };
+      paginaArea.querySelectorAll("[data-painel]").forEach(function (el) {
+        el.textContent = valores[el.dataset.painel] || "não informado";
+      });
+
+      listaTrabalhos.textContent = "";
+      r.trabalhos.forEach(function (t) {
+        const li = document.createElement("li");
+        li.className = "area__trabalho";
+        const topo = document.createElement("p");
+        topo.className = "area__trabalho-topo";
+        const protocolo = document.createElement("strong");
+        protocolo.textContent = t.protocolo;
+        topo.appendChild(protocolo);
+        topo.appendChild(document.createTextNode(t.papel + (t.data ? " · enviado em " + t.data : "")));
+        const titulo = document.createElement("h3");
+        titulo.textContent = t.titulo;
+        const detalhes = document.createElement("p");
+        detalhes.textContent = t.tipo + " · " + t.eixo + " · Apresentação: " + t.apresentador;
+        li.appendChild(topo);
+        li.appendChild(titulo);
+        li.appendChild(detalhes);
+        listaTrabalhos.appendChild(li);
+      });
+      document.getElementById("area-trabalhos-vazio").hidden = r.trabalhos.length > 0;
+
+      const sub = r.submissao;
+      const nota = document.getElementById("area-submissao-nota");
+      const botao = document.getElementById("area-submeter");
+      if (!sub.aberta) {
+        nota.textContent = "O envio de trabalhos está fechado. O prazo final é " + sub.prazo + ".";
+      } else if (sub.restantes < 1) {
+        nota.textContent = "Você já enviou " + sub.maximo + " trabalhos como primeiro autor, o máximo do edital.";
+      } else {
+        nota.textContent = "Você ainda pode enviar " + sub.restantes + (sub.restantes === 1 ? " trabalho" : " trabalhos") +
+          " como primeiro autor, até " + sub.prazo + ".";
+      }
+      botao.hidden = !sub.aberta || sub.restantes < 1;
+    }
+
+    function atualizarArea() {
+      if (!sessao) {
+        mostrarVista(vistaSemSessao);
+        if (avisoSessao) ligacaoEntrar.definirStatus(avisoSessao, true);
+        return;
+      }
+      mostrarVista("painel");
+      if (painelAtual) {
+        preencherPainel(painelAtual);
+        carregando.hidden = true;
+        conteudo.hidden = false;
+      } else {
+        carregando.textContent = "Carregando a sua inscrição…";
+        carregando.hidden = false;
+        conteudo.hidden = true;
+      }
+      carregarPainel(true).then(function (r) {
+        if (!sessao) return;
+        if (r) {
+          preencherPainel(r);
+          carregando.hidden = true;
+          conteudo.hidden = false;
+        } else if (!painelAtual) {
+          carregando.textContent = "Não foi possível carregar a sua inscrição agora. Verifique a conexão e recarregue a página.";
+        }
+      });
+    }
+
+    // Link do menu e página aberta acompanham a sessão
+    const linksArea = document.querySelectorAll("[data-area-link]");
+    function atualizarMenuArea() {
+      linksArea.forEach(function (a) { a.textContent = sessao ? "Minha área" : "Área do inscrito"; });
+    }
+    aoMostrarPagina.area = atualizarArea;
+    aoMudarSessao.push(atualizarMenuArea);
+    aoMudarSessao.push(function () {
+      if (!paginaArea.hidden) {
+        atualizarArea();
+        window.scrollTo(0, 0);
+      }
+    });
+    atualizarMenuArea();
   }
 
   // ---------- Menu no celular ----------
@@ -1223,6 +1597,7 @@ const CONFIG = {
     });
 
     document.title = alvo.dataset.titulo ? alvo.dataset.titulo + " · " + TITULO_BASE : TITULO_BASE;
+    if (aoMostrarPagina[alvo.dataset.pagina]) aoMostrarPagina[alvo.dataset.pagina]();
 
     const rotaAtual = "#/" + alvo.dataset.pagina + (rota.trecho ? "/" + rota.trecho : "");
     document.querySelectorAll('.topo__nav a[href^="#/"]').forEach(function (a) {
