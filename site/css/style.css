@@ -1739,6 +1739,31 @@ p.campo--largo { margin: 0; max-width: none; }
   border-top: 1px solid var(--linha);
 }
 .com-trabalho__decidir textarea { width: 100%; }
+.com-trabalho__rotulo {
+  margin: 0 0 0.5rem;
+  font-family: var(--fonte-titulo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+  max-width: none;
+}
+.com-trabalho__recusa {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: #FBEFF0;
+  border: 1px solid #EBC5C8;
+  border-radius: 6px;
+}
+.com-trabalho__recusa[hidden] { display: none; }
+.com-trabalho__recusa .campo__dica { margin: 0; max-width: none; }
+.com-trabalho__recusa textarea { background: var(--branco); }
+.com-trabalho__recusa .com-trabalho__acoes { margin-top: 0.4rem; }
+.com-trabalho__decidir > .inscricao__status:empty { display: none; }
+.com-trabalho__decidir > .inscricao__status { margin-top: 0.6rem; }
 .com-trabalho__acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin: 0.6rem 0 0; max-width: none; }
 .com-trabalho__recusar { border-color: var(--vermelho); color: var(--vermelho-escuro); }
 .com-trabalho__recusar:hover { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }

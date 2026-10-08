@@ -67,7 +67,9 @@
   const MAX_FALHAS_ENTRADA = 5;    // senhas erradas seguidas antes de esperar 15 minutos
   const MAX_CODIGOS_POR_HORA = 3;  // códigos de senha por e-mail
   const MAX_TENTATIVAS_CODIGO = 5; // tentativas para acertar cada código
-  const DECISOES = { aceito: "Aceito", recusado: "Recusado" };
+  // "aceito" continua valendo no pedido, por compatibilidade
+  const DECISOES = { aprovado: "Aprovado", aceito: "Aprovado", recusado: "Recusado" };
+  const MIN_JUSTIFICATIVA = 10;
   const EM_AVALIACAO = "Em avaliação";
   // Trabalho que o primeiro autor excluiu (desistiu). Fica guardado para a
   // organização, mas sai da avaliação, da área do inscrito e do limite de envios.
@@ -314,7 +316,7 @@
           return {
             protocolo: t.protocolo, data: dataHora(t.criadoEm), titulo: t.titulo, tipo: t.tipo, eixo: t.eixo,
             apresentador: t.apresentadorNome, papel: enviou ? "Primeiro autor" : "Coautor",
-            situacao: t.situacao, comentario: t.situacao === EM_AVALIACAO ? "" : t.comentario || "",
+            situacao: situacaoDe(t), comentario: t.situacao === EM_AVALIACAO ? "" : t.comentario || "",
             autores: autoresDoTrabalho(t, enviou),
             introducao: t.introducao, metodos: t.metodos, resultados: t.resultados, conclusoes: t.conclusoes,
             caracteres: t.caracteres, maxCaracteres: cfg.MAX_CARACTERES,
@@ -502,7 +504,7 @@
         }).join("\n"),
         totalAutores: t.totalAutores, apresentador: t.apresentadorNome,
         introducao: t.introducao, metodos: t.metodos, resultados: t.resultados, conclusoes: t.conclusoes,
-        caracteres: t.caracteres, situacao: t.situacao, avaliadoPor: t.avaliadorNome,
+        caracteres: t.caracteres, situacao: situacaoDe(t), avaliadoPor: t.avaliadorNome,
         dataAvaliacao: dataHora(t.avaliadoEm), comentario: t.comentario || "", emailResultado: t.emailResultado || "",
         emailConfirmacao: t.emailConfirmacao || "", excluidoEm: dataHora(t.excluidoEm),
       };
@@ -514,21 +516,25 @@
       return { ok: true, avaliador: s.conta.nome || s.conta.email, trabalhos: trabalhosAtivos().map(trabalhoCompleto) };
     }
 
-    // Aceita ou recusa um trabalho e avisa o primeiro autor por e-mail na hora.
-    // A decisão é definitiva no site; cada trabalho recebe uma só.
+    // Aprova ou recusa um trabalho e avisa o primeiro autor por e-mail na hora.
+    // A recusa exige justificativa, que vai no e-mail. A decisão é definitiva
+    // no site; cada trabalho recebe uma só.
     async function comissaoDecidir(d) {
       const s = sessaoDe(d.token, "comissao");
       if (!s) return s === null ? semSessao() : semPerfil("comissao");
       const decisao = DECISOES[String(d.decisao || "")];
-      if (!decisao) return falha("decisao", "Escolha aceitar ou recusar.");
+      if (!decisao) return falha("decisao", "Escolha aprovar ou recusar.");
       const comentario = textoLongo(d.comentario, 1500);
+      if (decisao === "Recusado" && comentario.replace(/\s/g, "").length < MIN_JUSTIFICATIVA) {
+        return falha("justificativa", "Escreva a justificativa da recusa, com pelo menos " + MIN_JUSTIFICATIVA + " caracteres. Ela vai no e-mail ao primeiro autor.", "comentario");
+      }
       const protocolo = texto(d.protocolo, 20);
 
       const r = repo.atomico(function () {
         const t = repo.trabalhos.porProtocolo(protocolo);
         if (!t) return falha("nao_encontrado", "Trabalho não encontrado.");
         if (t.situacao !== EM_AVALIACAO) {
-          return falha("ja_avaliado", "Este trabalho já foi avaliado (" + t.situacao.toLowerCase() + ") por " + (t.avaliadorNome || "outro avaliador") + ".");
+          return falha("ja_avaliado", "Este trabalho já foi avaliado (" + situacaoDe(t).toLowerCase() + ") por " + (t.avaliadorNome || "outro avaliador") + ".");
         }
         repo.trabalhos.atualizar(protocolo, {
           situacao: decisao, avaliadorNome: s.conta.nome || s.conta.email, avaliadorEmail: s.conta.email,
@@ -539,14 +545,16 @@
       if (!r.ok) return r;
 
       const t = r.trabalho;
+      const aprovado = decisao === "Aprovado";
       const paragrafos = ["Olá, " + t.autorNome.split(" ")[0] + "."];
       paragrafos.push("O trabalho \"" + t.titulo + "\" (protocolo " + protocolo + ") " +
-        (decisao === "Aceito" ? "foi aceito" : "não foi aceito") + " pela Comissão Científica do " + cfg.EVENTO + ".");
-      if (comentario) paragrafos.push("Comentário da comissão: " + comentario);
-      paragrafos.push(decisao === "Aceito"
-        ? "As orientações sobre a apresentação em pôster ou painel serão enviadas pela organização. O resultado também aparece na área do inscrito."
+        (aprovado ? "foi aprovado" : "não foi aprovado") + " pela Comissão Científica do " + cfg.EVENTO + ".");
+      if (comentario) paragrafos.push((aprovado ? "Comentário da comissão: " : "Justificativa da comissão: ") + comentario);
+      paragrafos.push(aprovado
+        ? "Os trabalhos aprovados são apresentados em pôster ou painel durante o simpósio. As orientações sobre a apresentação serão enviadas pela organização. O resultado também aparece na área do inscrito."
         : "Agradecemos o envio. O resultado também aparece na área do inscrito.");
-      const situacao = await enviarEmail(t.autorEmail, "Resultado do trabalho " + protocolo + " · " + cfg.EVENTO, paragrafos);
+      const assunto = (aprovado ? "Trabalho aprovado · " : "Resultado do trabalho ") + protocolo + " · " + cfg.EVENTO;
+      const situacao = await enviarEmail(t.autorEmail, assunto, paragrafos);
       repo.trabalhos.atualizar(protocolo, { emailResultado: situacao });
       return { ok: true, protocolo: protocolo, situacao: decisao, email: situacao };
     }
@@ -672,6 +680,11 @@
     /* -------------------------------------------------------------------
        Conflito de interesse: quem avalia não é autor
        ------------------------------------------------------------------- */
+    // Registros antigos guardaram "Aceito"; para fora, é sempre "Aprovado"
+    function situacaoDe(t) {
+      return t.situacao === "Aceito" ? "Aprovado" : t.situacao;
+    }
+
     function trabalhosAtivos() {
       return repo.trabalhos.listar().filter(function (t) { return t.situacao !== EXCLUIDO; });
     }

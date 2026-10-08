@@ -329,19 +329,28 @@ async function rodar(tipo, resultados) {
     ok(r.ok && r.trabalhos.length === 2 && r.trabalhos[0].primeiroAutor === "Maria da Silva" && r.trabalhos[0].coautores.includes("João Souza") && r.trabalhos[0].situacao === "Em avaliação", "comissão vê os trabalhos com autores, resumo e situação");
 
     const antes = b.emails.length;
-    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "aceito", comentario: "Parabéns pelo estudo." });
+    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "aprovado" });
     const t1 = b.repo.trabalhos.porProtocolo("TRB-0001");
-    ok(r.ok && t1.situacao === "Aceito" && t1.avaliadorNome === "Ana Avaliadora" && t1.avaliadorEmail === "ana@exemplo.com" && t1.comentario === "Parabéns pelo estudo." && t1.emailResultado === "enviado", "aceitar grava decisão, avaliadora, comentário e envio do e-mail");
+    ok(r.ok && t1.situacao === "Aprovado" && t1.avaliadorNome === "Ana Avaliadora" && t1.avaliadorEmail === "ana@exemplo.com" && t1.comentario === "" && t1.emailResultado === "enviado", "aprovar grava decisão, avaliadora e envio do e-mail, sem precisar de comentário");
     const m = b.emails[b.emails.length - 1];
-    ok(b.emails.length === antes + 1 && m.para === "maria@exemplo.com" && m.assunto.includes("TRB-0001") && m.texto.includes("foi aceito") && m.texto.includes("Parabéns pelo estudo."), "o primeiro autor recebe na hora o e-mail de aceite com o comentário");
-    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "recusado" });
-    ok(!r.ok && r.erro === "ja_avaliado" && b.emails.length === antes + 1, "trabalho já avaliado não recebe segunda decisão nem segundo e-mail");
-    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "recusado" });
-    ok(r.ok && b.emails[b.emails.length - 1].texto.includes("não foi aceito"), "recusar manda o e-mail de recusa");
+    ok(b.emails.length === antes + 1 && m.para === "maria@exemplo.com" && m.assunto.startsWith("Trabalho aprovado · TRB-0001") && m.texto.includes("foi aprovado") && !m.texto.includes("Justificativa"), "o primeiro autor recebe na hora o e-mail de aprovação");
+    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "recusado", comentario: "Justificativa qualquer." });
+    ok(!r.ok && r.erro === "ja_avaliado" && r.mensagem.includes("aprovado") && b.emails.length === antes + 1, "trabalho já avaliado não recebe segunda decisão nem segundo e-mail");
+    for (const vazia of [undefined, "", "   ", "ruim"]) {
+      r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "recusado", comentario: vazia });
+      ok(!r.ok && r.erro === "justificativa" && r.campo === "comentario", "recusa sem justificativa (" + JSON.stringify(vazia) + ") é recusada");
+    }
+    ok(b.repo.trabalhos.porProtocolo("TRB-0002").situacao === "Em avaliação" && b.emails.length === antes + 1, "sem justificativa, nada é gravado nem enviado");
+    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "recusado", comentario: "O resumo não apresenta resultados." });
+    const mr = b.emails[b.emails.length - 1];
+    ok(r.ok && mr.assunto.startsWith("Resultado do trabalho TRB-0002") && mr.texto.includes("não foi aprovado") && mr.texto.includes("Justificativa da comissão: O resumo não apresenta resultados."), "recusar manda o e-mail com a justificativa");
     ok((await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "talvez" })).erro === "decisao", "decisão fora de aceitar ou recusar é recusada");
     ok(!(await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-9999", decisao: "aceito" })).ok, "protocolo inexistente é recusado");
     const p = await b.enviar("painel", { token: tokenMaria });
-    ok(p.trabalhos[0].situacao === "Aceito" && p.trabalhos[0].comentario === "Parabéns pelo estudo." && p.trabalhos[1].situacao === "Recusado", "a área do inscrito mostra aceito ou recusado e o comentário");
+    ok(p.trabalhos[0].situacao === "Aprovado" && p.trabalhos[1].situacao === "Recusado" && p.trabalhos[1].comentario === "O resumo não apresenta resultados.", "a área do inscrito mostra aprovado ou recusado e a justificativa");
+    b.repo.trabalhos.atualizar("TRB-0001", { situacao: "Aceito" }); // registro gravado por versão anterior
+    ok((await b.enviar("painel", { token: tokenMaria })).trabalhos[0].situacao === "Aprovado" && (await b.enviar("comissaoTrabalhos", { token: tokenAna })).trabalhos[0].situacao === "Aprovado", "registros antigos \"Aceito\" aparecem como \"Aprovado\"");
+    b.repo.trabalhos.atualizar("TRB-0001", { situacao: "Aprovado" });
 
     r = await b.enviar("orgReenviarConvite", { token: tokenOrg, email: "ana@exemplo.com" });
     ok(r.ok && b.ultimoConvite(), "a organização reenvia o convite");

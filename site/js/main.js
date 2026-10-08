@@ -543,10 +543,10 @@ const CONFIG = {
     return { ok: false, mensagem: "Esta parte precisa do banco de teste (js/banco-teste.js), que não carregou." };
   }
 
-  // Selo "Em avaliação", "Aceito" ou "Recusado"
+  // Selo "Em avaliação", "Aprovado", "Recusado" ou "Excluído"
   function selo(situacao) {
     const el = document.createElement("span");
-    el.className = "selo selo--" + ({ "Aceito": "aceito", "Recusado": "recusado", "Excluído": "excluido" }[situacao] || "avaliacao");
+    el.className = "selo selo--" + ({ "Aprovado": "aceito", "Aceito": "aceito", "Recusado": "recusado", "Excluído": "excluido" }[situacao] || "avaliacao");
     el.textContent = situacao;
     return el;
   }
@@ -1924,7 +1924,7 @@ const CONFIG = {
           comentario.className = "trabalho__comentario";
           const rotulo = document.createElement("p");
           rotulo.className = "trabalho__comentario-rotulo";
-          rotulo.textContent = "Comentário da Comissão Científica";
+          rotulo.textContent = t.situacao === "Recusado" ? "Justificativa da Comissão Científica" : "Comentário da Comissão Científica";
           comentario.appendChild(rotulo);
           comentario.appendChild(paragrafo(t.comentario, "trabalho__comentario-texto"));
           li.appendChild(comentario);
@@ -2118,7 +2118,7 @@ const CONFIG = {
     return "e-mail: " + (situacao || "sem registro");
   }
 
-  // Cartão de um trabalho. Com o.decidir, mostra os botões Aceitar e Recusar.
+  // Cartão de um trabalho. Com o.decidir, mostra os botões Aprovar e Recusar.
   function cartaoTrabalho(t, o) {
     o = o || {};
     const emAvaliacao = t.situacao === "Em avaliação";
@@ -2155,45 +2155,117 @@ const CONFIG = {
       detalhes.appendChild(paragrafo(parte[1], "com-trabalho__texto"));
     });
 
+    // Decisão: "Aprovar" vai direto; "Recusar" abre a justificativa
+    // obrigatória, que segue no e-mail ao primeiro autor
     if (o.decidir && emAvaliacao) {
       const caixa = document.createElement("div");
-      caixa.className = "com-trabalho__decidir campo";
-      const idComentario = "com-comentario-" + t.protocolo;
-      const rotulo = document.createElement("label");
-      rotulo.htmlFor = idComentario;
-      rotulo.textContent = "Comentário para o autor (opcional)";
-      const comentario = document.createElement("textarea");
-      comentario.id = idComentario;
-      comentario.rows = 3;
-      comentario.maxLength = 1500;
+      caixa.className = "com-trabalho__decidir";
+      const rotuloDecisao = paragrafo("Decisão da comissão", "com-trabalho__rotulo");
       const acoes = document.createElement("p");
       acoes.className = "com-trabalho__acoes";
-      const aceitar = document.createElement("button");
-      aceitar.type = "button";
-      aceitar.className = "btn btn--primario btn--pequeno";
-      aceitar.textContent = "Aceitar";
+      const aprovar = document.createElement("button");
+      aprovar.type = "button";
+      aprovar.className = "btn btn--primario btn--pequeno com-trabalho__aprovar";
+      aprovar.textContent = "Aprovar";
       const recusar = document.createElement("button");
       recusar.type = "button";
       recusar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar";
       recusar.textContent = "Recusar";
+      recusar.setAttribute("aria-expanded", "false");
+      acoes.appendChild(aprovar);
+      acoes.appendChild(recusar);
+
+      const idJustificativa = "com-justificativa-" + t.protocolo;
+      const recusa = document.createElement("div");
+      recusa.className = "com-trabalho__recusa campo";
+      recusa.id = idJustificativa + "-caixa";
+      recusa.hidden = true;
+      recusar.setAttribute("aria-controls", recusa.id);
+      const rotulo = document.createElement("label");
+      rotulo.htmlFor = idJustificativa;
+      rotulo.textContent = "Justificativa da recusa (obrigatória)";
+      const dica = paragrafo("Este texto vai no e-mail ao primeiro autor, como o motivo da recusa.", "campo__dica");
+      dica.id = idJustificativa + "-dica";
+      const justificativa = document.createElement("textarea");
+      justificativa.id = idJustificativa;
+      justificativa.rows = 4;
+      justificativa.maxLength = 1500;
+      justificativa.required = true;
+      justificativa.setAttribute("aria-describedby", dica.id + " " + idJustificativa + "-erro");
+      const erro = paragrafo("", "campo__erro");
+      erro.id = idJustificativa + "-erro";
+      erro.hidden = true;
+      const acoesRecusa = document.createElement("p");
+      acoesRecusa.className = "com-trabalho__acoes";
+      const confirmar = document.createElement("button");
+      confirmar.type = "button";
+      confirmar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar com-trabalho__confirmar";
+      confirmar.textContent = "Confirmar recusa";
+      const cancelar = document.createElement("button");
+      cancelar.type = "button";
+      cancelar.className = "link-botao";
+      cancelar.textContent = "Cancelar";
+      acoesRecusa.appendChild(confirmar);
+      acoesRecusa.appendChild(cancelar);
+      recusa.appendChild(rotulo);
+      recusa.appendChild(dica);
+      recusa.appendChild(justificativa);
+      recusa.appendChild(erro);
+      recusa.appendChild(acoesRecusa);
+
       const status = paragrafo("", "inscricao__status");
       status.setAttribute("role", "status");
-      acoes.appendChild(aceitar);
-      acoes.appendChild(recusar);
-      acoes.appendChild(status);
-      caixa.appendChild(rotulo);
-      caixa.appendChild(comentario);
+      caixa.appendChild(rotuloDecisao);
       caixa.appendChild(acoes);
+      caixa.appendChild(recusa);
+      caixa.appendChild(status);
       detalhes.appendChild(caixa);
+
+      function mostrarErro(texto) {
+        erro.textContent = texto;
+        erro.hidden = !texto;
+        if (texto) justificativa.setAttribute("aria-invalid", "true");
+        else justificativa.removeAttribute("aria-invalid");
+      }
       const tela = {
-        travar: function (sim) { aceitar.disabled = recusar.disabled = sim; },
-        status: function (texto, erro) {
+        travar: function (sim) { aprovar.disabled = recusar.disabled = confirmar.disabled = cancelar.disabled = sim; },
+        status: function (texto, ehErro, campo) {
+          if (campo === "comentario") {
+            mostrarErro(texto);
+            status.textContent = "";
+            return;
+          }
           status.textContent = texto;
-          status.classList.toggle("is-erro", !!erro);
+          status.classList.toggle("is-erro", !!ehErro);
         },
       };
-      aceitar.addEventListener("click", function () { o.decidir(t, "aceito", comentario.value.trim(), tela); });
-      recusar.addEventListener("click", function () { o.decidir(t, "recusado", comentario.value.trim(), tela); });
+      aprovar.addEventListener("click", function () {
+        recusa.hidden = true;
+        recusar.setAttribute("aria-expanded", "false");
+        o.decidir(t, "aprovado", "", tela);
+      });
+      recusar.addEventListener("click", function () {
+        recusa.hidden = false;
+        recusar.setAttribute("aria-expanded", "true");
+        justificativa.focus();
+      });
+      cancelar.addEventListener("click", function () {
+        recusa.hidden = true;
+        recusar.setAttribute("aria-expanded", "false");
+        mostrarErro("");
+        recusar.focus();
+      });
+      justificativa.addEventListener("input", function () { if (!erro.hidden) mostrarErro(""); });
+      confirmar.addEventListener("click", function () {
+        const texto = justificativa.value.trim();
+        if (texto.replace(/\s/g, "").length < 10) {
+          mostrarErro(texto ? "A justificativa precisa ter pelo menos 10 caracteres." : "Escreva a justificativa da recusa. Ela vai no e-mail ao primeiro autor.");
+          justificativa.focus();
+          return;
+        }
+        mostrarErro("");
+        o.decidir(t, "recusado", texto, tela);
+      });
     }
     li.appendChild(detalhes);
 
@@ -2202,7 +2274,7 @@ const CONFIG = {
     } else if (!emAvaliacao) {
       li.appendChild(paragrafo(t.situacao + " por " + (t.avaliadoPor || "comissão") + (t.dataAvaliacao ? " em " + t.dataAvaliacao : "") +
         " · " + resultadoDoEmail(t.emailResultado) + " ao autor.", "com-trabalho__decisao"));
-      if (t.comentario) li.appendChild(paragrafo("Comentário enviado: " + t.comentario, "area__comentario"));
+      if (t.comentario) li.appendChild(paragrafo((t.situacao === "Recusado" ? "Justificativa enviada: " : "Comentário enviado: ") + t.comentario, "area__comentario"));
     }
     return li;
   }
@@ -2212,7 +2284,7 @@ const CONFIG = {
     let filtro = o.filtroInicial;
     let trabalhos = [];
     function desenhar() {
-      const contas = { "": 0, "Em avaliação": 0, "Aceito": 0, "Recusado": 0, "Excluído": 0 };
+      const contas = { "": 0, "Em avaliação": 0, "Aprovado": 0, "Recusado": 0, "Excluído": 0 };
       trabalhos.forEach(function (t) {
         contas[t.situacao] = (contas[t.situacao] || 0) + 1;
         if (t.situacao !== "Excluído") contas[""]++;
@@ -2278,8 +2350,10 @@ const CONFIG = {
     }
 
     function decidir(t, decisao, comentario, tela) {
-      const nome = decisao === "aceito" ? "aceitar" : "recusar";
-      if (!window.confirm("Confirma " + nome + " o trabalho " + t.protocolo + "? O primeiro autor recebe o e-mail agora, e a decisão não pode ser mudada pelo site.")) return;
+      const pergunta = decisao === "aprovado"
+        ? "Aprovar o trabalho " + t.protocolo + "?\n\nO primeiro autor recebe agora o e-mail de aprovação, e a decisão não pode ser mudada pelo site."
+        : "Recusar o trabalho " + t.protocolo + "?\n\nO primeiro autor recebe agora o e-mail com a sua justificativa, e a decisão não pode ser mudada pelo site.";
+      if (!window.confirm(pergunta)) return;
       tela.travar(true);
       tela.status("Registrando…");
       enviarAoBanco("comissaoDecidir", { token: sessao ? sessao.token : "", protocolo: t.protocolo, decisao: decisao, comentario: comentario })
@@ -2287,7 +2361,7 @@ const CONFIG = {
           if (r && r.ok) return carregarAvaliacao();
           if (tratarAcessoNegado(r)) return;
           if (r && r.erro === "ja_avaliado") carregarAvaliacao();
-          tela.status((r && r.mensagem) || "Não foi possível registrar a decisão. Tente de novo.", true);
+          tela.status((r && r.mensagem) || "Não foi possível registrar a decisão. Tente de novo.", true, r && r.campo);
           tela.travar(false);
         })
         .catch(function () {
@@ -2382,7 +2456,7 @@ const CONFIG = {
         vagas: d.vagas > 0 ? "de " + formatoNumero.format(d.vagas) + " vagas" : "",
         trabalhos: d.trabalhos.length - conta("Excluído"),
         avaliacao: conta("Em avaliação"),
-        aceitos: conta("Aceito"),
+        aprovados: conta("Aprovado"),
         recusados: conta("Recusado"),
         comissao: ativos,
         convites: d.comissao.length - ativos ? (d.comissao.length - ativos) + (d.comissao.length - ativos === 1 ? " convite aguardando" : " convites aguardando") : "",

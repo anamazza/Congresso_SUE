@@ -111,7 +111,7 @@ lhe cabe:
 | Perfil | Vai para | O que faz ali |
 | --- | --- | --- |
 | Organização | `#/organizacao` | convida e tira avaliadores, vê inscrições e trabalhos, baixa as listas |
-| Comissão Científica | `#/avaliacao` | lê os trabalhos e registra Aceito ou Recusado, com comentário |
+| Comissão Científica | `#/avaliacao` | lê os trabalhos e aprova ou recusa (a recusa exige justificativa) |
 | Inscrito | `#/area` (área do inscrito) | vê a inscrição, os trabalhos e o resultado, e envia trabalho |
 
 Depois de entrar, o link do topo vira **Minha área**. Quem tem mais de um perfil (uma
@@ -122,15 +122,19 @@ recusa os pedidos do mesmo jeito, mesmo que alguém tente chamar a API direto.
 - **Inscrição**, na página Inscrições. Nela a pessoa cria a senha, e a inscrição já abre a área
   do inscrito.
 - **Área do inscrito**: dados da inscrição, trabalhos em que a pessoa é primeiro autor ou
-  coautor, com a situação (Em avaliação, Aceito ou Recusado) e o comentário da comissão, e o
-  botão para submeter trabalho.
+  coautor, com a situação (Em avaliação, Aprovado ou Recusado) e a justificativa da comissão,
+  quando houver, e o botão para submeter trabalho. O primeiro autor pode excluir um trabalho
+  ("Desistir do trabalho"): ele sai da avaliação e deixa de contar no limite de envios.
 - **Envio de trabalhos** (`#/submissao`): só abre para quem entrou e tem inscrição. Quem envia
   é sempre o primeiro autor, identificado pela sessão.
 - **Avaliação** (`#/avaliacao`), só para a Comissão Científica: cartões com cada trabalho,
-  filtros (A avaliar, Aceitos, Recusados, Todos), busca e o quanto já foi avaliado. O avaliador
-  abre o trabalho, lê autores e resumo e clica em **Aceitar** ou **Recusar**, com comentário
-  opcional. Na mesma hora o primeiro autor recebe o e-mail com o resultado. Cada trabalho
-  recebe uma só decisão pelo site.
+  filtros (A avaliar, Aprovados, Recusados, Todos), busca e o quanto já foi avaliado. O avaliador
+  abre o trabalho, lê autores e resumo e clica em **Aprovar** ou **Recusar**. A recusa abre uma
+  caixa de justificativa obrigatória. Na mesma hora o primeiro autor recebe o e-mail de
+  aprovação, ou o de recusa com a justificativa. Cada trabalho recebe uma só decisão pelo site.
+- **Conflito de interesse:** quem está na comissão (mesmo com o convite pendente) ou na
+  organização não envia trabalho nem entra como coautor. A organização não consegue convidar
+  para a comissão quem é autor ou coautor de um trabalho; o site avisa antes de o convite sair.
 - **Área da organização** (`#/organizacao`), só para os e-mails de `ORGANIZACAO_EMAILS`:
   números do evento, aba **Comissão** (convidar, reenviar convite, tirar da comissão), aba
   **Inscrições** (busca e detalhes de contato) e aba **Trabalhos** (filtros, busca e leitura do
@@ -300,8 +304,9 @@ site usa para marcar o campo com erro).
   `aceitarConvite`. As que abrem sessão devolvem `token`, `nome` e `papeis`
   (`organizacao`, `comissao`, `inscrito`).
 - **Com sessão (`token`):** `sessao`, `sair`, `painel`, `trabalho` e `conferir` (coautor).
-- **Comissão:** `comissaoTrabalhos` e `comissaoDecidir` (`protocolo`, `decisao`: `"aceito"` ou
-  `"recusado"`, `comentario`).
+- **Comissão:** `comissaoTrabalhos` e `comissaoDecidir` (`protocolo`, `decisao`: `"aprovado"` ou
+  `"recusado"`, `comentario`; na recusa, o comentário é a justificativa obrigatória).
+- **Inscrito:** `excluirTrabalho` (`protocolo`), só para o primeiro autor.
 - **Organização:** `orgPainel`, `orgConvidar` (`nome`, `email`), `orgReenviarConvite` e
   `orgRemoverComissao` (`email`).
 
