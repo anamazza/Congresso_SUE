@@ -33,7 +33,7 @@ function coautor(n, extra) {
 function inscricao(extra) {
   return Object.assign({
     nome: "Maria da Silva", cpf: CPFS[0], email: "maria@exemplo.com", celular: "(21) 98765-4321",
-    categoria: "Enfermeiro(a)", instituicao: "Hospital Municipal Souza Aguiar", trabalho: "Sim", senha: SENHA,
+    categoria: "Enfermeiro(a)", instituicao: "Hospital Municipal Souza Aguiar", senha: SENHA,
   }, extra);
 }
 function trabalho(token, extra) {
@@ -133,8 +133,9 @@ async function rodar(tipo, resultados) {
     }
     ok(b.repo.inscricoes.listar().length === 1 && b.repo.contas.listar().length === 1, "nenhuma inscrição inválida foi gravada");
 
-    r = await b.enviar("inscricao", inscricao({ nome: "João Pedro Silva", cpf: CPFS[1], email: "joao@exemplo.com", trabalho: "talvez", senha: "senha do João" }));
-    ok(r.ok && r.protocolo === "INS-0002" && b.repo.inscricoes.porCpf("11144477735").intencao === "Não informado", "intenção de submeter fora da lista vira \"Não informado\"");
+    // Campo que o formulário não tem mais (a antiga pergunta sobre submeter trabalho) é ignorado
+    r = await b.enviar("inscricao", inscricao({ nome: "João Pedro Silva", cpf: CPFS[1], email: "joao@exemplo.com", trabalho: "Sim", senha: "senha do João" }));
+    ok(r.ok && r.protocolo === "INS-0002" && !("intencao" in b.repo.inscricoes.porCpf("11144477735")), "inscrição não guarda mais a intenção de submeter trabalho");
     const tokenJoao = r.token;
     ok(b.repo.contas.porEmail("joao@exemplo.com").senha !== b.repo.contas.porEmail("maria@exemplo.com").senha, "cada senha é embaralhada com um sal próprio");
 

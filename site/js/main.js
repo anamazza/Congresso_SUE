@@ -959,7 +959,6 @@ const CONFIG = {
       },
       coletar: function () {
         const el = formInscricao.elements;
-        const marcado = formInscricao.querySelector('input[name="trabalho"]:checked');
         return {
           nome: limpar(el.nome.value),
           cpf: mascaraCpf(el.cpf.value),
@@ -967,7 +966,6 @@ const CONFIG = {
           celular: mascaraCelular(el.celular.value),
           categoria: el.categoria.value,
           instituicao: limpar(el.instituicao.value),
-          trabalho: marcado ? marcado.value : "",
           senha: el.senha.value,
         };
       },
@@ -2097,7 +2095,7 @@ const CONFIG = {
       detalhes.appendChild(resumo);
       detalhes.appendChild(listaDeDados([
         ["E-mail", i.email], ["Celular", i.celular], ["CPF", i.cpf],
-        ["Pretende enviar trabalho", i.intencao], ["E-mail de confirmação", resultadoDoEmail(i.emailConfirmacao)],
+        ["E-mail de confirmação", resultadoDoEmail(i.emailConfirmacao)],
       ]));
       li.appendChild(detalhes);
       return li;
@@ -2161,7 +2159,7 @@ const CONFIG = {
       if (!dadosOrg) return;
       baixar("inscricoes-simposio", [
         ["Número", "protocolo"], ["Data", "data"], ["Nome", "nome"], ["CPF", "cpf"], ["E-mail", "email"], ["Celular", "celular"],
-        ["Categoria", "categoria"], ["Instituição", "instituicao"], ["Pretende enviar trabalho", "intencao"], ["E-mail de confirmação", "emailConfirmacao"],
+        ["Categoria", "categoria"], ["Instituição", "instituicao"], ["E-mail de confirmação", "emailConfirmacao"],
       ], dadosOrg.inscricoes);
     });
     document.getElementById("org-baixar-trabalhos").addEventListener("click", function () {
