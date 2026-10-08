@@ -431,7 +431,7 @@
           introducao: partes[0], metodos: partes[1], resultados: partes[2], conclusoes: partes[3], caracteres: caracteres,
           emailConfirmacao: "", situacao: EM_AVALIACAO, avaliadorNome: "", avaliadorEmail: "", avaliadoEm: "", comentario: "", emailResultado: "",
         });
-        return { ok: true, protocolo: protocolo };
+        return { ok: true, protocolo: protocolo, restantes: Math.max(0, cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR - doAutor.length - 1) };
       });
       if (!r.ok) return r;
 
@@ -444,7 +444,11 @@
         "O resultado chega por e-mail assim que a Comissão Científica avaliar o trabalho, até " + cfg.RESULTADO + ". Ele também aparece na área do inscrito.",
       ]);
       repo.trabalhos.atualizar(r.protocolo, { emailConfirmacao: situacao });
-      return { ok: true, protocolo: r.protocolo, titulo: titulo, caracteres: caracteres, apresentador: apresentadorNome };
+      // "restantes": quantos trabalhos a pessoa ainda pode enviar como primeiro autor
+      return {
+        ok: true, protocolo: r.protocolo, titulo: titulo, caracteres: caracteres, apresentador: apresentadorNome,
+        restantes: r.restantes, maximo: cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR,
+      };
     }
 
     // Preenche coautores inscritos: só para quem entrou, e só quando CPF e

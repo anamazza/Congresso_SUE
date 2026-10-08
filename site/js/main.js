@@ -1309,9 +1309,11 @@ const CONFIG = {
         atualizarContador();
         atualizarTitulo();
       },
-      // O trabalho novo precisa aparecer na área do inscrito
-      aoConcluir: function () {
+      // O trabalho novo precisa aparecer na área do inscrito. Se era o último
+      // permitido, a confirmação não oferece "Enviar outro trabalho".
+      aoConcluir: function (resposta) {
         painelAtual = null;
+        document.getElementById("trb-outro").hidden = resposta.restantes === 0;
         return false;
       },
       aoRecusar: tratarAcessoNegado,
@@ -1319,6 +1321,7 @@ const CONFIG = {
         if (chave === "protocolo") return resposta.protocolo || "enviado por e-mail";
         if (chave === "titulo") return dados.titulo || "";
         if (chave === "email") return emailDoEnvio || "o seu e-mail";
+        if (chave === "restantes") return textoRestantes(resposta.restantes, resposta.maximo, true);
         return "";
       },
     });
@@ -1330,9 +1333,54 @@ const CONFIG = {
     const textoAcesso = document.getElementById("trb-acesso-texto");
     const textoAcessoPadrao = textoAcesso.textContent;
     const sucessoTrabalho = document.getElementById("trb-sucesso");
+    const caixaLimite = document.getElementById("trb-limite");
+    const carregandoEnvio = document.getElementById("trb-carregando");
+    const notaRestantes = document.getElementById("trb-restantes");
+
+    // "Você ainda pode enviar 2 trabalhos..." (depoisDoEnvio: texto da confirmação)
+    function textoRestantes(restantes, maximo, depoisDoEnvio) {
+      if (typeof restantes !== "number") return "Cada autor pode enviar até 3 trabalhos como primeiro autor.";
+      if (restantes < 1) {
+        return depoisDoEnvio
+          ? "Este foi o seu " + maximo + "º trabalho como primeiro autor, o máximo permitido pelo edital."
+          : "Você já enviou " + maximo + " trabalhos como primeiro autor, o máximo permitido pelo edital.";
+      }
+      const quantos = restantes + (restantes === 1 ? " trabalho" : " trabalhos");
+      return depoisDoEnvio
+        ? "Você ainda pode enviar " + quantos + " como primeiro autor."
+        : "Você ainda pode enviar " + quantos + " como primeiro autor, contando este.";
+    }
+
+    // Antes de a pessoa começar a escrever: se já chegou ao limite do edital,
+    // ou se o prazo acabou, o formulário nem aparece
+    function aplicarLimite(r) {
+      carregandoEnvio.hidden = true;
+      const sub = r && r.submissao;
+      const bloqueio = !sub ? "" : !sub.aberta ? "prazo" : sub.restantes < 1 ? "limite" : "";
+      caixaLimite.hidden = !bloqueio;
+      if (bloqueio === "limite") {
+        document.getElementById("trb-limite-titulo").textContent = "Você já enviou o máximo de trabalhos";
+        document.getElementById("trb-limite-texto").textContent = "Cada autor pode enviar até " + sub.maximo +
+          " trabalhos como primeiro autor, e você já enviou " + sub.maximo + ". Você ainda pode aparecer como coautor nos trabalhos enviados por outras pessoas.";
+      } else if (bloqueio === "prazo") {
+        document.getElementById("trb-limite-titulo").textContent = "O envio de trabalhos está fechado";
+        document.getElementById("trb-limite-texto").textContent = "O prazo para enviar trabalhos terminou em " + sub.prazo + ".";
+      }
+      if (bloqueio) {
+        formTrabalho.hidden = true;
+        sucessoTrabalho.hidden = true;
+        return;
+      }
+      if (sucessoTrabalho.hidden) formTrabalho.hidden = false;
+      notaRestantes.textContent = sub ? textoRestantes(sub.restantes, sub.maximo, false) : "";
+      notaRestantes.hidden = !sub;
+    }
+
     function atualizarEnvio() {
       const travado = estadoSubmissao === "aberto" && !temPapel("inscrito");
       caixaAcesso.hidden = !travado;
+      caixaLimite.hidden = true;
+      carregandoEnvio.hidden = true;
       if (travado) {
         if (sessao) {
           textoAcesso.textContent = "Você entrou com uma conta da comissão ou da organização, que não tem inscrição no simpósio. Para enviar trabalho como autor, faça a inscrição com outro e-mail.";
@@ -1351,10 +1399,25 @@ const CONFIG = {
         linhaAutor.querySelector('[data-autor="protocolo"]').textContent = r ? r.inscricao.protocolo : "…";
       }
       mostrarAutor(painelAtual);
-      carregarPainel(false).then(function (r) { if (r) mostrarAutor(r); });
+      if (estadoSubmissao !== "aberto") return;
+      if (painelAtual) {
+        aplicarLimite(painelAtual);
+      } else if (sucessoTrabalho.hidden) {
+        // Enquanto confere quantos trabalhos a pessoa já enviou, o formulário espera
+        formTrabalho.hidden = true;
+        carregandoEnvio.hidden = false;
+      }
+      carregarPainel(false).then(function (r) {
+        if (!sessao || !temPapel("inscrito")) return;
+        if (r) mostrarAutor(r);
+        // Sem resposta (conexão), libera o formulário: o servidor confere de novo no envio
+        aplicarLimite(r);
+      });
     }
     aoMostrarPagina.submissao = atualizarEnvio;
     aoMudarSessao.push(atualizarEnvio);
+    // "Enviar outro trabalho" confere de novo antes de mostrar o formulário
+    document.getElementById("trb-outro").addEventListener("click", atualizarEnvio);
     atualizarEnvio();
 
     // Coautores inscritos: o banco só devolve nome e instituição a quem entrou
