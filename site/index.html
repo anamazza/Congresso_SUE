@@ -486,7 +486,7 @@
             <li>Cada trabalho precisa ter um apresentador inscrito no simpósio.</li>
             <li>Trabalhos enviados após o prazo final não serão considerados.</li>
             <li>O resumo tem até 2.500 caracteres sem espaços, com introdução, métodos, resultados e conclusões. O título tem até 200 caracteres. Veja as <a href="#/normas">normas de submissão</a> antes de enviar.</li>
-            <li>O resultado final é comunicado aos autores pelo canal informado pela organização.</li>
+            <li>O resultado chega por e-mail ao primeiro autor assim que a Comissão Científica avalia o trabalho, e também aparece na área do inscrito.</li>
           </ul>
         </div>
         <div class="painel">
@@ -818,6 +818,124 @@
             <p class="nota" id="area-trabalhos-vazio">Você ainda não enviou trabalhos. Enviar é opcional.</p>
             <p class="nota" id="area-submissao-nota"></p>
             <p><a class="btn btn--primario" id="area-submeter" href="#/submissao">Submeter trabalho</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ÁREA DA COMISSÃO (avaliação dos trabalhos) ===================== -->
+  <section class="pagina" data-pagina="comissao" data-titulo="Área da comissão" hidden>
+    <div class="container">
+      <header class="pagina__cabecalho">
+        <p class="eyebrow">Área da comissão</p>
+        <h1 id="com-titulo">Avaliação dos trabalhos</h1>
+        <p class="lead" id="com-lead">Acesso restrito aos avaliadores da Comissão Científica.</p>
+      </header>
+
+      <div class="inscricao area area--larga">
+        <p class="inscricao__aviso" id="com-aviso" hidden></p>
+
+        <div id="com-entrar">
+          <form class="inscricao__form" id="form-com-entrar" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Entrar na área da comissão</legend>
+              <div class="campo campo--largo">
+                <label for="cen-email">E-mail do avaliador</label>
+                <input id="cen-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="cen-email-erro">
+                <p class="campo__erro" id="cen-email-erro" hidden></p>
+              </div>
+              <div class="campo campo--largo">
+                <label for="cen-senha">Senha</label>
+                <input id="cen-senha" name="senha" type="password" autocomplete="current-password" maxlength="100" required aria-describedby="cen-senha-erro">
+                <p class="campo__erro" id="cen-senha-erro" hidden></p>
+              </div>
+              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="cen-senha"> Mostrar a senha</label>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Entrar</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="area__links"><button class="link-botao" type="button" data-com-ver="recuperar">Primeiro acesso ou esqueci a senha</button></p>
+          <p class="nota">Só entram os e-mails cadastrados pela organização na lista da comissão. No primeiro acesso, peça um código e crie a sua senha.</p>
+        </div>
+
+        <div id="com-recuperar" hidden>
+          <form class="inscricao__form" id="form-com-codigo" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Pedir código por e-mail</legend>
+              <p class="campo__dica campo--largo">Informe o seu e-mail de avaliador. Vamos enviar um código de 6 números para você criar a senha.</p>
+              <div class="campo campo--largo">
+                <label for="cco-email">E-mail do avaliador</label>
+                <input id="cco-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="cco-email-erro">
+                <p class="campo__erro" id="cco-email-erro" hidden></p>
+              </div>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Enviar código</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="area__links"><button class="link-botao" type="button" data-com-ver="nova">Já tenho um código</button> · <button class="link-botao" type="button" data-com-ver="entrar">Voltar para entrar</button></p>
+        </div>
+
+        <div id="com-nova" hidden>
+          <p class="inscricao__aviso inscricao__aviso--info" id="cno-enviado" hidden></p>
+          <form class="inscricao__form" id="form-com-nova" novalidate>
+            <fieldset class="inscricao__campos">
+              <legend class="sr-only">Criar senha com o código</legend>
+              <div class="campo">
+                <label for="cno-email">E-mail do avaliador</label>
+                <input id="cno-email" name="email" type="email" autocomplete="username" maxlength="120" required aria-describedby="cno-email-erro">
+                <p class="campo__erro" id="cno-email-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="cno-codigo">Código recebido</label>
+                <input id="cno-codigo" name="codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required aria-describedby="cno-codigo-erro">
+                <p class="campo__erro" id="cno-codigo-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="cno-senha">Senha nova</label>
+                <input id="cno-senha" name="senha" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="cno-senha-dica cno-senha-erro">
+                <p class="campo__dica" id="cno-senha-dica">Pelo menos 8 caracteres.</p>
+                <p class="campo__erro" id="cno-senha-erro" hidden></p>
+              </div>
+              <div class="campo">
+                <label for="cno-senha2">Repita a senha nova</label>
+                <input id="cno-senha2" name="senha2" type="password" autocomplete="new-password" maxlength="100" required aria-describedby="cno-senha2-erro">
+                <p class="campo__erro" id="cno-senha2-erro" hidden></p>
+              </div>
+              <label class="opcao opcao--simples campo--largo"><input type="checkbox" data-mostrar-senha="cno-senha cno-senha2"> Mostrar a senha</label>
+            </fieldset>
+            <div class="inscricao__envio">
+              <button class="btn btn--primario" type="submit">Salvar a senha e entrar</button>
+              <p class="inscricao__status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="area__links"><button class="link-botao" type="button" data-com-ver="recuperar">Pedir outro código</button> · <button class="link-botao" type="button" data-com-ver="entrar">Voltar para entrar</button></p>
+        </div>
+
+        <div id="com-painel" hidden>
+          <p class="area__carregando" id="com-carregando" role="status">Carregando os trabalhos…</p>
+          <div id="com-conteudo" hidden>
+            <div class="area__topo">
+              <p class="area__ola">Olá, <strong id="com-nome"></strong>.</p>
+              <button class="btn btn--secundario btn--pequeno" type="button" data-com-sair>Sair</button>
+            </div>
+            <p class="nota">Abra cada trabalho para ler autores e resumo. Ao aceitar ou recusar, o primeiro autor recebe um e-mail na hora, com o seu comentário, se houver. A decisão não pode ser mudada pelo site.</p>
+            <div class="com-filtros" role="group" aria-label="Filtrar trabalhos">
+              <button type="button" class="com-filtro" data-filtro="Em avaliação" aria-pressed="true">Em avaliação <span data-conta="Em avaliação">0</span></button>
+              <button type="button" class="com-filtro" data-filtro="Aceito" aria-pressed="false">Aceitos <span data-conta="Aceito">0</span></button>
+              <button type="button" class="com-filtro" data-filtro="Recusado" aria-pressed="false">Recusados <span data-conta="Recusado">0</span></button>
+              <button type="button" class="com-filtro" data-filtro="" aria-pressed="false">Todos <span data-conta="">0</span></button>
+            </div>
+            <div class="campo com-busca">
+              <label for="com-busca">Buscar</label>
+              <input id="com-busca" type="text" placeholder="Título, protocolo ou autor" autocomplete="off">
+            </div>
+            <ul class="com-lista" id="com-lista"></ul>
+            <p class="nota" id="com-vazio" hidden>Nenhum trabalho nesta lista.</p>
           </div>
         </div>
       </div>
@@ -1186,6 +1304,7 @@
         <li data-vinculo="avisos"><a href="#/avisos">Avisos</a></li>
         <li><a href="#/contato">Contato</a></li>
         <li><a href="#/privacidade">Privacidade</a></li>
+        <li><a href="#/comissao">Área da comissão</a></li>
       </ul>
     </div>
   </div>

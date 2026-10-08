@@ -7,7 +7,7 @@ Feito em HTML, CSS e JavaScript puros, sem dependências. Funciona em qualquer h
 de arquivos estáticos e também como um único arquivo HTML.
 
 O site tem menu suspenso no topo (Informações, Programação, Trabalhos) e páginas separadas:
-Home, O evento, Programação, Palestrantes, Inscrições, Área do inscrito, Trabalhos, Enviar trabalho, Normas de submissão,
+Home, O evento, Programação, Palestrantes, Inscrições, Área do inscrito, Área da comissão, Trabalhos, Enviar trabalho, Normas de submissão,
 Comissões, Local, Datas importantes, Perguntas frequentes, Realização e apoio, Avisos,
 Contato e Privacidade. Todas as páginas ficam no mesmo `index.html`, uma por `<section
 data-pagina="...">`; o menu abre uma de cada vez pelos links `#/pagina` (por exemplo,
@@ -103,6 +103,12 @@ O site tem formulários com a identidade visual do evento:
   inscrito; quem envia é sempre o primeiro autor, identificado pela sessão. Sem entrar, a
   página mostra o convite para entrar ou se inscrever.
 
+- **Área da comissão** (`#/comissao`, com link no rodapé). Só entram os e-mails listados na
+  aba Comissão da planilha. O avaliador lê autores e resumo de cada trabalho e clica em
+  **Aceitar** ou **Recusar**, com um comentário opcional. Na mesma hora o primeiro autor
+  recebe um e-mail com o resultado e o comentário, e a situação aparece na área do inscrito.
+  A decisão é definitiva no site e fica registrada na aba Trabalhos.
+
 A sessão fica só na aba do navegador: ao fechar a aba, a pessoa sai. No banco, a sessão vence
 depois de 6 horas sem uso. Isso protege quem usa computador compartilhado na unidade.
 
@@ -120,6 +126,8 @@ seguinte:
 - depois de 5 senhas erradas seguidas, faz o e-mail esperar 15 minutos; manda no máximo 3
   códigos por hora para o mesmo e-mail, e cada código vale 30 minutos e aceita 5 tentativas;
 - só aceita trabalho de quem entrou na área do inscrito, e exige apresentador inscrito;
+- na área da comissão, mostra os trabalhos, grava a decisão (Aceito ou Recusado), quem decidiu,
+  quando e o comentário na aba Trabalhos, e manda o e-mail de resultado ao primeiro autor;
 - no envio de trabalho, preenche nome e instituição dos coautores inscritos. Só responde a quem
   entrou e só quando o CPF e o e-mail do coautor batem com a mesma inscrição;
 - exige celular com DDD e o 9 inicial;
@@ -159,7 +167,14 @@ se a implantação funcionou.
   `banco.inscricoesEncerradas` para `true` no site e preencha `VAGAS` ou `INSCRICOES_FIM` no banco.
 - **Prazo dos trabalhos:** o envio fecha sozinho depois de `submissao.prazo`, no site, e de
   `SUBMISSAO_FIM`, no banco. Se o prazo mudar, altere os dois.
-- **Avaliação:** a aba Trabalhos tem a coluna Avaliação, livre para a Comissão Científica.
+- **Comissão:** na aba **Comissão**, preencha uma linha por avaliador, com **E-mail** e **Nome**.
+  Deixe as outras colunas em branco. O avaliador abre a Área da comissão, clica em "Primeiro
+  acesso ou esqueci a senha", recebe um código no e-mail e cria a senha. Para tirar alguém da
+  comissão, apague a linha: o acesso cai na hora, mesmo com a sessão aberta.
+- **Avaliação:** as decisões ficam nas colunas Avaliação ("Aceito" ou "Recusado"), Avaliado por,
+  Data da avaliação, Comentário ao autor e E-mail do resultado da aba Trabalhos. Cada trabalho
+  recebe uma só decisão pelo site. Para corrigir uma decisão, edite a planilha e avise o autor
+  diretamente: o site não manda um segundo e-mail.
 - **Limite de e-mails:** o Google limita os e-mails enviados por dia, cerca de 100 numa conta
   Gmail comum e 1.500 numa conta Workspace. Quando o limite acaba, o registro é gravado mesmo
   assim e a coluna "E-mail de confirmação" mostra que o e-mail não saiu.
@@ -201,6 +216,10 @@ do computador. No canto da tela aparece o **Painel de teste**, com:
 Cada navegador tem o seu banco: uma pessoa não vê as inscrições de teste da outra. Para testar
 a busca de coautor inscrito, inscreva o coautor no mesmo navegador antes.
 
+Para testar a área da comissão, o banco de teste já vem com o avaliador `comissao@teste.com`.
+Na Área da comissão, use "Primeiro acesso ou esqueci a senha"; o código aparece no Painel de
+teste. A aba **Comissão** do Painel de teste lista os avaliadores e deixa incluir outros.
+
 Links para testar, no site oficial ou na cópia do GitHub Pages:
 `.../?teste#/inscricoes/formulario`, `.../?teste#/area` e `.../?teste#/submissao`.
 
@@ -237,7 +256,10 @@ referência para as regras.
 
 - **Pedido:** `POST` com o corpo em JSON e `Content-Type: text/plain`, no formato
   `{"acao": "...", "dados": {...}}`. As ações são `inscricao`, `entrar`, `painel`,
-  `trabalho`, `conferir`, `pedirCodigo`, `novaSenha` e `sair`.
+  `trabalho`, `conferir`, `pedirCodigo`, `novaSenha` e `sair`. Para a comissão:
+  `comissaoEntrar`, `comissaoPedirCodigo`, `comissaoNovaSenha`, `comissaoTrabalhos`,
+  `comissaoDecidir` (`token`, `protocolo`, `decisao`: `"aceito"` ou `"recusado"`, `comentario`)
+  e `comissaoSair`. A sessão da comissão é separada da sessão de inscrito.
 - **Dados da inscrição:** `nome`, `cpf`, `email`, `celular`, `categoria`, `instituicao`,
   `trabalho` (pode vir vazio) e `senha`. A resposta traz `protocolo`, `nome` e `token`.
 - **Sessão:** `entrar` (`email`, `senha`) e `novaSenha` (`email`, `codigo`, `senha`) devolvem

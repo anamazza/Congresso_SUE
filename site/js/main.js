@@ -532,7 +532,18 @@ const CONFIG = {
         submissao: { aberta: true, prazo: ler("submissao.prazo"), maximo: 3, restantes: 3 },
       };
     }
+    if (/^comissao/.test(acao)) {
+      return { ok: false, mensagem: "A área da comissão precisa do banco de teste (js/banco-teste.js), que não carregou." };
+    }
     return { ok: acao === "sair" };
+  }
+
+  // Selo "Em avaliação", "Aceito" ou "Recusado"
+  function selo(situacao) {
+    const el = document.createElement("span");
+    el.className = "selo selo--" + ({ "Aceito": "aceito", "Recusado": "recusado" }[situacao] || "avaliacao");
+    el.textContent = situacao;
+    return el;
   }
 
   // ---------- Sessão da área do inscrito ----------
@@ -1470,9 +1481,16 @@ const CONFIG = {
         titulo.textContent = t.titulo;
         const detalhes = document.createElement("p");
         detalhes.textContent = t.tipo + " · " + t.eixo + " · Apresentação: " + t.apresentador;
+        if (t.situacao) topo.appendChild(selo(t.situacao));
         li.appendChild(topo);
         li.appendChild(titulo);
         li.appendChild(detalhes);
+        if (t.comentario) {
+          const comentario = document.createElement("p");
+          comentario.className = "area__comentario";
+          comentario.textContent = "Comentário da comissão: " + t.comentario;
+          li.appendChild(comentario);
+        }
         listaTrabalhos.appendChild(li);
       });
       document.getElementById("area-trabalhos-vazio").hidden = r.trabalhos.length > 0;
@@ -1533,6 +1551,362 @@ const CONFIG = {
       }
     });
     atualizarMenuArea();
+  }
+
+  // ----- Área da comissão: entrar, criar senha e avaliar -----
+  const paginaComissao = document.querySelector('[data-pagina="comissao"]');
+  if (paginaComissao) {
+    const estadoCom = modoTeste || urlBanco ? "aberto" : "pendente";
+    const CHAVE_COMISSAO = "simposio-ue-comissao";
+    let sessaoCom = (function () {
+      try {
+        const s = JSON.parse(window.sessionStorage.getItem(CHAVE_COMISSAO) || "null");
+        return s && typeof s.token === "string" && s.token ? s : null;
+      } catch (erro) {
+        return null;
+      }
+    })();
+    let avisoCom = "";
+    let trabalhosCom = null;
+    let filtroCom = "Em avaliação";
+    let vistaCom = "entrar";
+    let emailCom = "";
+
+    const vistasCom = {
+      entrar: document.getElementById("com-entrar"),
+      recuperar: document.getElementById("com-recuperar"),
+      nova: document.getElementById("com-nova"),
+      painel: document.getElementById("com-painel"),
+    };
+    const tituloCom = document.getElementById("com-titulo");
+    const leadCom = document.getElementById("com-lead");
+    const CABECALHOS_COM = {
+      entrar: ["Avaliação dos trabalhos", "Acesso restrito aos avaliadores da Comissão Científica."],
+      recuperar: ["Senha da área da comissão", "Você recebe um código no e-mail de avaliador e cria uma senha nova."],
+      nova: ["Senha da área da comissão", "Digite o código que chegou no e-mail e escolha a senha nova."],
+      painel: ["Avaliação dos trabalhos", "Leia cada trabalho e registre a decisão da comissão."],
+    };
+    function mostrarVistaCom(nome) {
+      Object.keys(vistasCom).forEach(function (k) { vistasCom[k].hidden = k !== nome; });
+      tituloCom.textContent = CABECALHOS_COM[nome][0];
+      leadCom.textContent = CABECALHOS_COM[nome][1];
+    }
+
+    const avisoComEl = document.getElementById("com-aviso");
+    if (estadoCom !== "aberto") {
+      avisoComEl.textContent = "A área da comissão abre quando o banco do site estiver ligado.";
+      avisoComEl.hidden = false;
+    } else if (modoTeste && !urlBancoTeste) {
+      avisoComEl.textContent = "Modo de teste: use o avaliador comissao@teste.com. Crie a senha em \"Primeiro acesso\"; o código aparece no Painel de teste, no canto da tela.";
+      avisoComEl.classList.add("inscricao__aviso--teste");
+      avisoComEl.hidden = false;
+    }
+
+    function abrirSessaoCom(token, nome) {
+      sessaoCom = { token: token, nome: nome || "" };
+      avisoCom = "";
+      trabalhosCom = null;
+      try {
+        window.sessionStorage.setItem(CHAVE_COMISSAO, JSON.stringify(sessaoCom));
+      } catch (erro) {
+        // sem armazenamento: vale até recarregar
+      }
+      atualizarComissao();
+    }
+    function fecharSessaoCom(motivo) {
+      if (sessaoCom && !motivo) enviarAoBanco("comissaoSair", { token: sessaoCom.token }).catch(function () {});
+      sessaoCom = null;
+      trabalhosCom = null;
+      avisoCom = motivo || "";
+      try {
+        window.sessionStorage.removeItem(CHAVE_COMISSAO);
+      } catch (erro) {
+        // nada a apagar
+      }
+      atualizarComissao();
+    }
+
+    const textosCom = { botaoPendente: "Em breve", botaoEncerrado: "Em breve", avisoPendente: "", avisoEncerrado: "" };
+    const formComEntrar = document.getElementById("form-com-entrar");
+    const formComCodigo = document.getElementById("form-com-codigo");
+    const formComNova = document.getElementById("form-com-nova");
+    const ligacaoComEntrar = ligarFormulario({
+      form: formComEntrar,
+      prefixo: "cen",
+      acao: "comissaoEntrar",
+      estado: estadoCom,
+      textos: textosCom,
+      regras: { email: regraEmail, senha: function (v) { return v ? "" : "Informe a senha."; } },
+      coletar: function () {
+        emailCom = formComEntrar.elements.email.value.trim().toLowerCase();
+        return { email: emailCom, senha: formComEntrar.elements.senha.value };
+      },
+      aoConcluir: function (r) {
+        abrirSessaoCom(r.token, r.nome);
+        return true;
+      },
+    });
+    ligarFormulario({
+      form: formComCodigo,
+      prefixo: "cco",
+      acao: "comissaoPedirCodigo",
+      estado: estadoCom,
+      textos: textosCom,
+      regras: { email: regraEmail },
+      coletar: function () { return { email: formComCodigo.elements.email.value.trim().toLowerCase() }; },
+      aoConcluir: function (r, dados) {
+        formComNova.elements.email.value = dados.email;
+        const enviado = document.getElementById("cno-enviado");
+        enviado.textContent = r.mensagem || "";
+        enviado.hidden = !r.mensagem;
+        verVistaCom("nova");
+        formComNova.elements.codigo.focus();
+        return true;
+      },
+    });
+    ligarFormulario({
+      form: formComNova,
+      prefixo: "cno",
+      acao: "comissaoNovaSenha",
+      estado: estadoCom,
+      textos: textosCom,
+      mascaras: { codigo: function (v) { return soDigitos(v).slice(0, 6); } },
+      regras: {
+        email: regraEmail,
+        codigo: function (v) {
+          if (!v) return "Digite o código que chegou no e-mail.";
+          return soDigitos(v).length === 6 ? "" : "O código tem 6 números.";
+        },
+        senha: regraSenha,
+        senha2: function (v) {
+          if (!v) return "Repita a senha.";
+          return v === formComNova.elements.senha.value ? "" : "As duas senhas estão diferentes.";
+        },
+      },
+      coletar: function () {
+        return {
+          email: formComNova.elements.email.value.trim().toLowerCase(),
+          codigo: soDigitos(formComNova.elements.codigo.value),
+          senha: formComNova.elements.senha.value,
+        };
+      },
+      aoConcluir: function (r) {
+        document.getElementById("cno-enviado").hidden = true;
+        vistaCom = "entrar";
+        abrirSessaoCom(r.token, r.nome);
+        return true;
+      },
+    });
+
+    function verVistaCom(nome) {
+      vistaCom = nome;
+      mostrarVistaCom(nome);
+      const email = (formComEntrar.elements.email.value || emailCom).trim();
+      if (nome === "recuperar" && email && !formComCodigo.elements.email.value) formComCodigo.elements.email.value = email;
+      if (nome === "nova" && !formComNova.elements.email.value) formComNova.elements.email.value = formComCodigo.elements.email.value || email;
+    }
+    paginaComissao.querySelectorAll("[data-com-ver]").forEach(function (botao) {
+      botao.addEventListener("click", function () {
+        verVistaCom(botao.dataset.comVer);
+        const primeiro = vistasCom[botao.dataset.comVer].querySelector("input");
+        if (primeiro) primeiro.focus();
+      });
+    });
+    paginaComissao.querySelector("[data-com-sair]").addEventListener("click", function () { fecharSessaoCom(); });
+
+    // ----- Lista de trabalhos -----
+    const listaCom = document.getElementById("com-lista");
+    const buscaCom = document.getElementById("com-busca");
+    const carregandoCom = document.getElementById("com-carregando");
+    const conteudoCom = document.getElementById("com-conteudo");
+
+    function paragrafo(texto, classe) {
+      const p = document.createElement("p");
+      if (classe) p.className = classe;
+      p.textContent = texto;
+      return p;
+    }
+
+    function cartaoTrabalho(t) {
+      const li = document.createElement("li");
+      li.className = "com-trabalho";
+      const topo = document.createElement("p");
+      topo.className = "area__trabalho-topo";
+      const protocolo = document.createElement("strong");
+      protocolo.textContent = t.protocolo;
+      topo.appendChild(protocolo);
+      topo.appendChild(document.createTextNode(t.data ? "enviado em " + t.data : ""));
+      topo.appendChild(selo(t.situacao));
+      li.appendChild(topo);
+      const titulo = document.createElement("h3");
+      titulo.textContent = t.titulo;
+      li.appendChild(titulo);
+      li.appendChild(paragrafo(t.tipo + " · " + t.eixo + " · " + t.totalAutores + (t.totalAutores === 1 ? " autor" : " autores") +
+        " · " + formatoNumero.format(t.caracteres) + " caracteres", "com-trabalho__meta"));
+
+      const detalhes = document.createElement("details");
+      if (t.situacao === "Em avaliação") detalhes.className = "com-trabalho__detalhes";
+      const resumo = document.createElement("summary");
+      resumo.textContent = t.situacao === "Em avaliação" ? "Ler autores e resumo e avaliar" : "Ler autores e resumo";
+      detalhes.appendChild(resumo);
+
+      const autores = document.createElement("dl");
+      autores.className = "area__dados com-trabalho__autores";
+      [["Primeiro autor", t.primeiroAutor], ["Coautores", t.coautores || "nenhum"], ["Apresentação", t.apresentador]].forEach(function (par) {
+        const div = document.createElement("div");
+        const dt = document.createElement("dt");
+        dt.textContent = par[0];
+        const dd = document.createElement("dd");
+        dd.textContent = par[1];
+        div.appendChild(dt);
+        div.appendChild(dd);
+        autores.appendChild(div);
+      });
+      detalhes.appendChild(autores);
+      [["Introdução", t.introducao], ["Métodos", t.metodos], ["Resultados", t.resultados], ["Conclusões", t.conclusoes]].forEach(function (parte) {
+        const h = document.createElement("h4");
+        h.textContent = parte[0];
+        detalhes.appendChild(h);
+        detalhes.appendChild(paragrafo(parte[1], "com-trabalho__texto"));
+      });
+
+      if (t.situacao === "Em avaliação") {
+        const caixa = document.createElement("div");
+        caixa.className = "com-trabalho__decidir campo";
+        const idComentario = "com-comentario-" + t.protocolo;
+        const rotulo = document.createElement("label");
+        rotulo.htmlFor = idComentario;
+        rotulo.textContent = "Comentário para o autor (opcional)";
+        const comentario = document.createElement("textarea");
+        comentario.id = idComentario;
+        comentario.rows = 3;
+        comentario.maxLength = 1500;
+        const acoes = document.createElement("p");
+        acoes.className = "com-trabalho__acoes";
+        const aceitar = document.createElement("button");
+        aceitar.type = "button";
+        aceitar.className = "btn btn--primario btn--pequeno";
+        aceitar.textContent = "Aceitar";
+        const recusar = document.createElement("button");
+        recusar.type = "button";
+        recusar.className = "btn btn--secundario btn--pequeno com-trabalho__recusar";
+        recusar.textContent = "Recusar";
+        const status = paragrafo("", "inscricao__status");
+        status.setAttribute("role", "status");
+        acoes.appendChild(aceitar);
+        acoes.appendChild(recusar);
+        acoes.appendChild(status);
+        caixa.appendChild(rotulo);
+        caixa.appendChild(comentario);
+        caixa.appendChild(acoes);
+        detalhes.appendChild(caixa);
+        function decidir(decisao) {
+          const nome = decisao === "aceito" ? "aceitar" : "recusar";
+          if (!window.confirm("Confirma " + nome + " o trabalho " + t.protocolo + "? O primeiro autor recebe o e-mail agora, e a decisão não pode ser mudada pelo site.")) return;
+          aceitar.disabled = recusar.disabled = true;
+          status.classList.remove("is-erro");
+          status.textContent = "Registrando…";
+          enviarAoBanco("comissaoDecidir", { token: sessaoCom ? sessaoCom.token : "", protocolo: t.protocolo, decisao: decisao, comentario: comentario.value.trim() })
+            .then(function (r) {
+              if (r && r.ok) {
+                carregarTrabalhosCom();
+                return;
+              }
+              if (r && r.erro === "sessao") return fecharSessaoCom(r.mensagem);
+              if (r && r.erro === "ja_avaliado") carregarTrabalhosCom();
+              status.textContent = (r && r.mensagem) || "Não foi possível registrar a decisão. Tente de novo.";
+              status.classList.add("is-erro");
+              aceitar.disabled = recusar.disabled = false;
+            })
+            .catch(function () {
+              status.textContent = "Não foi possível registrar agora. Verifique a conexão e tente de novo.";
+              status.classList.add("is-erro");
+              aceitar.disabled = recusar.disabled = false;
+            });
+        }
+        aceitar.addEventListener("click", function () { decidir("aceito"); });
+        recusar.addEventListener("click", function () { decidir("recusado"); });
+      }
+      li.appendChild(detalhes);
+
+      if (t.situacao !== "Em avaliação") {
+        const email = /^enviado/.test(t.emailResultado) ? "e-mail enviado ao autor" : "e-mail ao autor: " + (t.emailResultado || "sem registro");
+        li.appendChild(paragrafo(t.situacao + " por " + t.avaliadoPor.replace(/\s*<[^>]*>$/, "") + (t.dataAvaliacao ? " em " + t.dataAvaliacao : "") + " · " + email + ".", "com-trabalho__decisao"));
+        if (t.comentario) li.appendChild(paragrafo("Comentário enviado: " + t.comentario, "area__comentario"));
+      }
+      return li;
+    }
+
+    function desenharLista() {
+      if (!trabalhosCom) return;
+      const contas = { "": trabalhosCom.length, "Em avaliação": 0, "Aceito": 0, "Recusado": 0 };
+      trabalhosCom.forEach(function (t) { contas[t.situacao] = (contas[t.situacao] || 0) + 1; });
+      paginaComissao.querySelectorAll("[data-conta]").forEach(function (el) { el.textContent = contas[el.dataset.conta] || 0; });
+      paginaComissao.querySelectorAll("[data-filtro]").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.dataset.filtro === filtroCom));
+      });
+      const termo = buscaCom.value.trim().toLowerCase();
+      const abertos = {};
+      listaCom.querySelectorAll("details[open]").forEach(function (d) { abertos[d.closest("li").dataset.protocolo] = true; });
+      listaCom.textContent = "";
+      const visiveis = trabalhosCom.filter(function (t) {
+        if (filtroCom && t.situacao !== filtroCom) return false;
+        if (!termo) return true;
+        return (t.protocolo + " " + t.titulo + " " + t.primeiroAutor + " " + t.coautores).toLowerCase().indexOf(termo) >= 0;
+      });
+      visiveis.forEach(function (t) {
+        const li = cartaoTrabalho(t);
+        li.dataset.protocolo = t.protocolo;
+        if (abertos[t.protocolo]) li.querySelector("details").open = true;
+        listaCom.appendChild(li);
+      });
+      document.getElementById("com-vazio").hidden = visiveis.length > 0;
+    }
+
+    function carregarTrabalhosCom() {
+      if (!sessaoCom) return;
+      const token = sessaoCom.token;
+      if (!trabalhosCom) {
+        carregandoCom.textContent = "Carregando os trabalhos…";
+        carregandoCom.hidden = false;
+        conteudoCom.hidden = true;
+      }
+      enviarAoBanco("comissaoTrabalhos", { token: token }).then(function (r) {
+        if (!sessaoCom || sessaoCom.token !== token) return;
+        if (r && r.ok) {
+          trabalhosCom = r.trabalhos;
+          document.getElementById("com-nome").textContent = r.avaliador || sessaoCom.nome;
+          carregandoCom.hidden = true;
+          conteudoCom.hidden = false;
+          desenharLista();
+        } else if (r && r.erro === "sessao") {
+          fecharSessaoCom(r.mensagem);
+        } else {
+          carregandoCom.textContent = "Não foi possível carregar os trabalhos agora. Recarregue a página.";
+        }
+      }, function () {
+        carregandoCom.textContent = "Não foi possível carregar os trabalhos agora. Verifique a conexão e recarregue a página.";
+      });
+    }
+
+    paginaComissao.querySelectorAll("[data-filtro]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        filtroCom = b.dataset.filtro;
+        desenharLista();
+      });
+    });
+    buscaCom.addEventListener("input", desenharLista);
+
+    function atualizarComissao() {
+      if (!sessaoCom) {
+        mostrarVistaCom(vistaCom);
+        if (avisoCom) ligacaoComEntrar.definirStatus(avisoCom, true);
+        return;
+      }
+      mostrarVistaCom("painel");
+      carregarTrabalhosCom();
+    }
+    aoMostrarPagina.comissao = atualizarComissao;
   }
 
   // ---------- Menu no celular ----------

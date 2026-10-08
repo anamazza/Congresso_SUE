@@ -4,7 +4,8 @@
    Este código roda no Google Apps Script, ligado a uma planilha do Google.
    Ele recebe os formulários do site, confere as regras do edital, grava
    cada envio numa aba da planilha e manda um e-mail de confirmação. Também
-   cuida da área do inscrito: senha, entrada, sessão e recuperação de senha.
+   cuida da área do inscrito (senha, entrada, sessão e recuperação de senha)
+   e da área da comissão, onde os avaliadores aceitam ou recusam trabalhos.
 
    Instalação: siga a seção "Banco de dados" do README do repositório.
    O mesmo código serve para a planilha de testes, com TESTE: true
@@ -63,7 +64,14 @@ const ABAS = {
       "Primeiro autor", "CPF do primeiro autor", "E-mail do primeiro autor", "Coautores",
       "Total de autores", "Apresentador", "CPF do apresentador", "Introdução", "Métodos",
       "Resultados", "Conclusões", "Caracteres sem espaços", "Avaliação", "E-mail de confirmação",
+      "Avaliado por", "Data da avaliação", "Comentário ao autor", "E-mail do resultado",
     ],
+  },
+  // Avaliadores da área da comissão. A organização preenche E-mail e Nome;
+  // cada avaliador cria a própria senha com um código enviado ao e-mail.
+  comissao: {
+    nome: "Comissão",
+    colunas: ["E-mail", "Nome", "Senha protegida", "Criada em", "Atualizada em"],
   },
   // Senhas da área do inscrito. A senha nunca é guardada: só uma versão
   // embaralhada, que não dá para desfazer. Pode ocultar esta aba.
@@ -76,8 +84,10 @@ const ABAS = {
 // Posição (começando em 0) das colunas usadas nas buscas
 const COL = {
   INS_NOME: 2, INS_CPF: 3, INS_EMAIL: 4, INS_CELULAR: 5, INS_CATEGORIA: 6, INS_INSTITUICAO: 7,
-  TRB_TITULO: 2, TRB_CPF: 6, TRB_COAUTORES: 8,
+  TRB_TITULO: 2, TRB_CPF: 6, TRB_EMAIL: 7, TRB_COAUTORES: 8, TRB_AVALIACAO: 17, TRB_CONFIRMACAO: 18,
+  TRB_AVALIADOR: 19, TRB_DATA_AVALIACAO: 20, TRB_COMENTARIO: 21, TRB_EMAIL_RESULTADO: 22,
   ACE_EMAIL: 0, ACE_CPF: 1, ACE_SENHA: 2,
+  COM_EMAIL: 0, COM_NOME: 1, COM_SENHA: 2,
 };
 
 // Proteção das senhas e limites da área do inscrito
@@ -159,8 +169,17 @@ const ACOES = {
   conferir: conferirInscricao,
   pedirCodigo: pedirCodigo,
   sair: sair,
+  comissaoEntrar: comissaoEntrar,
+  comissaoPedirCodigo: comissaoPedirCodigo,
+  comissaoNovaSenha: comissaoNovaSenha,
+  comissaoTrabalhos: comissaoTrabalhos,
+  comissaoDecidir: comissaoDecidir,
+  comissaoSair: comissaoSair,
 };
-const SO_LEITURA = ["entrar", "painel", "conferir", "pedirCodigo", "sair"];
+const SO_LEITURA = [
+  "entrar", "painel", "conferir", "pedirCodigo", "sair",
+  "comissaoEntrar", "comissaoPedirCodigo", "comissaoTrabalhos", "comissaoSair",
+];
 
 function doPost(e) {
   let pedido;
@@ -441,9 +460,9 @@ function registrarTrabalho(planilha, d) {
     "Protocolo: " + protocolo,
     "Tipo: " + tipo + ". Eixo temático: " + eixo + ". Apresentador: " + apresentador + ".",
     "O resumo tem " + caracteres + " caracteres sem espaços.",
-    "O resultado final da avaliação será divulgado em " + CONFIG.RESULTADO + ".",
+    "O resultado chega por e-mail assim que a Comissão Científica avaliar o trabalho, até " + CONFIG.RESULTADO + ". Ele também aparece na área do inscrito.",
   ]);
-  folha.getRange(numeroLinha, ABAS.trabalhos.colunas.length).setValue(situacaoEmail);
+  folha.getRange(numeroLinha, COL.TRB_CONFIRMACAO + 1).setValue(situacaoEmail);
 
   return { ok: true, protocolo: protocolo, titulo: titulo, caracteres: caracteres, apresentador: apresentador };
 }
@@ -495,6 +514,7 @@ function painel(planilha, d) {
         protocolo: String(l[0]), data: dataHora(l[1]), titulo: String(l[COL.TRB_TITULO]),
         tipo: String(l[3]), eixo: String(l[4]), apresentador: String(l[10]),
         papel: soDigitos(l[COL.TRB_CPF]) === cpf ? "Primeiro autor" : "Coautor",
+        situacao: situacaoDoTrabalho(l), comentario: situacaoDoTrabalho(l) === "Em avaliação" ? "" : String(l[COL.TRB_COMENTARIO] || ""),
       };
     });
   const comoPrimeiro = trabalhos.filter(function (t) { return t.papel === "Primeiro autor"; }).length;
@@ -691,6 +711,216 @@ function dataHora(valor) {
   return Object.prototype.toString.call(valor) === "[object Date]"
     ? Utilities.formatDate(valor, CONFIG.FUSO, "dd/MM/yyyy HH:mm")
     : String(valor || "");
+}
+
+/* ---------------------------------------------------------------------
+   Área da comissão: avaliadores, avaliação e e-mail de resultado
+   --------------------------------------------------------------------- */
+const DECISOES = { aceito: "Aceito", recusado: "Recusado" };
+
+function situacaoDoTrabalho(linha) {
+  const v = String(linha[COL.TRB_AVALIACAO] || "").trim().toLowerCase();
+  if (v === "aceito") return "Aceito";
+  if (v === "recusado") return "Recusado";
+  return "Em avaliação";
+}
+
+// Linha do avaliador na aba Comissão, com a posição na planilha
+function buscarAvaliador(planilha, email) {
+  const registros = linhas(aba(planilha, ABAS.comissao), ABAS.comissao.colunas.length);
+  for (let i = 0; i < registros.length; i++) {
+    if (String(registros[i][COL.COM_EMAIL]).trim().toLowerCase() === email) return { linha: registros[i], numero: i + 2 };
+  }
+  return null;
+}
+
+function comissaoEntrar(planilha, d) {
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+  const senha = senhaRecebida(d.senha);
+  if (!senha) return falha("senha", "Informe a senha.", "senha");
+
+  const cache = CacheService.getScriptCache();
+  const chaveFalhas = "falhasComissao:" + resumo(email);
+  const falhas = Number(cache.get(chaveFalhas) || 0);
+  if (falhas >= MAX_FALHAS_ENTRADA) {
+    return falha("bloqueado", "Muitas tentativas erradas com este e-mail. Aguarde 15 minutos ou crie uma nova senha em \"Esqueci a senha\".");
+  }
+  const avaliador = buscarAvaliador(planilha, email);
+  if (!avaliador || !senhaConfere(senha, avaliador.linha[COL.COM_SENHA])) {
+    cache.put(chaveFalhas, String(falhas + 1), 900);
+    return falha(
+      "credenciais",
+      "E-mail ou senha incorretos. No primeiro acesso, crie a senha em \"Esqueci a senha\". O e-mail precisa estar na lista da comissão.",
+      "senha"
+    );
+  }
+  cache.remove(chaveFalhas);
+  return { ok: true, token: abrirSessaoComissao(email), nome: String(avaliador.linha[COL.COM_NOME] || email) };
+}
+
+function comissaoPedirCodigo(planilha, d) {
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+  const cache = CacheService.getScriptCache();
+  const chaveEnvios = "enviosComissao:" + resumo(email);
+  const envios = Number(cache.get(chaveEnvios) || 0);
+  if (envios >= MAX_CODIGOS_POR_HORA) {
+    return falha("muitos_codigos", "Já enviamos " + MAX_CODIGOS_POR_HORA + " códigos para este e-mail há pouco. Use o código mais recente ou aguarde uma hora.");
+  }
+  cache.put(chaveEnvios, String(envios + 1), 3600);
+
+  const avaliador = buscarAvaliador(planilha, email);
+  if (avaliador) {
+    const numeros = parseInt(Utilities.getUuid().replace(/-/g, "").slice(0, 12), 16);
+    const codigo = String(numeros % 1000000).padStart(6, "0");
+    cache.put("codigoComissao:" + resumo(email), JSON.stringify({ h: resumo(codigo + ":" + email), n: 0 }), 1800);
+    enviarEmail(email, "Código para a área da comissão · " + CONFIG.EVENTO, [
+      "Olá" + (avaliador.linha[COL.COM_NOME] ? ", " + String(avaliador.linha[COL.COM_NOME]).split(" ")[0] : "") + ".",
+      "Use este código para criar ou trocar a senha da área da comissão: " + codigo,
+      "O código vale por 30 minutos. Se você não pediu, ignore este e-mail.",
+    ]);
+  }
+  return { ok: true, mensagem: "Se este e-mail estiver na lista da comissão, enviamos um código de 6 números. Ele vale por 30 minutos." };
+}
+
+function comissaoNovaSenha(planilha, d) {
+  const email = texto(d.email, 120).toLowerCase();
+  if (!emailValido(email)) return falha("email", "Confira o e-mail.", "email");
+  const codigo = soDigitos(d.codigo);
+  if (codigo.length !== 6) return falha("codigo", "O código tem 6 números.", "codigo");
+  const senha = senhaRecebida(d.senha);
+  const erroSenha = conferirSenha(senha);
+  if (erroSenha) return falha("senha", erroSenha, "senha");
+
+  const cache = CacheService.getScriptCache();
+  const chave = "codigoComissao:" + resumo(email);
+  let guardado = null;
+  try {
+    guardado = JSON.parse(cache.get(chave) || "null");
+  } catch (erro) {
+    guardado = null;
+  }
+  if (!guardado || guardado.n >= MAX_TENTATIVAS_CODIGO) {
+    cache.remove(chave);
+    return falha("codigo_vencido", "Código vencido ou inválido. Peça um novo código.", "codigo");
+  }
+  if (guardado.h !== resumo(codigo + ":" + email)) {
+    guardado.n++;
+    cache.put(chave, JSON.stringify(guardado), 1800);
+    return falha("codigo", "Código incorreto. Confira os 6 números do e-mail mais recente.", "codigo");
+  }
+  cache.remove(chave);
+
+  const avaliador = buscarAvaliador(planilha, email);
+  if (!avaliador) return falha("codigo_vencido", "Código vencido ou inválido. Peça um novo código.", "codigo");
+  segredoSenhas(true);
+  const folha = aba(planilha, ABAS.comissao);
+  const protegida = protegerSenha(senha, Utilities.getUuid().replace(/-/g, ""), ITERACOES_SENHA);
+  const criada = avaliador.linha[3] || new Date();
+  folha.getRange(avaliador.numero, COL.COM_SENHA + 1, 1, 3).setValues([[protegida, criada, new Date()]]);
+  cache.remove("falhasComissao:" + resumo(email));
+  return { ok: true, token: abrirSessaoComissao(email), nome: String(avaliador.linha[COL.COM_NOME] || email) };
+}
+
+// Todos os trabalhos, com autores e resumo, para a avaliação
+function comissaoTrabalhos(planilha, d) {
+  const avaliador = avaliadorDaSessao(planilha, d.token);
+  if (!avaliador) return semSessaoComissao();
+  const trabalhos = linhas(aba(planilha, ABAS.trabalhos), ABAS.trabalhos.colunas.length).map(function (l) {
+    return {
+      protocolo: String(l[0]), data: dataHora(l[1]), titulo: String(l[COL.TRB_TITULO]),
+      tipo: String(l[3]), eixo: String(l[4]),
+      primeiroAutor: String(l[5]), coautores: String(l[COL.TRB_COAUTORES] || ""), totalAutores: Number(l[9]) || 1,
+      apresentador: String(l[10]),
+      introducao: String(l[12]), metodos: String(l[13]), resultados: String(l[14]), conclusoes: String(l[15]),
+      caracteres: Number(l[16]) || 0,
+      situacao: situacaoDoTrabalho(l), avaliadoPor: String(l[COL.TRB_AVALIADOR] || ""),
+      dataAvaliacao: dataHora(l[COL.TRB_DATA_AVALIACAO]), comentario: String(l[COL.TRB_COMENTARIO] || ""),
+      emailResultado: String(l[COL.TRB_EMAIL_RESULTADO] || ""),
+    };
+  });
+  return { ok: true, avaliador: String(avaliador.linha[COL.COM_NOME] || avaliador.email), trabalhos: trabalhos };
+}
+
+// Aceita ou recusa um trabalho e avisa o primeiro autor por e-mail na hora.
+// A decisão é definitiva no site; para mudar, a organização edita a planilha.
+function comissaoDecidir(planilha, d) {
+  const avaliador = avaliadorDaSessao(planilha, d.token);
+  if (!avaliador) return semSessaoComissao();
+  const decisao = DECISOES[String(d.decisao || "")];
+  if (!decisao) return falha("decisao", "Escolha aceitar ou recusar.");
+  const comentario = textoLongo(d.comentario, 1500);
+
+  const folha = aba(planilha, ABAS.trabalhos);
+  const trabalhos = linhas(folha, ABAS.trabalhos.colunas.length);
+  const protocolo = texto(d.protocolo, 20);
+  let indice = -1;
+  for (let i = 0; i < trabalhos.length; i++) {
+    if (String(trabalhos[i][0]) === protocolo) { indice = i; break; }
+  }
+  if (indice < 0) return falha("nao_encontrado", "Trabalho não encontrado.");
+  const linha = trabalhos[indice];
+  if (situacaoDoTrabalho(linha) !== "Em avaliação") {
+    return falha(
+      "ja_avaliado",
+      "Este trabalho já foi avaliado (" + situacaoDoTrabalho(linha).toLowerCase() + ") por " + (linha[COL.TRB_AVALIADOR] || "outro avaliador") + "."
+    );
+  }
+
+  const numero = indice + 2;
+  const quem = String(avaliador.linha[COL.COM_NOME] || avaliador.email) + " <" + avaliador.email + ">";
+  folha.getRange(numero, COL.TRB_AVALIACAO + 1).setValue(decisao);
+  folha.getRange(numero, COL.TRB_AVALIADOR + 1, 1, 3).setValues([protegerLinha([quem, new Date(), comentario])]);
+
+  const titulo = String(linha[COL.TRB_TITULO]);
+  const primeiroNome = String(linha[5]).split(" ")[0];
+  const paragrafos = ["Olá, " + primeiroNome + "."];
+  if (decisao === "Aceito") {
+    paragrafos.push("O trabalho \"" + titulo + "\" (protocolo " + protocolo + ") foi aceito pela Comissão Científica do " + CONFIG.EVENTO + ".");
+  } else {
+    paragrafos.push("O trabalho \"" + titulo + "\" (protocolo " + protocolo + ") não foi aceito pela Comissão Científica do " + CONFIG.EVENTO + ".");
+  }
+  if (comentario) paragrafos.push("Comentário da comissão: " + comentario);
+  paragrafos.push(decisao === "Aceito"
+    ? "As orientações sobre a apresentação em pôster ou painel serão enviadas pela organização. O resultado também aparece na área do inscrito."
+    : "Agradecemos o envio. O resultado também aparece na área do inscrito.");
+  const situacaoEmail = enviarEmail(String(linha[COL.TRB_EMAIL]).trim(), "Resultado do trabalho " + protocolo + " · " + CONFIG.EVENTO, paragrafos);
+  folha.getRange(numero, COL.TRB_EMAIL_RESULTADO + 1).setValue(situacaoEmail);
+
+  return { ok: true, protocolo: protocolo, situacao: decisao, email: situacaoEmail };
+}
+
+function comissaoSair(_planilha, d) {
+  if (typeof d.token === "string" && d.token) CacheService.getScriptCache().remove("sessaoComissao:" + resumo(d.token));
+  return { ok: true };
+}
+
+function abrirSessaoComissao(email) {
+  const token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, "");
+  CacheService.getScriptCache().put("sessaoComissao:" + resumo(token), email, segundosDeSessao());
+  return token;
+}
+
+// Avaliador da sessão, conferido de novo na aba Comissão: quem sai da lista
+// perde o acesso na hora, mesmo com a sessão aberta.
+function avaliadorDaSessao(planilha, token) {
+  if (typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) return null;
+  const cache = CacheService.getScriptCache();
+  const chave = "sessaoComissao:" + resumo(token);
+  const email = cache.get(chave);
+  if (!email) return null;
+  const avaliador = buscarAvaliador(planilha, email);
+  if (!avaliador) {
+    cache.remove(chave);
+    return null;
+  }
+  cache.put(chave, email, segundosDeSessao());
+  return { email: email, linha: avaliador.linha };
+}
+
+function semSessaoComissao() {
+  return falha("sessao", "Sua sessão terminou. Entre de novo na área da comissão.");
 }
 
 /* ---------------------------------------------------------------------

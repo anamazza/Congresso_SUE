@@ -188,7 +188,7 @@ function rodar() {
     const b = criarBanco();
     b.api.configurar();
     ok(b.aba("Inscrições") && b.aba("Trabalhos") && b.aba("Acessos"), "configurar cria as abas Inscrições, Trabalhos e Acessos");
-    ok(b.aba("Inscrições").dados[0][0] === "Protocolo" && b.aba("Trabalhos").dados[0].length === 19, "cabeçalhos gravados");
+    ok(b.aba("Inscrições").dados[0][0] === "Protocolo" && b.aba("Trabalhos").dados[0].length === 23 && b.aba("Comissão"), "cabeçalhos gravados");
     ok(b.props.PLANILHA_ID === "planilha-teste" && /^[0-9a-f]{64}$/.test(b.props.SEGREDO_SENHAS), "configurar guarda o id da planilha e cria o segredo das senhas");
     ok(JSON.parse(b.api.doGet().getContent()).ok, "doGet responde que o banco está no ar");
 
@@ -506,6 +506,61 @@ function rodar() {
     ok(m.subject.startsWith("[TESTE] Inscrição recebida") && m.body.startsWith("Este e-mail veio do ambiente de teste"), "no teste, o e-mail sai com [TESTE] no assunto e aviso no texto");
     b.enviar("trabalho", trabalho(r.token));
     ok(b.emails[b.emails.length - 1].subject.startsWith("[TESTE] Trabalho recebido · TRB-0001"), "no teste, o e-mail do trabalho também sai marcado");
+  }
+
+  // Área da comissão: avaliadores, decisão e e-mail ao autor
+  {
+    const b = criarBanco();
+    b.api.configurar();
+    const tokenMaria = b.inscrever();
+    b.enviar("trabalho", trabalho(tokenMaria));
+    b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Segundo trabalho" }));
+    ok(b.enviar("painel", { token: tokenMaria }).trabalhos.every((t) => t.situacao === "Em avaliação" && !t.comentario), "trabalho recém-enviado aparece como em avaliação");
+    b.aba("Comissão").dados.push(["Avaliadora@Exemplo.com", "Ana Avaliadora", "", "", ""]);
+
+    let r = b.enviar("comissaoEntrar", { email: "avaliadora@exemplo.com", senha: "qualquer1" });
+    ok(!r.ok && r.erro === "credenciais", "avaliadora sem senha ainda não entra");
+    ok(!b.enviar("comissaoEntrar", { email: "maria@exemplo.com", senha: SENHA }).ok, "a senha de inscrita não abre a área da comissão");
+    const enviados = b.emails.length;
+    r = b.enviar("comissaoPedirCodigo", { email: "ninguem@exemplo.com" });
+    const generica = r.mensagem;
+    ok(r.ok && b.emails.length === enviados, "código da comissão para e-mail fora da lista não manda nada");
+    r = b.enviar("comissaoPedirCodigo", { email: "AVALIADORA@exemplo.com" });
+    ok(r.ok && r.mensagem === generica && b.emails.length === enviados + 1 && b.emails[b.emails.length - 1].subject.includes("comissão"), "e-mail da lista recebe o código, com a mesma resposta");
+    r = b.enviar("comissaoNovaSenha", { email: "avaliadora@exemplo.com", codigo: b.ultimoCodigo(), senha: "senha da comissão" });
+    ok(r.ok && /^[0-9a-f]{64}$/.test(r.token) && r.nome === "Ana Avaliadora", "avaliadora cria a senha pelo código e entra");
+    ok(/^500\$/.test(b.aba("Comissão").dados[1][2]) && !JSON.stringify(b.planilha.folhas).includes("senha da comissão"), "a senha da comissão também fica só embaralhada");
+    r = b.enviar("comissaoEntrar", { email: "avaliadora@exemplo.com", senha: "senha da comissão" });
+    ok(r.ok, "avaliadora entra com e-mail e senha");
+    const tokenCom = r.token;
+    ok(b.enviar("painel", { token: tokenCom }).erro === "sessao" && b.enviar("comissaoTrabalhos", { token: tokenMaria }).erro === "sessao", "sessão de inscrito e de comissão não se misturam");
+
+    r = b.enviar("comissaoTrabalhos", { token: tokenCom });
+    const t1 = r.trabalhos[0];
+    ok(r.ok && r.trabalhos.length === 2 && t1.primeiroAutor === "Maria da Silva" && t1.coautores.includes("João Souza") && t1.introducao === "Introdução do estudo." && t1.situacao === "Em avaliação", "comissão vê os trabalhos com autores, resumo e situação");
+
+    const antes = b.emails.length;
+    r = b.enviar("comissaoDecidir", { token: tokenCom, protocolo: "TRB-0001", decisao: "aceito", comentario: "Parabéns pelo estudo." });
+    const linhaT = b.aba("Trabalhos").dados[1];
+    ok(r.ok && r.situacao === "Aceito" && linhaT[17] === "Aceito" && linhaT[19] === "Ana Avaliadora <avaliadora@exemplo.com>" && linhaT[21] === "Parabéns pelo estudo." && linhaT[22] === "enviado", "aceitar grava decisão, avaliadora, comentário e envio do e-mail");
+    const m = b.emails[b.emails.length - 1];
+    ok(b.emails.length === antes + 1 && m.to === "maria@exemplo.com" && m.subject.includes("TRB-0001") && m.body.includes("foi aceito") && m.body.includes("Parabéns pelo estudo."), "o primeiro autor recebe na hora o e-mail de aceite com o comentário");
+    ok(linhaT[18] === "enviado", "a decisão não mexe na coluna do e-mail de confirmação do envio");
+    r = b.enviar("comissaoDecidir", { token: tokenCom, protocolo: "TRB-0001", decisao: "recusado" });
+    ok(!r.ok && r.erro === "ja_avaliado" && b.emails.length === antes + 1, "trabalho já avaliado não recebe segunda decisão nem segundo e-mail");
+    r = b.enviar("comissaoDecidir", { token: tokenCom, protocolo: "TRB-0002", decisao: "recusado" });
+    const m2 = b.emails[b.emails.length - 1];
+    ok(r.ok && m2.body.includes("não foi aceito") && !m2.body.includes("Comentário"), "recusar sem comentário manda o e-mail de recusa");
+    ok(!b.enviar("comissaoDecidir", { token: tokenCom, protocolo: "TRB-9999", decisao: "aceito" }).ok, "protocolo inexistente é recusado");
+    ok(b.enviar("comissaoDecidir", { token: tokenCom, protocolo: "TRB-0002", decisao: "talvez" }).erro === "decisao", "decisão fora de aceitar ou recusar é recusada");
+    ok(b.enviar("comissaoDecidir", { token: tokenMaria, protocolo: "TRB-0002", decisao: "aceito" }).erro === "sessao", "inscrita não consegue decidir");
+
+    const painelMaria = b.enviar("painel", { token: tokenMaria });
+    ok(painelMaria.trabalhos[0].situacao === "Aceito" && painelMaria.trabalhos[0].comentario === "Parabéns pelo estudo." && painelMaria.trabalhos[1].situacao === "Recusado", "a área do inscrito mostra aceito ou recusado e o comentário");
+
+    b.aba("Comissão").dados.splice(1, 1);
+    ok(b.enviar("comissaoTrabalhos", { token: tokenCom }).erro === "sessao", "avaliador tirado da aba Comissão perde o acesso mesmo com a sessão aberta");
+    ok(b.enviar("comissaoSair", { token: tokenCom }).ok, "sair da comissão responde ok");
   }
 
   // O banco do navegador (modo de teste do site) precisa estar em dia com este código
