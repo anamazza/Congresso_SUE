@@ -14,7 +14,7 @@ const TABELAS = {
     ordem: "protocolo",
     campos: {
       protocolo: "protocolo", criadoEm: "criado_em", nome: "nome", cpf: "cpf", email: "email",
-      celular: "celular", categoria: "categoria", instituicao: "instituicao", intencao: "intencao",
+      celular: "celular", categoria: "categoria", instituicao: "instituicao",
       emailConfirmacao: "email_confirmacao",
     },
   },
@@ -47,7 +47,7 @@ const ESQUEMA = `
   CREATE TABLE IF NOT EXISTS inscricoes (
     protocolo TEXT PRIMARY KEY, criado_em TEXT NOT NULL, nome TEXT NOT NULL,
     cpf TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, celular TEXT, categoria TEXT,
-    instituicao TEXT, intencao TEXT, email_confirmacao TEXT DEFAULT ''
+    instituicao TEXT, email_confirmacao TEXT DEFAULT ''
   );
   CREATE TABLE IF NOT EXISTS trabalhos (
     protocolo TEXT PRIMARY KEY, criado_em TEXT NOT NULL, titulo TEXT NOT NULL, tipo TEXT, eixo TEXT,

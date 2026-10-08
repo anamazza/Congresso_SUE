@@ -67,7 +67,6 @@
     "Farmacêutico(a)", "Psicólogo(a)", "Assistente social", "Outra categoria da saúde",
     "Gestor(a) de serviço de saúde", "Residente", "Estudante", "Outra área",
   ];
-  const INTENCAO_TRABALHO = ["Sim", "Não", "Ainda não sei"];
   const TIPOS = [
     "Estudo original observacional", "Estudo original de intervenção",
     "Relato de caso", "Revisão sistemática",
@@ -164,7 +163,6 @@
       if (CATEGORIAS.indexOf(categoria) < 0) return falha("categoria", "Escolha a categoria profissional.", "categoria");
       const instituicao = texto(d.instituicao, 120);
       if (!instituicao) return falha("instituicao", "Informe a instituição ou unidade.", "instituicao");
-      const intencao = INTENCAO_TRABALHO.indexOf(d.trabalho) >= 0 ? d.trabalho : "Não informado";
       const senha = senhaRecebida(d.senha);
       const erroSenha = conferirSenha(senha);
       if (erroSenha) return falha("senha", erroSenha, "senha");
@@ -195,7 +193,7 @@
         const momento = agora().toISOString();
         repo.inscricoes.inserir({
           protocolo: protocolo, criadoEm: momento, nome: nome, cpf: cpf, email: email,
-          celular: celular, categoria: categoria, instituicao: instituicao, intencao: intencao, emailConfirmacao: "",
+          celular: celular, categoria: categoria, instituicao: instituicao, emailConfirmacao: "",
         });
         // A senha da inscrição não prova que o e-mail é da pessoa: a conta nasce sem verificação
         repo.contas.salvar({
@@ -545,7 +543,7 @@
         return {
           protocolo: i.protocolo, data: dataHora(i.criadoEm), nome: i.nome, cpf: formatarCpf(i.cpf), email: i.email,
           celular: formatarCelular(i.celular), categoria: i.categoria, instituicao: i.instituicao,
-          intencao: i.intencao, emailConfirmacao: i.emailConfirmacao,
+          emailConfirmacao: i.emailConfirmacao,
         };
       });
       const trabalhos = repo.trabalhos.listar().map(trabalhoCompleto);

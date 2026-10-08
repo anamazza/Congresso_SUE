@@ -98,7 +98,7 @@ async function rodar() {
 
     j = await api(s.base, "inscricao", {
       nome: "Maria da Silva", cpf: "529.982.247-25", email: "maria@exemplo.com", celular: "(21) 98765-4321",
-      categoria: "Enfermeiro(a)", instituicao: "Hospital Municipal Souza Aguiar", trabalho: "Sim", senha: "senha da Maria 1",
+      categoria: "Enfermeiro(a)", instituicao: "Hospital Municipal Souza Aguiar", senha: "senha da Maria 1",
     });
     ok(j.ok && j.protocolo === "INS-0001" && /^[0-9a-f]{64}$/.test(j.token), "inscrição pela API grava e abre a sessão");
     const tokenMaria = j.token;
