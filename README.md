@@ -285,7 +285,9 @@ Se ele mudar, troque as três.
 
 O arquivo `.github/workflows/pages.yml` também copia a pasta `site/` para a branch `gh-pages` a
 cada envio para a `main`, e o GitHub Pages publica uma cópia em
-<https://anamazza.github.io/Congresso_SUE/>. Ela serve para conferir mudanças. Como a tag
+<https://anamazza.github.io/Congresso_SUE/>. Ela serve para testes: em qualquer endereço
+`*.github.io` o site abre sempre no modo de teste, como se tivesse `?teste`, com o banco no
+navegador e o Painel de teste. O endereço oficial continua precisando do `?teste`. Como a tag
 `canonical` aponta para o endereço oficial, os buscadores tratam o endereço oficial como o
 principal. Para desligar a cópia, apague o workflow ou desative o Pages em **Settings > Pages**.
 

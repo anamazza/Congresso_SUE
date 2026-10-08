@@ -105,7 +105,10 @@ const CONFIG = {
   }
 
   // ---------- Banco dos formulários: endereço e estado ----------
-  const modoTeste = /[?&]teste\b/.test(window.location.search);
+  // A cópia do GitHub Pages (*.github.io) serve só para testes: lá o site
+  // abre sempre no modo de teste. No endereço oficial, só com ?teste.
+  const copiaDeTeste = /\.github\.io$/i.test(window.location.hostname);
+  const modoTeste = copiaDeTeste || /[?&]teste\b/.test(window.location.search);
   const bancoCfg = CONFIG.banco || {};
   function enderecoDoBanco(url) {
     url = String(url || "").trim();
