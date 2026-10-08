@@ -291,6 +291,11 @@ ul, ol { margin: 0; padding: 0; }
 
 .menu--acoes { gap: 0.4rem; }
 .menu--acoes .btn { padding: 0.55rem 1rem; }
+/* Botões do topo mantêm a cor ao passar o mouse e não ganham sublinhado */
+.menu a.btn--primario:hover { background: var(--vermelho-escuro); border-color: var(--vermelho-escuro); }
+.menu a.btn[aria-current="page"] { text-decoration: none; }
+/* Quem entrou não vê "Inscreva-se": "Minha área" vira o botão de destaque */
+.com-sessao [data-sem-sessao] { display: none; }
 .topo__social {
   display: inline-flex;
   padding: 0.5rem;
