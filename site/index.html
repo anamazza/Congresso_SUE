@@ -71,7 +71,9 @@
             <summary>Trabalhos</summary>
             <ul class="submenu">
               <li><a href="#/trabalhos">Submissão de trabalhos</a></li>
-              <li><a href="#/submissao">Enviar trabalho</a></li>
+              <li class="submenu__aviso">Para enviar trabalho, é preciso estar inscrito</li>
+              <li><a href="#/inscricoes/formulario" data-fora-do-grupo>1. Faça sua inscrição</a></li>
+              <li><a href="#/area" data-fora-do-grupo>2. Envie pela área do inscrito</a></li>
               <li><a href="#/trabalhos/eixos">Eixos temáticos</a></li>
               <li><a href="#/trabalhos/avaliacao">Avaliação e apresentação</a></li>
               <li><a href="#/normas">Normas de submissão</a></li>
@@ -459,11 +461,28 @@
         <p class="lead">Serão aceitos estudos originais (observacionais ou de intervenção), relatos de caso e revisões sistemáticas na área de urgência e emergência. Os trabalhos aprovados são apresentados em pôster ou painel durante o simpósio.</p>
       </header>
 
+      <!-- A inscrição é regra para submeter: os dois passos aparecem antes de tudo -->
+      <section class="passos" aria-labelledby="passos-titulo">
+        <h2 class="passos__titulo" id="passos-titulo">Para enviar trabalho, é preciso estar inscrito no simpósio</h2>
+        <ol class="passos__lista">
+          <li class="passos__item">
+            <p class="passos__nome">Faça sua inscrição</p>
+            <p>A inscrição é obrigatória para submeter. Nela você cria a senha da área do inscrito.</p>
+            <a class="btn btn--primario" href="#/inscricoes/formulario">Faça sua inscrição</a>
+          </li>
+          <li class="passos__item">
+            <p class="passos__nome">Envie pela área do inscrito</p>
+            <p>Entre com o e-mail e a senha da inscrição e clique em "Submeter trabalho". Quem envia é o primeiro autor.</p>
+            <a class="btn btn--secundario" href="#/area">Entrar na área do inscrito</a>
+          </li>
+        </ol>
+      </section>
+
       <div class="grid-2">
         <div>
           <h2 class="subtitulo">Como enviar</h2>
           <ul class="regras">
-            <li>A submissão é exclusiva para inscritos no simpósio e é feita pelo site, na <a href="#/area">área do inscrito</a>.</li>
+            <li>A inscrição no simpósio é obrigatória para submeter. O envio é feito pelo site, na <a href="#/area">área do inscrito</a>, com o e-mail e a senha criados na inscrição.</li>
             <li>Cada trabalho precisa ter um apresentador inscrito no simpósio.</li>
             <li>Trabalhos enviados após o prazo final não serão considerados.</li>
             <li>O resumo tem até 2.500 caracteres sem espaços, com introdução, métodos, resultados e conclusões. O título tem até 200 caracteres. Veja as <a href="#/normas">normas de submissão</a> antes de enviar.</li>
@@ -536,9 +555,9 @@
 
         <!-- Sem sessão aberta, o formulário fica escondido e aparece este convite -->
         <div class="acesso" id="trb-acesso" hidden>
-          <h2>Entre para enviar o trabalho</h2>
-          <p id="trb-acesso-texto">O envio de trabalhos fica na área do inscrito. Entre com o e-mail e a senha que você criou na inscrição.</p>
-          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/area">Entrar na área do inscrito</a> <a class="btn btn--secundario" href="#/inscricoes/formulario">Fazer a inscrição</a></p>
+          <h2>Só quem está inscrito pode enviar trabalho</h2>
+          <p id="trb-acesso-texto">Primeiro faça sua inscrição no simpósio: nela você cria a senha da área do inscrito. Depois entre na área do inscrito com o e-mail e a senha para enviar o trabalho.</p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" href="#/inscricoes/formulario">Faça sua inscrição</a> <a class="btn btn--secundario" href="#/area">Já sou inscrito: entrar</a></p>
         </div>
 
         <form class="inscricao__form" id="form-trabalho" novalidate>
