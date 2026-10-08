@@ -1467,3 +1467,66 @@ p.campo--largo { margin: 0; max-width: none; }
 .area__trabalho p { margin: 0; max-width: none; font-size: 0.92rem; color: var(--texto-2); }
 .area__trabalho-topo { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; font-size: 0.85rem; color: var(--texto-2); }
 .area__trabalho-topo strong { color: var(--tinta); letter-spacing: 0.04em; }
+
+/* ------------------------------ Trabalhos: inscrição antes do envio ------------------------------ */
+/* Aviso dentro do menu Trabalhos */
+.submenu__aviso {
+  padding: 0.6rem 0.9rem 0.2rem;
+  font-family: var(--fonte-titulo);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--topo-texto);
+  opacity: 0.75;
+}
+@media (max-width: 899px) {
+  .submenu__aviso { padding: 0.5rem 0 0.1rem; }
+}
+
+.passos {
+  margin: 0 auto 3rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  background: #E8F4F8;
+  border: 1px solid #B9DCE9;
+  border-left: 4px solid var(--azul);
+  border-radius: 8px;
+}
+.passos__titulo { margin: 0 0 1.1rem; font-size: clamp(1.15rem, 1rem + 0.6vw, 1.4rem); font-weight: 800; color: var(--tinta); }
+.passos__lista {
+  list-style: none;
+  counter-reset: passo;
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+@media (min-width: 760px) {
+  .passos__lista { grid-template-columns: 1fr 1fr; }
+}
+.passos__item {
+  counter-increment: passo;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+.passos__item p { margin: 0; max-width: none; }
+.passos__item .btn { margin-top: auto; }
+.passos__nome { font-family: var(--fonte-titulo); font-weight: 800; color: var(--tinta); }
+.passos__nome::before {
+  content: counter(passo);
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  background: var(--azul);
+  color: #fff;
+  font-size: 0.9rem;
+}

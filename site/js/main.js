@@ -1630,7 +1630,7 @@ const CONFIG = {
       else a.removeAttribute("aria-current");
     });
     document.querySelectorAll(".menu__grupo").forEach(function (grupo) {
-      const contemPagina = Array.prototype.some.call(grupo.querySelectorAll('a[href^="#/"]'), function (a) {
+      const contemPagina = Array.prototype.some.call(grupo.querySelectorAll('a[href^="#/"]:not([data-fora-do-grupo])'), function (a) {
         return lerRota(a.getAttribute("href")).pagina === alvo.dataset.pagina;
       });
       grupo.classList.toggle("is-atual", contemPagina);
