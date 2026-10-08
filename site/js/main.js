@@ -1628,6 +1628,70 @@ const CONFIG = {
       });
     });
 
+    // Tudo o que foi enviado no trabalho, para a pessoa conferir. O trabalho não
+    // muda pelo site: para corrigir, o caminho é falar com a organização.
+    function dadosDoTrabalho(t) {
+      const enviou = t.papel === "Primeiro autor";
+      const detalhes = document.createElement("details");
+      detalhes.className = "area__detalhes";
+      const resumo = document.createElement("summary");
+      resumo.textContent = enviou ? "Ver todos os dados enviados" : "Ver autores e resumo";
+      detalhes.appendChild(resumo);
+
+      detalhes.appendChild(listaDeDados([
+        ["Tipo de trabalho", t.tipo], ["Eixo temático", t.eixo], ["Apresentação", t.apresentador],
+        ["Enviado em", t.data],
+        ["Tamanho do resumo", formatoNumero.format(t.caracteres) + " de " + formatoNumero.format(t.maxCaracteres) + " caracteres, sem espaços"],
+      ]));
+
+      const tituloAutores = document.createElement("h4");
+      tituloAutores.textContent = t.autores.length === 1 ? "Autor" : "Autores, na ordem do trabalho";
+      detalhes.appendChild(tituloAutores);
+      const autores = document.createElement("ol");
+      autores.className = "area__autores";
+      t.autores.forEach(function (a, n) {
+        const item = document.createElement("li");
+        const nome = document.createElement("strong");
+        nome.textContent = a.nome;
+        item.appendChild(nome);
+        if (n === 0) item.appendChild(document.createTextNode(" (primeiro autor)"));
+        const extras = [a.cpf ? "CPF " + a.cpf : "", a.email || "", a.instituicao || ""].filter(Boolean);
+        if (extras.length) {
+          const linha = document.createElement("span");
+          linha.textContent = extras.join(" · ");
+          item.appendChild(linha);
+        }
+        autores.appendChild(item);
+      });
+      detalhes.appendChild(autores);
+
+      [["Introdução", t.introducao], ["Métodos", t.metodos], ["Resultados", t.resultados], ["Conclusões", t.conclusoes]].forEach(function (parte) {
+        const h = document.createElement("h4");
+        h.textContent = parte[0];
+        detalhes.appendChild(h);
+        detalhes.appendChild(paragrafo(parte[1], "area__texto"));
+      });
+
+      // Como pedir correção: por e-mail, se a organização informou um, ou pela página Contato
+      const corrigir = document.createElement("p");
+      corrigir.className = "area__corrigir";
+      corrigir.appendChild(document.createTextNode("Encontrou algo para corrigir? O trabalho não pode ser alterado pelo site. " +
+        (enviou ? "Fale com a organização " : "Avise o primeiro autor ou fale com a organização ")));
+      const contato = document.createElement("a");
+      const emailContato = ler("contato.email");
+      if (emailContato) {
+        contato.href = "mailto:" + emailContato + "?subject=" + encodeURIComponent("Correção no trabalho " + t.protocolo);
+        contato.textContent = "por e-mail (" + emailContato + ")";
+      } else {
+        contato.href = "#/contato";
+        contato.textContent = "pela página Contato";
+      }
+      corrigir.appendChild(contato);
+      corrigir.appendChild(document.createTextNode(", informando o protocolo " + t.protocolo + " e o que precisa mudar."));
+      detalhes.appendChild(corrigir);
+      return detalhes;
+    }
+
     function preencherPainel(r) {
       const i = r.inscricao;
       const valores = {
@@ -1638,10 +1702,14 @@ const CONFIG = {
         el.textContent = valores[el.dataset.painel] || "não informado";
       });
 
+      // Recarregar a lista não fecha o trabalho que a pessoa abriu
+      const abertos = {};
+      listaTrabalhos.querySelectorAll("details[open]").forEach(function (d) { abertos[d.closest("li").dataset.protocolo] = true; });
       listaTrabalhos.textContent = "";
       r.trabalhos.forEach(function (t) {
         const li = document.createElement("li");
         li.className = "area__trabalho";
+        li.dataset.protocolo = t.protocolo;
         const topo = document.createElement("p");
         topo.className = "area__trabalho-topo";
         const protocolo = document.createElement("strong");
@@ -1661,6 +1729,11 @@ const CONFIG = {
           comentario.className = "area__comentario";
           comentario.textContent = "Comentário da comissão: " + t.comentario;
           li.appendChild(comentario);
+        }
+        if (t.autores) {
+          const tudo = dadosDoTrabalho(t);
+          tudo.open = !!abertos[t.protocolo];
+          li.appendChild(tudo);
         }
         listaTrabalhos.appendChild(li);
       });

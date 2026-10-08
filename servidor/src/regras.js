@@ -306,10 +306,14 @@
           return t.autorCpf === cpf || t.coautores.some(function (c) { return c.cpf === cpf; });
         })
         .map(function (t) {
+          const enviou = t.autorCpf === cpf;
           return {
             protocolo: t.protocolo, data: dataHora(t.criadoEm), titulo: t.titulo, tipo: t.tipo, eixo: t.eixo,
-            apresentador: t.apresentadorNome, papel: t.autorCpf === cpf ? "Primeiro autor" : "Coautor",
+            apresentador: t.apresentadorNome, papel: enviou ? "Primeiro autor" : "Coautor",
             situacao: t.situacao, comentario: t.situacao === EM_AVALIACAO ? "" : t.comentario || "",
+            autores: autoresDoTrabalho(t, enviou),
+            introducao: t.introducao, metodos: t.metodos, resultados: t.resultados, conclusoes: t.conclusoes,
+            caracteres: t.caracteres, maxCaracteres: cfg.MAX_CARACTERES,
           };
         });
       const comoPrimeiro = trabalhos.filter(function (t) { return t.papel === "Primeiro autor"; }).length;
@@ -328,6 +332,23 @@
         },
         papeis: papeisDe(s.conta),
       };
+    }
+
+    // Autores na ordem do trabalho. Quem enviou (o primeiro autor) vê o CPF e o
+    // e-mail que digitou de cada um, para conferir; um coautor vê só nomes e
+    // instituições, sem os dados pessoais dos outros autores.
+    function autoresDoTrabalho(t, completo) {
+      const inscAutor = repo.inscricoes.porCpf(t.autorCpf);
+      const lista = [{ nome: t.autorNome, cpf: t.autorCpf, email: t.autorEmail, instituicao: inscAutor ? inscAutor.instituicao : "" }]
+        .concat(t.coautores);
+      return lista.map(function (a) {
+        const autor = { nome: a.nome, instituicao: a.instituicao || "" };
+        if (completo) {
+          autor.cpf = formatarCpf(a.cpf);
+          autor.email = a.email;
+        }
+        return autor;
+      });
     }
 
     async function trabalho(d) {

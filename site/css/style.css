@@ -1555,6 +1555,30 @@ p.campo--largo { margin: 0; max-width: none; }
 .selo--aceito { background: #E3F4EA; color: #1E6B3A; }
 .selo--recusado { background: #FBEFF0; color: var(--vermelho-escuro); }
 .area__trabalho-topo { align-items: center; }
+
+/* Trabalho expandido na área do inscrito: tudo o que foi enviado */
+.area__detalhes { margin-top: 0.6rem; }
+.area__detalhes summary {
+  cursor: pointer;
+  font-family: var(--fonte-titulo);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+}
+.area__detalhes .area__dados { margin: 0.85rem 0 0.5rem; }
+.area__detalhes h4 { margin: 0.9rem 0 0.25rem; font-size: 0.9rem; }
+.area__trabalho .area__texto { color: var(--texto); font-size: 0.97rem; white-space: pre-line; overflow-wrap: anywhere; }
+.area__autores { display: grid; gap: 0.4rem; margin: 0; padding-left: 1.4rem; }
+.area__autores li { font-size: 0.95rem; }
+.area__autores span { display: block; font-size: 0.88rem; color: var(--texto-2); overflow-wrap: anywhere; }
+.area__trabalho .area__corrigir {
+  margin-top: 1.1rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  color: var(--texto);
+}
 .area__comentario {
   margin: 0.5rem 0 0;
   padding: 0.5rem 0.75rem;

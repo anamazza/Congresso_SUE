@@ -181,6 +181,14 @@ async function rodar(tipo, resultados) {
     ok(r.ok && r.inscricao.protocolo === "INS-0001" && r.inscricao.cpf === "529.982.247-25" && r.inscricao.celular === "(21) 98765-4321" && r.inscricao.data === "07/10/2026 12:00", "painel mostra a inscrição de quem entrou");
     ok(r.trabalhos.map((x) => x.protocolo + ":" + x.papel).join(",") === "TRB-0001:Primeiro autor,TRB-0002:Primeiro autor,TRB-0003:Primeiro autor,TRB-0004:Coautor", "painel lista os trabalhos como primeira autora e como coautora");
     ok(r.submissao.aberta && r.submissao.restantes === 0 && r.submissao.prazo === "06/11/2026", "painel informa prazo e trabalhos que ainda pode enviar");
+    const enviado = r.trabalhos[0];
+    ok(enviado.introducao === "Introdução do estudo." && enviado.conclusoes === "Conclusões." && enviado.caracteres > 0 && enviado.maxCaracteres === 2500, "painel traz o resumo completo do trabalho enviado");
+    ok(enviado.autores.length === 2 && enviado.autores[0].nome === "Maria da Silva" && enviado.autores[0].cpf === "529.982.247-25" && enviado.autores[0].instituicao === "Hospital Municipal Souza Aguiar"
+      && enviado.autores[1].nome === "João Souza" && enviado.autores[1].email === "joao.souza@exemplo.com" && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(enviado.autores[1].cpf),
+      "quem enviou vê todos os autores, com CPF e e-mail que digitou");
+    const comoCoautora = r.trabalhos.filter((x) => x.papel === "Coautor")[0];
+    ok(comoCoautora.autores[0].nome === "João Pedro Silva" && !("cpf" in comoCoautora.autores[0]) && !("email" in comoCoautora.autores[0]) && !("cpf" in comoCoautora.autores[1]),
+      "coautora vê nomes e instituições, sem CPF nem e-mail dos outros autores");
     ok(!/scrypt|senha/.test(JSON.stringify(r)), "painel não devolve nada da senha");
     ok((await b.enviar("painel", {})).erro === "sessao", "painel sem sessão é recusado");
 
