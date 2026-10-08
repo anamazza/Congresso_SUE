@@ -568,7 +568,7 @@
         <div class="acesso" id="trb-limite" hidden>
           <h2 id="trb-limite-titulo">Você já enviou o máximo de trabalhos</h2>
           <p id="trb-limite-texto"></p>
-          <p class="inscricao__acoes"><a class="btn btn--primario" id="trb-limite-botao" href="#/area">Ver meus trabalhos</a></p>
+          <p class="inscricao__acoes"><a class="btn btn--primario" id="trb-limite-botao" href="#/area">Ver meus trabalhos</a> <button class="btn btn--secundario" type="button" id="trb-limite-sair" data-sair hidden>Sair da conta</button></p>
         </div>
 
         <form class="inscricao__form" id="form-trabalho" novalidate>
@@ -883,6 +883,7 @@
               <label for="com-busca">Buscar</label>
               <input id="com-busca" type="search" placeholder="Título, protocolo, autor ou eixo" autocomplete="off">
             </div>
+            <p class="inscricao__aviso inscricao__aviso--info" id="com-resultado" role="status" hidden></p>
             <ul class="com-lista" id="com-lista"></ul>
             <p class="nota" id="com-vazio" hidden>Nenhum trabalho nesta lista.</p>
           </div>

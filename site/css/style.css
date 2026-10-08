@@ -1733,40 +1733,76 @@ p.campo--largo { margin: 0; max-width: none; }
 .com-trabalho__autores dd { white-space: pre-line; }
 .com-trabalho h4 { margin: 0.9rem 0 0.2rem; font-size: 0.9rem; }
 .com-trabalho__texto { margin: 0; max-width: none; white-space: pre-line; }
-.com-trabalho__decidir {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--linha);
+/* ---------- Decisão do avaliador ----------
+   Passo 1: duas opções neutras e de mesmo peso (fundo branco, só contorno),
+   que ganham cor apenas quando escolhidas. Verde para aprovar e vermelho
+   para recusar, com ícone e texto (a cor nunca é o único sinal).
+   Passo 2: confirmação no próprio cartão, com "Cancelar" à esquerda e a
+   ação no fim da linha. */
+.decisao {
+  margin-top: 1.4rem;
+  padding: 1rem 1.1rem 1.1rem;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 8px;
 }
-.com-trabalho__decidir textarea { width: 100%; }
-.com-trabalho__rotulo {
-  margin: 0 0 0.5rem;
+.com-trabalho h4.decisao__titulo { margin: 0 0 0.2rem; font-size: 1rem; color: var(--tinta); }
+.decisao__dica { margin: 0 0 0.85rem; font-size: 0.9rem; color: var(--texto-2); max-width: none; }
+.decisao__opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.75rem; max-width: 30rem; }
+.decisao__opcao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.9rem;
+  padding: 0.6rem 1rem;
+  background: var(--branco);
+  border: 2px solid currentColor;
+  border-radius: 8px;
   font-family: var(--fonte-titulo);
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--texto-2);
-  max-width: none;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s;
 }
-.com-trabalho__recusa {
+.decisao__opcao--aprovar { color: #1E6B3A; }
+.decisao__opcao--recusar { color: var(--vermelho-escuro); }
+.decisao__opcao--aprovar:hover { background: #F1F9F4; }
+.decisao__opcao--recusar:hover { background: #FDF5F5; }
+.decisao__opcao--aprovar[aria-pressed="true"] { background: #E3F4EA; box-shadow: inset 0 0 0 1px currentColor; }
+.decisao__opcao--recusar[aria-pressed="true"] { background: #FBEFF0; box-shadow: inset 0 0 0 1px currentColor; }
+.decisao__opcao:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+.decisao__opcao:disabled { opacity: 0.55; cursor: default; }
+
+.decisao__painel {
   display: grid;
-  gap: 0.35rem;
-  margin-top: 0.85rem;
-  padding: 0.85rem 1rem;
-  background: #FBEFF0;
-  border: 1px solid #EBC5C8;
-  border-radius: 6px;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid;
+  border-radius: 8px;
 }
-.com-trabalho__recusa[hidden] { display: none; }
-.com-trabalho__recusa .campo__dica { margin: 0; max-width: none; }
-.com-trabalho__recusa textarea { background: var(--branco); }
-.com-trabalho__recusa .com-trabalho__acoes { margin-top: 0.4rem; }
-.com-trabalho__decidir > .inscricao__status:empty { display: none; }
-.com-trabalho__decidir > .inscricao__status { margin-top: 0.6rem; }
-.com-trabalho__acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin: 0.6rem 0 0; max-width: none; }
-.com-trabalho__recusar { border-color: var(--vermelho); color: var(--vermelho-escuro); }
-.com-trabalho__recusar:hover { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }
+.decisao__painel[hidden] { display: none; }
+.decisao__painel--aprovar { background: #F1F9F4; border-color: #BFE3CC; }
+.decisao__painel--recusar { background: #FDF5F5; border-color: #EBC5C8; }
+.decisao__painel p { margin: 0; max-width: none; }
+.decisao__pergunta { font-weight: 700; color: var(--tinta); }
+.decisao__painel textarea { width: 100%; background: var(--branco); }
+.decisao__acoes { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0.6rem; margin-top: 0.5rem; }
+.btn--aprovar { background: #1E6B3A; border-color: #1E6B3A; color: #fff; }
+.btn--aprovar:hover { background: #17552E; border-color: #17552E; color: #fff; }
+.btn--recusar { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }
+.btn--recusar:hover { background: var(--vermelho-escuro); border-color: var(--vermelho-escuro); color: #fff; }
+.decisao__status { margin-top: 0.6rem; }
+.decisao__status:empty { display: none; }
+.decisao__atalho { display: block; margin: 0.6rem 0 0.2rem; font-size: 0.88rem; }
+@media (max-width: 30rem) {
+  .decisao__acoes { flex-direction: column-reverse; align-items: stretch; }
+  .decisao__acoes .btn { width: 100%; }
+}
+#com-resultado { margin: 0 0 1rem; }
 .com-trabalho__decisao { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--texto-2); max-width: none; }
 
 /* ---------- Áreas restritas: links para os outros perfis da mesma conta ---------- */
