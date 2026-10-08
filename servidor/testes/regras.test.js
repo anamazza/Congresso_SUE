@@ -329,19 +329,28 @@ async function rodar(tipo, resultados) {
     ok(r.ok && r.trabalhos.length === 2 && r.trabalhos[0].primeiroAutor === "Maria da Silva" && r.trabalhos[0].coautores.includes("João Souza") && r.trabalhos[0].situacao === "Em avaliação", "comissão vê os trabalhos com autores, resumo e situação");
 
     const antes = b.emails.length;
-    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "aceito", comentario: "Parabéns pelo estudo." });
+    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "aprovado" });
     const t1 = b.repo.trabalhos.porProtocolo("TRB-0001");
-    ok(r.ok && t1.situacao === "Aceito" && t1.avaliadorNome === "Ana Avaliadora" && t1.avaliadorEmail === "ana@exemplo.com" && t1.comentario === "Parabéns pelo estudo." && t1.emailResultado === "enviado", "aceitar grava decisão, avaliadora, comentário e envio do e-mail");
+    ok(r.ok && t1.situacao === "Aprovado" && t1.avaliadorNome === "Ana Avaliadora" && t1.avaliadorEmail === "ana@exemplo.com" && t1.comentario === "" && t1.emailResultado === "enviado", "aprovar grava decisão, avaliadora e envio do e-mail, sem precisar de comentário");
     const m = b.emails[b.emails.length - 1];
-    ok(b.emails.length === antes + 1 && m.para === "maria@exemplo.com" && m.assunto.includes("TRB-0001") && m.texto.includes("foi aceito") && m.texto.includes("Parabéns pelo estudo."), "o primeiro autor recebe na hora o e-mail de aceite com o comentário");
-    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "recusado" });
-    ok(!r.ok && r.erro === "ja_avaliado" && b.emails.length === antes + 1, "trabalho já avaliado não recebe segunda decisão nem segundo e-mail");
-    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "recusado" });
-    ok(r.ok && b.emails[b.emails.length - 1].texto.includes("não foi aceito"), "recusar manda o e-mail de recusa");
+    ok(b.emails.length === antes + 1 && m.para === "maria@exemplo.com" && m.assunto.startsWith("Trabalho aprovado · TRB-0001") && m.texto.includes("foi aprovado") && !m.texto.includes("Justificativa"), "o primeiro autor recebe na hora o e-mail de aprovação");
+    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0001", decisao: "recusado", comentario: "Justificativa qualquer." });
+    ok(!r.ok && r.erro === "ja_avaliado" && r.mensagem.includes("aprovado") && b.emails.length === antes + 1, "trabalho já avaliado não recebe segunda decisão nem segundo e-mail");
+    for (const vazia of [undefined, "", "   ", "ruim"]) {
+      r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "recusado", comentario: vazia });
+      ok(!r.ok && r.erro === "justificativa" && r.campo === "comentario", "recusa sem justificativa (" + JSON.stringify(vazia) + ") é recusada");
+    }
+    ok(b.repo.trabalhos.porProtocolo("TRB-0002").situacao === "Em avaliação" && b.emails.length === antes + 1, "sem justificativa, nada é gravado nem enviado");
+    r = await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "recusado", comentario: "O resumo não apresenta resultados." });
+    const mr = b.emails[b.emails.length - 1];
+    ok(r.ok && mr.assunto.startsWith("Resultado do trabalho TRB-0002") && mr.texto.includes("não foi aprovado") && mr.texto.includes("Justificativa da comissão: O resumo não apresenta resultados."), "recusar manda o e-mail com a justificativa");
     ok((await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-0002", decisao: "talvez" })).erro === "decisao", "decisão fora de aceitar ou recusar é recusada");
     ok(!(await b.enviar("comissaoDecidir", { token: tokenAna, protocolo: "TRB-9999", decisao: "aceito" })).ok, "protocolo inexistente é recusado");
     const p = await b.enviar("painel", { token: tokenMaria });
-    ok(p.trabalhos[0].situacao === "Aceito" && p.trabalhos[0].comentario === "Parabéns pelo estudo." && p.trabalhos[1].situacao === "Recusado", "a área do inscrito mostra aceito ou recusado e o comentário");
+    ok(p.trabalhos[0].situacao === "Aprovado" && p.trabalhos[1].situacao === "Recusado" && p.trabalhos[1].comentario === "O resumo não apresenta resultados.", "a área do inscrito mostra aprovado ou recusado e a justificativa");
+    b.repo.trabalhos.atualizar("TRB-0001", { situacao: "Aceito" }); // registro gravado por versão anterior
+    ok((await b.enviar("painel", { token: tokenMaria })).trabalhos[0].situacao === "Aprovado" && (await b.enviar("comissaoTrabalhos", { token: tokenAna })).trabalhos[0].situacao === "Aprovado", "registros antigos \"Aceito\" aparecem como \"Aprovado\"");
+    b.repo.trabalhos.atualizar("TRB-0001", { situacao: "Aprovado" });
 
     r = await b.enviar("orgReenviarConvite", { token: tokenOrg, email: "ana@exemplo.com" });
     ok(r.ok && b.ultimoConvite(), "a organização reenvia o convite");
@@ -350,12 +359,49 @@ async function rodar(tipo, resultados) {
     ok((await b.enviar("orgPainel", { token: tokenOrg })).comissao.length === 0, "a comissão fica vazia depois da remoção");
     ok(!(await b.enviar("aceitarConvite", { convite: b.ultimoConvite(), senha: "mais uma senha" })).ok, "convite de quem saiu da comissão não vale mais");
 
-    // Inscrita convidada para a comissão: precisa aceitar o convite para avaliar
-    await b.enviar("orgConvidar", { token: tokenOrg, nome: "Maria da Silva", email: "maria@exemplo.com" });
+    // Quem tem trabalho no simpósio não pode ser convidada para avaliar
+    const emailsAntes = b.emails.length;
+    r = await b.enviar("orgConvidar", { token: tokenOrg, nome: "Maria da Silva", email: "maria@exemplo.com" });
+    ok(!r.ok && r.erro === "autor_de_trabalho" && r.campo === "email" && r.mensagem.includes("TRB-0001, TRB-0002") && r.mensagem.includes("primeiro autor") && b.emails.length === emailsAntes,
+      "autora com trabalho enviado não recebe convite (e nenhum e-mail sai)");
+    ok(!b.repo.contas.porEmail("maria@exemplo.com").comissao, "a conta da autora continua fora da comissão");
+    const tokenJoao = await b.inscrever({ nome: "João Souza", cpf: gerarCpf(300000001), email: "joao.souza@exemplo.com" });
+    r = await b.enviar("orgConvidar", { token: tokenOrg, nome: "João Souza", email: "joao.souza@exemplo.com" });
+    ok(!r.ok && r.erro === "autor_de_trabalho" && r.mensagem.includes("coautor"), "coautor de trabalho enviado também não pode ser convidado");
+
+    // A autora desiste dos trabalhos: exclui pela área do inscrito
+    ok((await b.enviar("excluirTrabalho", { token: tokenJoao, protocolo: "TRB-0001" })).erro === "nao_encontrado", "coautor não exclui o trabalho de outra pessoa");
+    r = await b.enviar("excluirTrabalho", { token: tokenMaria, protocolo: "TRB-0001" });
+    ok(r.ok && b.repo.trabalhos.porProtocolo("TRB-0001").situacao === "Excluído" && b.repo.trabalhos.porProtocolo("TRB-0001").excluidoEm && b.emails[b.emails.length - 1].assunto.includes("Trabalho excluído"),
+      "a primeira autora exclui o trabalho e recebe a confirmação por e-mail");
+    ok(!(await b.enviar("excluirTrabalho", { token: tokenMaria, protocolo: "TRB-0001" })).ok, "trabalho excluído não é excluído de novo");
+    await b.enviar("excluirTrabalho", { token: tokenMaria, protocolo: "TRB-0002" });
+    let painelMaria = await b.enviar("painel", { token: tokenMaria });
+    ok(painelMaria.trabalhos.length === 0 && painelMaria.submissao.restantes === 3, "trabalhos excluídos somem da área do inscrito e liberam o limite de envios");
+    ok((await b.enviar("painel", { token: tokenJoao })).trabalhos.length === 0, "e somem também da área dos coautores");
+    ok((await b.enviar("orgPainel", { token: tokenOrg })).trabalhos.filter((t) => t.situacao === "Excluído").length === 2, "a organização continua vendo os trabalhos excluídos, marcados como Excluído");
+
+    // Sem trabalhos, o convite sai; quem está na comissão não envia trabalho
+    r = await b.enviar("orgConvidar", { token: tokenOrg, nome: "Maria da Silva", email: "maria@exemplo.com" });
+    ok(r.ok, "sem trabalhos, a inscrita pode ser convidada");
     ok((await b.enviar("entrar", { email: "maria@exemplo.com", senha: SENHA })).papeis.join() === "inscrito", "inscrita convidada continua só inscrita até aceitar o convite");
+    painelMaria = await b.enviar("painel", { token: tokenMaria });
+    ok(painelMaria.submissao.avaliador === true, "com o convite pendente, o painel já avisa que ela não envia trabalho");
+    r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Enviado durante o convite" }));
+    ok(!r.ok && r.erro === "avaliador" && r.mensagem.includes("Comissão Científica"), "convidada para a comissão não envia trabalho, mesmo antes de aceitar");
     const r2 = await b.enviar("aceitarConvite", { convite: b.ultimoConvite(), senha: "senha nova da Maria" });
     ok(r2.ok && r2.papeis.join() === "comissao,inscrito", "depois do convite, a mesma conta tem os dois perfis");
+    r = await b.enviar("trabalho", trabalho(r2.token, { titulo: "Enviado como avaliadora" }));
+    ok(!r.ok && r.erro === "avaliador", "avaliadora com inscrição não envia trabalho");
+    r = await b.enviar("trabalho", trabalho(tokenJoao, { titulo: "Do João com a avaliadora", coautores: [{ nome: "Maria da Silva", cpf: CPFS[0], email: "maria@exemplo.com" }] }));
+    ok(!r.ok && r.erro === "coautor_avaliador" && r.campo === "coautores", "avaliadora não entra como coautora");
+    r = await b.enviar("conferir", { token: tokenJoao, cpf: CPFS[0], email: "maria@exemplo.com" });
+    ok(!r.ok && r.erro === "coautor_avaliador", "a conferência do coautor já avisa que é avaliadora");
     ok((await b.enviar("orgRemoverComissao", { token: tokenOrg, email: "maria@exemplo.com" })).ok && (await b.enviar("entrar", { email: "maria@exemplo.com", senha: "senha nova da Maria" })).papeis.join() === "inscrito", "tirar da comissão mantém a inscrição");
+    r = await b.enviar("trabalho", trabalho(tokenMaria, { titulo: "Depois de sair da comissão" }));
+    ok(r.ok && r.restantes === 2, "fora da comissão, ela volta a poder enviar trabalho");
+    r = await b.enviar("trabalho", trabalho(tokenMaria));
+    ok(r.ok, "título de um trabalho excluído pode ser enviado de novo");
   }
 
 }
