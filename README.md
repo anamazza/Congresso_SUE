@@ -244,7 +244,8 @@ Todas estão explicadas em `servidor/.env.exemplo`. Além das do item **Instalar
 
 - `INSCRICOES_INICIO`, `INSCRICOES_FIM`, `SUBMISSAO_INICIO`, `SUBMISSAO_FIM` (AAAA-MM-DD) e
   `RESULTADO`: os prazos que o servidor aplica. Vazios, valem os do edital, que já estão no
-  programa. Se mudar um prazo, mude também a data correspondente no `CONFIG` de
+  programa: inscrições de 19/10 a 30/11/2026, trabalhos de 21/10 a 06/11/2026 e resultado em
+  16/11/2026. Antes da abertura, o site mostra os formulários como "em breve", com a data. Se mudar um prazo, mude também a data correspondente no `CONFIG` de
   `site/js/main.js`, que é o que o site mostra e usa para fechar os formulários;
 - `VAGAS`: número máximo de inscrições (vazio = sem limite automático);
 - `TESTE=true` num servidor de homologação: os e-mails saem com [TESTE] no assunto;
@@ -286,7 +287,7 @@ Para testar a organização, use `organizacao@teste.com`: em Entrar, "Esqueci a 
 aparece no Painel de teste. De lá, convide um avaliador; o convite aparece em E-mails enviados.
 Inscritos de teste são criados pelo próprio formulário de inscrição.
 
-Cada navegador tem o seu banco: uma pessoa não vê os dados de teste da outra. Use CPFs de
+No modo de teste, inscrições e envio de trabalhos ficam abertos o ano todo, independentemente dos prazos oficiais, para a equipe poder testar a qualquer momento. Cada navegador tem o seu banco: uma pessoa não vê os dados de teste da outra. Use CPFs de
 exemplo, como 529.982.247-25, 111.444.777-35 e 935.411.347-80, e nunca dados reais.
 
 `site/js/banco-teste.js` é gerado a partir de `servidor/src/regras.js`,

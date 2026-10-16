@@ -8,27 +8,27 @@
 const CONFIG = {
   inscricoes: {
     url: "",              // vazio = usa o formulário do site quando o banco estiver ligado
-    inicio: "06/10/2026",
+    inicio: "19/10/2026",
     fim: "30/11/2026",    // o formulário de inscrição fecha sozinho depois deste dia
   },
   submissao: {
     url: "",              // vazio = usa a área do inscrito do site quando o banco estiver ligado
-    inicio: "25/09/2026",
+    inicio: "21/10/2026",
     prazo: "06/11/2026",    // o envio de trabalhos fecha sozinho depois deste dia
     normas: "",           // link do PDF com as normas de submissão (item do menu Trabalhos)
     modeloPoster: "",     // link do modelo de pôster (item do menu Trabalhos)
   },
   datas: {
     edital: "",           // divulgação do edital
-    avaliacao: "",        // ex.: "21/10 a 04/11/2026"
+    avaliacao: "07/11 a 15/11/2026",
     aprovados: "16/11/2026", // resultado final dos trabalhos
     programacao: "",      // divulgação da programação final
     apresentacao: "03 e 04/12/2026",
-    certificados: "",     // disponibilização dos certificados
+    certificados: "16/12/2026", // disponibilização dos certificados (digitais)
   },
   certificacao: {
-    cargaHoraria: "",     // ex.: "16 horas"
-    frequencia: "",       // ex.: "75% de presença"
+    cargaHoraria: "16 horas",
+    frequencia: "75% de presença",
   },
   edital: {
     url: "assets/Edital.docx", // troque pelo PDF final quando estiver pronto
@@ -136,15 +136,19 @@ const CONFIG = {
     return diaEmBrasilia(data, "23:59:59");
   }
 
-  function estadoDe(encerrado) {
+  // Antes da data de abertura o formulário fica "em breve"; depois do prazo, "encerrado"
+  function estadoDe(encerrado, abertura) {
     if (modoTeste) return "aberto";
     if (encerrado) return "encerrado";
+    if (abertura && new Date() < abertura) return "pendente";
     return urlBanco ? "aberto" : "pendente";
   }
   const prazoTrabalhos = fimDoDia(ler("submissao.prazo"));
   const prazoInscricoes = fimDoDia(ler("inscricoes.fim"));
-  const estadoInscricao = estadoDe(bancoCfg.inscricoesEncerradas || (prazoInscricoes && new Date() > prazoInscricoes));
-  const estadoSubmissao = estadoDe(bancoCfg.submissaoEncerrada || (prazoTrabalhos && new Date() > prazoTrabalhos));
+  const aberturaInscricoes = diaEmBrasilia(ler("inscricoes.inicio"), "00:00:00");
+  const aberturaTrabalhos = diaEmBrasilia(ler("submissao.inicio"), "00:00:00");
+  const estadoInscricao = estadoDe(bancoCfg.inscricoesEncerradas || (prazoInscricoes && new Date() > prazoInscricoes), aberturaInscricoes);
+  const estadoSubmissao = estadoDe(bancoCfg.submissaoEncerrada || (prazoTrabalhos && new Date() > prazoTrabalhos), aberturaTrabalhos);
 
   // Com os formulários abertos, "Inscreva-se" e "Submeter trabalho" levam até eles
   function apontarBotoes(grupo, estado, destino, textoEncerrado) {
@@ -954,7 +958,9 @@ const CONFIG = {
       textos: {
         botaoPendente: "Inscrições em breve",
         botaoEncerrado: "Inscrições encerradas",
-        avisoPendente: "O formulário ainda não está recebendo inscrições. Ele será liberado em breve nesta página. Você já pode conferir os dados que serão pedidos.",
+        avisoPendente: ler("inscricoes.inicio")
+          ? "As inscrições abrem em " + ler("inscricoes.inicio") + ", nesta página. Você já pode conferir os dados que serão pedidos."
+          : "O formulário ainda não está recebendo inscrições. Ele será liberado em breve nesta página. Você já pode conferir os dados que serão pedidos.",
         avisoEncerrado: "As inscrições estão encerradas.",
       },
       mascaras: { cpf: mascaraCpf, celular: mascaraCelular },
@@ -1367,7 +1373,9 @@ const CONFIG = {
       textos: {
         botaoPendente: "Submissão em breve",
         botaoEncerrado: "Submissão encerrada",
-        avisoPendente: "O envio de trabalhos ainda não está aberto. Ele será liberado em breve nesta página. Você já pode conferir o que será pedido.",
+        avisoPendente: ler("submissao.inicio")
+          ? "O envio de trabalhos abre em " + ler("submissao.inicio") + ", nesta página. Você já pode conferir o que será pedido."
+          : "O envio de trabalhos ainda não está aberto. Ele será liberado em breve nesta página. Você já pode conferir o que será pedido.",
         avisoEncerrado: "O prazo de envio de trabalhos está encerrado.",
       },
       regras: regrasTrabalho,
@@ -1473,8 +1481,11 @@ const CONFIG = {
         document.getElementById("trb-limite-titulo").textContent = "Você já enviou o máximo de trabalhos";
         document.getElementById("trb-limite-texto").textContent = "Cada autor pode enviar até " + sub.maximo +
           " trabalhos como primeiro autor, e você já enviou " + sub.maximo + ". Você ainda pode aparecer como coautor nos trabalhos enviados por outras pessoas.";
+      } else if (bloqueio === "prazo" && sub.naoComecou) {
+        document.getElementById("trb-limite-titulo").textContent = "O envio de trabalhos ainda não começou";
+        document.getElementById("trb-limite-texto").textContent = "O envio abre em " + sub.inicio + " e vai até " + sub.prazo + ". Até lá, você pode conferir as normas de submissão.";
       } else if (bloqueio === "prazo") {
-        document.getElementById("trb-limite-titulo").textContent = "O envio de trabalhos está fechado";
+        document.getElementById("trb-limite-titulo").textContent = "O envio de trabalhos está encerrado";
         document.getElementById("trb-limite-texto").textContent = "O prazo para enviar trabalhos terminou em " + sub.prazo + ".";
       }
       if (bloqueio) {
@@ -1952,8 +1963,10 @@ const CONFIG = {
       const botao = document.getElementById("area-submeter");
       if (sub.avaliador) {
         nota.textContent = situacaoDeAvaliador().texto;
+      } else if (!sub.aberta && sub.naoComecou) {
+        nota.textContent = "O envio de trabalhos abre em " + sub.inicio + " e vai até " + sub.prazo + ".";
       } else if (!sub.aberta) {
-        nota.textContent = "O envio de trabalhos está fechado. O prazo final é " + sub.prazo + ".";
+        nota.textContent = "O envio de trabalhos está encerrado. O prazo terminou em " + sub.prazo + ".";
       } else if (sub.restantes < 1) {
         nota.textContent = "Você já enviou " + sub.maximo + " trabalhos como primeiro autor, o máximo do edital.";
       } else {
@@ -2047,6 +2060,13 @@ const CONFIG = {
     }
     if (!sessao || !temPapel("inscrito") || !r || !r.submissao) return null;
     const sub = r.submissao;
+    if (!sub.aberta && sub.naoComecou) {
+      return {
+        aviso: "O envio de trabalhos abre em " + sub.inicio,
+        texto: "Você já está inscrito(a). O envio de trabalhos abre em " + sub.inicio + " e vai até " + sub.prazo + ", pelo site. Quem envia é o primeiro autor.",
+        botao: "Ver as normas", rota: "#/normas",
+      };
+    }
     if (!sub.aberta) {
       return {
         aviso: "O envio de trabalhos está encerrado",

@@ -23,12 +23,12 @@
     FUSO: "America/Sao_Paulo",
 
     // Inscrições. Datas no formato AAAA-MM-DD; vazio = sem data.
-    INSCRICOES_INICIO: "2026-10-06",
+    INSCRICOES_INICIO: "2026-10-19",
     INSCRICOES_FIM: "2026-11-30", // último dia, até 23h59 de Brasília
     VAGAS: 0, // número máximo de inscrições; 0 = sem limite automático
 
     // Trabalhos
-    SUBMISSAO_INICIO: "2026-09-25",
+    SUBMISSAO_INICIO: "2026-10-21",
     SUBMISSAO_FIM: "2026-11-06", // último dia de envio, até 23h59 de Brasília
     RESULTADO: "16/11/2026",
     MAX_TRABALHOS_PRIMEIRO_AUTOR: 3,
@@ -332,6 +332,9 @@
         trabalhos: trabalhos,
         submissao: {
           aberta: dentroDoPeriodo(cfg.SUBMISSAO_INICIO, cfg.SUBMISSAO_FIM),
+          // Antes da abertura, o site diz quando abre (e não que fechou)
+          naoComecou: !!cfg.SUBMISSAO_INICIO && hoje() < cfg.SUBMISSAO_INICIO,
+          inicio: cfg.SUBMISSAO_INICIO ? cfg.SUBMISSAO_INICIO.split("-").reverse().join("/") : "",
           prazo: cfg.SUBMISSAO_FIM.split("-").reverse().join("/"),
           maximo: cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR,
           restantes: Math.max(0, cfg.MAX_TRABALHOS_PRIMEIRO_AUTOR - comoPrimeiro),

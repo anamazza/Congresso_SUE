@@ -50,7 +50,7 @@ function trabalho(token, extra) {
 
 function criarAmbiente(tipo, opcoes) {
   opcoes = opcoes || {};
-  const estado = { agora: new Date(opcoes.agora || "2026-10-07T12:00:00-03:00"), falharEmail: false };
+  const estado = { agora: new Date(opcoes.agora || "2026-10-22T12:00:00-03:00"), falharEmail: false };
   const agora = function () { return new Date(estado.agora.getTime()); };
   const repo = tipo === "sqlite" ? criarRepoSqlite({ arquivo: ":memory:", agora: agora }) : criarRepoMemoria({ agora: agora });
   const emails = [];
@@ -178,7 +178,7 @@ async function rodar(tipo, resultados) {
     ok(r.ok && r.caracteres === 2500 && b.repo.trabalhos.porProtocolo("TRB-0004").autorCpf === "11144477735", "resumo com exatamente 2.500 caracteres é aceito, em nome de quem está na sessão");
 
     r = await b.enviar("painel", { token: tokenMaria });
-    ok(r.ok && r.inscricao.protocolo === "INS-0001" && r.inscricao.cpf === "529.982.247-25" && r.inscricao.celular === "(21) 98765-4321" && r.inscricao.data === "07/10/2026 12:00", "painel mostra a inscrição de quem entrou");
+    ok(r.ok && r.inscricao.protocolo === "INS-0001" && r.inscricao.cpf === "529.982.247-25" && r.inscricao.celular === "(21) 98765-4321" && r.inscricao.data === "22/10/2026 12:00", "painel mostra a inscrição de quem entrou");
     ok(r.trabalhos.map((x) => x.protocolo + ":" + x.papel).join(",") === "TRB-0001:Primeiro autor,TRB-0002:Primeiro autor,TRB-0003:Primeiro autor,TRB-0004:Coautor", "painel lista os trabalhos como primeira autora e como coautora");
     ok(r.submissao.aberta && r.submissao.restantes === 0 && r.submissao.prazo === "06/11/2026", "painel informa prazo e trabalhos que ainda pode enviar");
     const enviado = r.trabalhos[0];
@@ -268,8 +268,16 @@ async function rodar(tipo, resultados) {
     b.estado.agora = new Date("2026-11-07T00:30:00-03:00");
     ok((await b.enviar("trabalho", trabalho(token, { titulo: "Atrasado" }))).erro === "fora_do_prazo", "07/11 às 00h30 de Brasília recusa trabalho");
     ok((await b.enviar("painel", { token })).submissao.aberta === false, "depois do prazo, o painel avisa que a submissão fechou");
-    b.estado.agora = new Date("2026-10-05T23:30:00-03:00");
-    ok((await b.enviar("inscricao", inscricao({ cpf: CPFS[1], email: "joao@exemplo.com" }))).erro === "fora_do_prazo", "inscrição em 05/10 às 23h30 é recusada");
+    b.estado.agora = new Date("2026-10-18T23:30:00-03:00");
+    ok((await b.enviar("inscricao", inscricao({ cpf: CPFS[1], email: "joao@exemplo.com" }))).erro === "fora_do_prazo", "inscrição em 18/10 às 23h30 é recusada (abre em 19/10)");
+    b.estado.agora = new Date("2026-10-19T00:10:00-03:00");
+    const tokenCedo = (await b.enviar("inscricao", inscricao({ cpf: CPFS[1], email: "joao@exemplo.com" }))).token;
+    ok(!!tokenCedo, "inscrição em 19/10 às 00h10 é aceita");
+    b.estado.agora = new Date("2026-10-20T23:30:00-03:00");
+    const tokenDia20 = (await b.enviar("entrar", { email: "joao@exemplo.com", senha: SENHA })).token; // a sessão de 19/10 já venceu
+    ok((await b.enviar("trabalho", trabalho(tokenDia20, { titulo: "Cedo demais" }))).erro === "fora_do_prazo", "trabalho em 20/10 às 23h30 é recusado (envio abre em 21/10)");
+    const antesDeAbrir = (await b.enviar("painel", { token: tokenDia20 })).submissao;
+    ok(!antesDeAbrir.aberta && antesDeAbrir.naoComecou === true && antesDeAbrir.inicio === "21/10/2026", "antes de 21/10, o painel diz que o envio ainda não começou e quando abre");
     b.estado.agora = new Date("2026-12-01T00:10:00-03:00");
     ok((await b.enviar("inscricao", inscricao({ cpf: CPFS[3], email: "d@exemplo.com" }))).erro === "fora_do_prazo", "inscrição em 01/12 às 00h10 é recusada");
 
