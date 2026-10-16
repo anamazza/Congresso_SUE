@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página não encontrada · 1º Simpósio de Urgência e Emergência</title>
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="6; url=./">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #F5F7FA; color: #2B3140;
+         font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; padding: 2rem; box-sizing: border-box; }
+  h1 { color: #1B1F2A; font-size: 1.6rem; margin: 0 0 .5rem; }
+  p { max-width: 40ch; margin: 0 auto 1.25rem; line-height: 1.5; }
+  a { display: inline-block; background: #880A12; color: #fff; text-decoration: none; padding: .8rem 1.4rem; border-radius: 6px; font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Página não encontrada</h1>
+  <p>O endereço não existe ou mudou. Você será levado ao início do site em alguns segundos.</p>
+  <a href="./">Ir para o início</a>
+</main>
+<script>
+  // Mantém a página pedida quando ela está no formato #/pagina
+  if (window.location.hash && window.location.hash.indexOf("#/") === 0) {
+    window.location.replace("./" + window.location.hash);
+  }
+</script>
+</body>
+</html>
