@@ -149,6 +149,12 @@
       config: {
         TESTE: true,
         ORGANIZACAO: [ORGANIZACAO_TESTE],
+        // No teste, inscrições e envio de trabalhos ficam abertos o ano todo,
+        // para a equipe testar antes e depois dos prazos oficiais
+        INSCRICOES_INICIO: "2026-01-01",
+        INSCRICOES_FIM: "2026-12-31",
+        SUBMISSAO_INICIO: "2026-01-01",
+        SUBMISSAO_FIM: "2026-12-31",
         SITE: window.location.href.split("#")[0],
       },
       log: function (erro) { console.error(erro); },
